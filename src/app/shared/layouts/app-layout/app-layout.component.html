@@ -1,0 +1,22 @@
+<div class="min-h-screen xl:flex">
+  <div>
+    <app-sidebar></app-sidebar>
+    <app-backdrop></app-backdrop>
+  </div>
+  <div
+    class="flex-1 transition-all duration-300 ease-in-out"
+    [ngClass]="{
+      'xl:ml-[290px]': isExpanded() || isHovered(),
+      'xl:ml-[90px]': !isExpanded() && !isHovered(),
+      'ml-0': isMobileOpen()
+    }"
+  >
+    <!-- App Header -->
+    <app-header />
+    
+    <!-- Page Content -->
+    <main class="p-4 mx-auto max-w-(--breakpoint-2xl) md:p-6">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>
