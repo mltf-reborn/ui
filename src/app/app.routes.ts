@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { AuthGuard } from '@auth0/auth0-angular';
 import { LandingComponent } from './pages/landing/landing.component';
 import { AppLayoutComponent } from './shared/layouts/app-layout/app-layout.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
@@ -12,6 +13,7 @@ export const routes: Routes = [
   {
     path: 'dashboard',
     component: AppLayoutComponent,
+    canActivate: [AuthGuard],
     children: [
       {
         path: '',

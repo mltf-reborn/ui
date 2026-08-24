@@ -44,3 +44,4 @@ __screenshots__/
 Thumbs.db
 .agents
 .claude
+/src/environments/environment.development.ts

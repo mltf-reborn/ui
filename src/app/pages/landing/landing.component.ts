@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { ThemeService } from '../../shared/services/theme.service';
+import { AppAuthService } from '../../shared/services/auth.service';
 
 export interface MortgagePackage {
   id: string;
@@ -34,36 +35,36 @@ export interface FaqItem {
 })
 export class LandingComponent {
   readonly themeService = inject(ThemeService);
+  readonly authService = inject(AppAuthService);
 
-  // Modals
-  readonly isLoginModalOpen = signal<boolean>(false);
-  readonly isRegisterModalOpen = signal<boolean>(false);
-  readonly registrationSuccess = signal<boolean>(false);
+  readonly isAuthenticated = this.authService.isAuthenticated;
+  readonly user = this.authService.user;
+  readonly isLoading = this.authService.isLoading;
 
-  // Login form state
-  loginForm = {
-    identity: '',
-    password: '',
-    rememberMe: false
-  };
-  readonly loginError = signal<string>('');
-  readonly isLoggingIn = signal<boolean>(false);
-  readonly loginSuccess = signal<boolean>(false);
+  // Auth0 Actions
+  login(): void {
+    this.authService.login();
+  }
 
-  // Register form state
-  registerForm = {
-    fullName: '',
-    nric: '',
-    phone: '',
-    email: '',
-    incomeBracket: 'b40',
-    employmentType: 'gig',
-    propertyPrice: 350000,
-    state: 'Selangor',
-    isFirstHome: true,
-    agreeTerms: true
-  };
-  readonly registeredRefNumber = signal<string>('');
+  register(): void {
+    this.authService.register();
+  }
+
+  logout(): void {
+    this.authService.logout();
+  }
+
+  openLogin(): void {
+    this.login();
+  }
+
+  openRegister(_prefillPrice?: number): void {
+    this.register();
+  }
+
+  applyFromCalculator(): void {
+    this.register();
+  }
 
   // Mortgage Calculator Reactive Signals
   readonly propertyPrice = signal<number>(350000);
@@ -276,69 +277,11 @@ export class LandingComponent {
     }
   }
 
-  openLogin(): void {
-    this.loginError.set('');
-    this.loginSuccess.set(false);
-    this.isLoginModalOpen.set(true);
-    this.isRegisterModalOpen.set(false);
-  }
-
-  closeLogin(): void {
-    this.isLoginModalOpen.set(false);
-    this.loginError.set('');
-  }
-
-  openRegister(prefillPrice?: number): void {
-    if (prefillPrice) {
-      this.registerForm.propertyPrice = prefillPrice;
-    }
-    this.registrationSuccess.set(false);
-    this.isRegisterModalOpen.set(true);
-    this.isLoginModalOpen.set(false);
-  }
-
-  closeRegister(): void {
-    this.isRegisterModalOpen.set(false);
-    this.registrationSuccess.set(false);
-  }
-
-  handleLoginSubmit(): void {
-    if (!this.loginForm.identity || !this.loginForm.password) {
-      this.loginError.set('Sila masukkan No. MyKad/E-mel dan Kata Laluan anda.');
-      return;
-    }
-    this.isLoggingIn.set(true);
-    this.loginError.set('');
-
-    setTimeout(() => {
-      this.isLoggingIn.set(false);
-      this.loginSuccess.set(true);
-      setTimeout(() => {
-        this.closeLogin();
-      }, 1200);
-    }, 800);
-  }
-
-  handleRegisterSubmit(): void {
-    if (!this.registerForm.fullName || !this.registerForm.nric || !this.registerForm.phone) {
-      alert('Sila lengkapkan maklumat wajib (Nama, MyKad, Telefon).');
-      return;
-    }
-
-    const randomRef = 'MLTF-' + new Date().getFullYear() + '-' + Math.floor(100000 + Math.random() * 900000);
-    this.registeredRefNumber.set(randomRef);
-    this.registrationSuccess.set(true);
-  }
-
   formatCurrency(val: number): string {
     return new Intl.NumberFormat('ms-MY', {
       style: 'currency',
       currency: 'MYR',
       maximumFractionDigits: 0
     }).format(val).replace('MYR', 'RM');
-  }
-
-  applyFromCalculator(): void {
-    this.openRegister(this.propertyPrice());
   }
 }
