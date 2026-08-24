@@ -1,0 +1,56 @@
+<div class="relative" #dropdownContainer>
+  <button
+    type="button"
+    (click)="toggleDropdown()"
+    [attr.aria-label]="'language.toggleAria' | translate"
+    class="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-200 hover:border-brand-500 dark:hover:border-brand-400 hover:text-brand-600 dark:hover:text-brand-400 transition-all text-xs sm:text-sm font-semibold cursor-pointer shadow-xs"
+  >
+    <span class="text-base leading-none">
+      {{ currentLangOption()?.flag }}
+    </span>
+    <span class="font-bold tracking-wide">
+      {{ currentLangOption()?.shortLabel }}
+    </span>
+    <svg
+      class="w-3.5 h-3.5 text-gray-400 dark:text-gray-500 transition-transform duration-200"
+      [ngClass]="{ 'rotate-180': isOpen() }"
+      viewBox="0 0 20 20"
+      fill="currentColor"
+    >
+      <path
+        fill-rule="evenodd"
+        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
+        clip-rule="evenodd"
+      />
+    </svg>
+  </button>
+
+  <!-- Dropdown Menu -->
+  @if (isOpen()) {
+    <div
+      class="absolute right-0 mt-2 w-44 rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-1.5 shadow-xl z-50 animate-in fade-in zoom-in-95 duration-150"
+    >
+      @for (opt of translationService.supportedLanguages; track opt.code) {
+        <button
+          type="button"
+          (click)="selectLanguage(opt.code)"
+          class="w-full flex items-center justify-between px-3 py-2 text-xs sm:text-sm rounded-xl font-medium transition-colors cursor-pointer"
+          [ngClass]="{
+            'bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 font-bold': translationService.currentLanguage() === opt.code,
+            'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800': translationService.currentLanguage() !== opt.code
+          }"
+        >
+          <span class="flex items-center gap-2">
+            <span class="text-base">{{ opt.flag }}</span>
+            <span>{{ opt.label }}</span>
+          </span>
+          @if (translationService.currentLanguage() === opt.code) {
+            <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z" clip-rule="evenodd" />
+            </svg>
+          }
+        </button>
+      }
+    </div>
+  }
+</div>

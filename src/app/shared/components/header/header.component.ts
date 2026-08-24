@@ -5,15 +5,20 @@ import { SidebarService } from '../../services/sidebar.service';
 import { ThemeToggleComponent } from './theme-toggle/theme-toggle.component';
 import { NotificationDropdownComponent } from './notification-dropdown/notification-dropdown.component';
 import { UserDropdownComponent } from './user-dropdown/user-dropdown.component';
+import { LanguageToggleComponent } from './language-toggle/language-toggle.component';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-header',
+  standalone: true,
   imports: [
     CommonModule,
     RouterModule,
     ThemeToggleComponent,
     NotificationDropdownComponent,
     UserDropdownComponent,
+    LanguageToggleComponent,
+    TranslatePipe,
   ],
   templateUrl: './header.component.html',
 })

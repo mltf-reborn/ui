@@ -4,10 +4,12 @@ import { RouterModule } from '@angular/router';
 import { DropdownComponent } from '../../ui/dropdown/dropdown.component';
 import { DropdownItemComponent } from '../../ui/dropdown/dropdown-item.component';
 import { AppAuthService } from '../../../services/auth.service';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-user-dropdown',
-  imports: [CommonModule, RouterModule, DropdownComponent, DropdownItemComponent],
+  standalone: true,
+  imports: [CommonModule, RouterModule, DropdownComponent, DropdownItemComponent, TranslatePipe],
   templateUrl: './user-dropdown.component.html',
 })
 export class UserDropdownComponent {

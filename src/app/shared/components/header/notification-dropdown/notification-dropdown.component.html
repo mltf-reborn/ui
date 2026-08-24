@@ -1,9 +1,9 @@
 <div class="relative">
   <button
     type="button"
-    class="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full dropdown-toggle hover:text-gray-700 h-11 w-11 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white"
+    class="relative flex items-center justify-center text-gray-500 transition-colors bg-white border border-gray-200 rounded-full dropdown-toggle hover:text-gray-700 h-11 w-11 hover:bg-gray-100 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white cursor-pointer"
     (click)="toggleDropdown()"
-    aria-label="Notifications"
+    [attr.aria-label]="'notifications.title' | translate"
   >
     <span
       class="absolute right-0 top-0.5 z-10 h-2 w-2 rounded-full bg-orange-400"
@@ -33,12 +33,12 @@
   >
     <div class="flex items-center justify-between pb-3 mb-3 border-b border-gray-100 dark:border-gray-700">
       <h5 class="text-lg font-semibold text-gray-800 dark:text-gray-200">
-        Notifications
+        {{ 'notifications.title' | translate }}
       </h5>
       <button
         (click)="closeDropdown()"
         type="button"
-        class="text-gray-500 transition dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+        class="text-gray-500 transition dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 cursor-pointer"
       >
         <svg
           class="fill-current"
@@ -77,15 +77,15 @@
               <span class="font-medium text-gray-800 dark:text-white/90">
                 Terry Franci
               </span>
-              <span> requests permission to change</span>
+              <span> {{ 'notifications.requestPermission' | translate }} </span>
               <span class="font-medium text-gray-800 dark:text-white/90">
-                Project Dashboard
+                {{ 'notifications.projectDashboard' | translate }}
               </span>
             </span>
             <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-              <span>Project</span>
+              <span>{{ 'notifications.project' | translate }}</span>
               <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-              <span>5 min ago</span>
+              <span>{{ 'notifications.minutesAgo' | translate: { min: 5 } }}</span>
             </span>
           </span>
         </app-dropdown-item>
@@ -111,15 +111,15 @@
               <span class="font-medium text-gray-800 dark:text-white/90">
                 Alena Franci
               </span>
-              <span>requests permission to change</span>
+              <span> {{ 'notifications.requestPermission' | translate }} </span>
               <span class="font-medium text-gray-800 dark:text-white/90">
-                Design System
+                {{ 'notifications.designSystem' | translate }}
               </span>
             </span>
             <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-              <span>Design</span>
+              <span>{{ 'notifications.design' | translate }}</span>
               <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-              <span>8 min ago</span>
+              <span>{{ 'notifications.minutesAgo' | translate: { min: 8 } }}</span>
             </span>
           </span>
         </app-dropdown-item>
@@ -145,12 +145,12 @@
               <span class="font-medium text-gray-800 dark:text-white/90">
                 Jocelyn Kenter
               </span>
-              <span> sent a message</span>
+              <span> {{ 'notifications.sentMessage' | translate }}</span>
             </span>
             <span class="flex items-center gap-2 text-gray-500 text-theme-xs dark:text-gray-400">
-              <span>Chat</span>
+              <span>{{ 'notifications.chat' | translate }}</span>
               <span class="w-1 h-1 bg-gray-400 rounded-full"></span>
-              <span>15 min ago</span>
+              <span>{{ 'notifications.minutesAgo' | translate: { min: 15 } }}</span>
             </span>
           </span>
         </app-dropdown-item>
@@ -161,7 +161,7 @@
       (click)="closeDropdown()"
       class="block px-4 py-2 mt-3 text-sm font-medium text-center text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700"
     >
-      View All Notifications
+      {{ 'notifications.viewAll' | translate }}
     </a>
   </app-dropdown>
 </div>

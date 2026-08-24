@@ -1,17 +1,19 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BreadcrumbComponent } from '../../shared/components/breadcrumb/breadcrumb.component';
+import { TranslationService } from '../../shared/services/translation.service';
+import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 
 export interface LoanApplication {
   id: string;
   applicantName: string;
   myKad: string;
   segment: 'B40' | 'M50';
-  scheme: string;
+  schemeKey: string;
   propertyPrice: number;
   loanAmount: number;
-  status: 'In Review' | 'Pre-Approved' | 'SJKP Guaranteed' | 'Disbursed';
+  statusKey: 'statusInReview' | 'statusPreApproved' | 'statusSjkpGuaranteed' | 'statusDisbursed';
   statusColor: string;
   date: string;
   officer: string;
@@ -20,20 +22,22 @@ export interface LoanApplication {
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, BreadcrumbComponent],
+  imports: [CommonModule, RouterModule, BreadcrumbComponent, TranslatePipe],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent {
-  readonly applications = signal<LoanApplication[]>([
+  readonly translationService = inject(TranslationService);
+
+  readonly rawApplications: LoanApplication[] = [
     {
       id: 'MLTF-2026-89412',
       applicantName: 'Mohd Hafiz bin Razali',
       myKad: '920815-10-5432',
       segment: 'B40',
-      scheme: 'SJKP i-Biaya (Pekerja Gig)',
+      schemeKey: 'footer.schemeSjkp',
       propertyPrice: 350000,
       loanAmount: 385000,
-      status: 'SJKP Guaranteed',
+      statusKey: 'statusSjkpGuaranteed',
       statusColor: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300',
       date: '24 Aug 2026',
       officer: 'Farhan Azman'
@@ -43,10 +47,10 @@ export class DashboardComponent {
       applicantName: 'Lim Wei Jian & Sarah Tan',
       myKad: '891102-14-6101',
       segment: 'M50',
-      scheme: 'MLTF M50 Flexi-Aspirasi',
+      schemeKey: 'footer.schemeM50',
       propertyPrice: 620000,
       loanAmount: 589000,
-      status: 'Pre-Approved',
+      statusKey: 'statusPreApproved',
       statusColor: 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300',
       date: '23 Aug 2026',
       officer: 'Siti Nur Aisyah'
@@ -56,10 +60,10 @@ export class DashboardComponent {
       applicantName: 'Puan Devagi a/p Murugan',
       myKad: '850403-08-5920',
       segment: 'B40',
-      scheme: 'Skim Rumah Pertama B40',
+      schemeKey: 'footer.schemeB40',
       propertyPrice: 280000,
       loanAmount: 280000,
-      status: 'Disbursed',
+      statusKey: 'statusDisbursed',
       statusColor: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300',
       date: '22 Aug 2026',
       officer: 'Farhan Azman'
@@ -69,18 +73,29 @@ export class DashboardComponent {
       applicantName: 'Ahmad Faizul bin Hassan',
       myKad: '940612-03-5119',
       segment: 'B40',
-      scheme: 'SJKP i-Biaya (E-Hailing)',
+      schemeKey: 'footer.schemeSjkp',
       propertyPrice: 420000,
       loanAmount: 420000,
-      status: 'In Review',
+      statusKey: 'statusInReview',
       statusColor: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300',
       date: '21 Aug 2026',
       officer: 'Khairul Anwar'
     }
-  ]);
+  ];
+
+  readonly applications = computed(() => {
+    // Read reactive signal so computed updates on language switch
+    const _ = this.translationService.currentLanguage();
+    return this.rawApplications.map(app => ({
+      ...app,
+      scheme: this.translationService.translate(app.schemeKey),
+      status: this.translationService.translate(`dashboard.${app.statusKey}`)
+    }));
+  });
 
   formatCurrency(val: number): string {
-    return new Intl.NumberFormat('ms-MY', {
+    const locale = this.translationService.currentLanguage() === 'en' ? 'en-MY' : 'ms-MY';
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: 'MYR',
       maximumFractionDigits: 0

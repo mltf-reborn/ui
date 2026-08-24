@@ -1,9 +1,11 @@
 import { Component, input } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
   selector: 'app-breadcrumb',
-  imports: [RouterModule],
+  standalone: true,
+  imports: [RouterModule, TranslatePipe],
   templateUrl: './breadcrumb.component.html',
 })
 export class BreadcrumbComponent {

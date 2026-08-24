@@ -1,9 +1,9 @@
 <div class="relative">
-  <button (click)="toggleDropdown()" type="button" class="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400">
+  <button (click)="toggleDropdown()" type="button" class="flex items-center text-gray-700 dropdown-toggle dark:text-gray-400 cursor-pointer">
     <span class="mr-3 overflow-hidden rounded-full h-11 w-11 ring-2 ring-brand-500/20">
       <img [src]="authService.user()?.picture || '/images/user/owner.png'" alt="User" class="object-cover w-full h-full" />
     </span>
-    <span class="block mr-1 font-medium text-theme-sm">{{ authService.user()?.name || authService.user()?.nickname || 'Pengguna MLTF' }}</span>
+    <span class="block mr-1 font-medium text-theme-sm">{{ authService.user()?.name || authService.user()?.nickname || ('common.userDefault' | translate) }}</span>
     <svg [ngClass]="{
         'stroke-gray-500 dark:stroke-gray-400 transition-transform duration-200': true,
         'rotate-180': isOpen()
@@ -17,7 +17,7 @@
     className="absolute right-0 mt-[17px] flex w-[260px] flex-col rounded-2xl border border-gray-200 bg-white p-3 shadow-theme-lg dark:border-gray-800 dark:bg-gray-dark">
     <div class="pb-1">
       <span class="block font-medium text-gray-700 text-theme-sm dark:text-gray-400">
-        {{ authService.user()?.name || authService.user()?.nickname || 'Pengguna MLTF' }}
+        {{ authService.user()?.name || authService.user()?.nickname || ('common.userDefault' | translate) }}
       </span>
       <span class="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400 truncate">
         {{ authService.user()?.email || 'portal@mltf.gov.my' }}
@@ -34,7 +34,7 @@
             <rect x="14" y="14" width="7" height="7"/>
             <rect x="3" y="14" width="7" height="7"/>
           </svg>
-          Papan Pemuka
+          {{ 'userMenu.dashboard' | translate }}
         </app-dropdown-item>
       </li>
       <li>
@@ -44,7 +44,7 @@
             <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
             <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
-          Laman Utama
+          {{ 'userMenu.home' | translate }}
         </app-dropdown-item>
       </li>
     </ul>
@@ -58,7 +58,7 @@
         <polyline points="16 17 21 12 16 7"></polyline>
         <line x1="21" y1="12" x2="9" y2="12"></line>
       </svg>
-      Log Keluar (Sign Out)
+      {{ 'userMenu.signOut' | translate }}
     </button>
   </app-dropdown>
 </div>

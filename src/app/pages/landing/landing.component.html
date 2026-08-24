@@ -4,17 +4,17 @@
   <aside aria-label="Pengumuman Inisiatif" class="bg-gradient-to-r from-brand-700 via-brand-600 to-blue-light-600 text-white text-xs sm:text-sm py-2 px-4 text-center font-medium shadow-xs">
     <div class="max-w-7xl mx-auto flex items-center justify-center gap-2 flex-wrap">
       <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-white/20 text-white text-[11px] font-semibold uppercase tracking-wider">
-        Inisiatif 2026
+        {{ 'banner.initiative' | translate }}
       </span>
       <span>
-        Pengecualian Duti Setem 100% & Jaminan SJKP sehingga RM500k untuk pembeli rumah pertama B40 & M50!
+        {{ 'banner.announcement' | translate }}
       </span>
       <button 
         type="button"
         (click)="register()"
         class="underline font-bold hover:text-brand-100 transition-colors ml-1 cursor-pointer"
       >
-        Semak Kelayakan Percuma &rarr;
+        {{ 'banner.cta' | translate }}
       </button>
     </div>
   </aside>
@@ -33,24 +33,27 @@
         </div>
         <div class="flex flex-col">
           <span class="text-xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-1.5">
-            MLTF <span class="text-brand-500">MORTGAGE</span>
-            <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 dark:bg-brand-950 dark:text-brand-300 font-semibold border border-brand-200 dark:border-brand-800">MALAYSIA</span>
+            {{ 'header.brandTitle' | translate }} <span class="text-brand-500">{{ 'header.brandSub' | translate }}</span>
+            <span class="text-[10px] px-1.5 py-0.5 rounded bg-brand-50 text-brand-600 dark:bg-brand-950 dark:text-brand-300 font-semibold border border-brand-200 dark:border-brand-800">{{ 'header.country' | translate }}</span>
           </span>
           <span class="text-[11px] text-gray-500 dark:text-gray-400 font-medium -mt-1">
-            Pembiayaan Perumahan Rakyat B40 & M50
+            {{ 'header.tagline' | translate }}
           </span>
         </div>
       </a>
 
-      <!-- Right Header Actions (Theme Toggle + Auth buttons) -->
-      <div class="flex items-center gap-2.5 sm:gap-3">
+      <!-- Right Header Actions (Language Switcher + Theme Toggle + Auth buttons) -->
+      <div class="flex items-center gap-2 sm:gap-2.5">
         
+        <!-- Language Switcher Toggle -->
+        <app-language-toggle />
+
         <!-- Theme Toggle Button -->
         <button
           type="button"
           (click)="themeService.toggleTheme()"
-          aria-label="Tukar mod gelap atau terang"
-          class="p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-brand-500 transition-colors cursor-pointer"
+          [attr.aria-label]="'header.themeToggleAria' | translate"
+          class="p-2 sm:p-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-brand-500 transition-colors cursor-pointer"
         >
           @if (themeService.theme() === 'dark') {
             <!-- Sun Icon -->
@@ -89,37 +92,37 @@
                 <rect x="3" y="14" width="7" height="7"/>
               </svg>
             }
-            <span>Papan Pemuka</span>
+            <span>{{ 'common.dashboard' | translate }}</span>
           </a>
           <button
             type="button"
             (click)="logout()"
             class="inline-flex items-center gap-1 px-3 py-2 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
           >
-            <span>Log Keluar</span>
+            <span>{{ 'common.logout' | translate }}</span>
           </button>
         } @else {
           <!-- CTA BUTTON 1: LOG MASUK (Auth0 Login) -->
           <button
             type="button"
             (click)="login()"
-            class="inline-flex items-center gap-1.5 px-3.5 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
+            class="inline-flex items-center gap-1.5 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
           >
             <svg class="w-4 h-4 text-gray-500 dark:text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
               <polyline points="10 17 15 12 10 7"/>
               <line x1="15" y1="12" x2="3" y2="12"/>
             </svg>
-            <span>Log Masuk</span>
+            <span>{{ 'common.login' | translate }}</span>
           </button>
 
           <!-- CTA BUTTON 2: DAFTAR SEKARANG (Auth0 Register) -->
           <button
             type="button"
             (click)="register()"
-            class="inline-flex items-center gap-2 px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 shadow-md shadow-brand-500/25 hover:shadow-lg hover:shadow-brand-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
+            class="inline-flex items-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 shadow-md shadow-brand-500/25 hover:shadow-lg hover:shadow-brand-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
           >
-            <span>Daftar Sekarang</span>
+            <span>{{ 'common.register' | translate }}</span>
             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="5" y1="12" x2="19" y2="12"/>
               <polyline points="12 5 19 12 12 19"/>
@@ -149,17 +152,16 @@
               <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-400 opacity-75"></span>
               <span class="relative inline-flex rounded-full h-2 w-2 bg-brand-500"></span>
             </span>
-            <span>🇲🇾 Pembiayaan Perumahan Khas Golongan B40 & M50</span>
+            <span>{{ 'hero.badge' | translate }}</span>
           </div>
 
           <!-- Main Hero Title -->
           <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.15]">
-            Miliki Rumah Impian Keluarga Anda dengan <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-blue-light-500">Pembiayaan Mudah & Mampu Milik</span>
+            {{ 'hero.titlePrefix' | translate }}<span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-600 via-brand-500 to-blue-light-500">{{ 'hero.titleHighlight' | translate }}</span>
           </h1>
 
           <!-- Hero Subtitle -->
-          <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed">
-            Pakej pinjaman perumahan bersubsidi untuk rakyat Malaysia. <strong>0% deposit</strong>, margin pembiayaan sehingga <strong>110%</strong>, jaminan <strong>SJKP</strong> untuk pekerja gig & peniaga kecil tanpa slip gaji, dengan kadar serendah <strong>3.25% setahun</strong>.
+          <p class="text-base sm:text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed" [innerHTML]="'hero.subtitle' | translate">
           </p>
 
           <!-- Key Benefit Highlights Checkmarks -->
@@ -168,25 +170,25 @@
               <div class="flex-shrink-0 w-5 h-5 rounded-full bg-success-100 dark:bg-success-950 text-success-600 dark:text-success-400 flex items-center justify-center">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <span>Jaminan SJKP sehingga RM500,000</span>
+              <span>{{ 'hero.benefit1' | translate }}</span>
             </div>
             <div class="flex items-center gap-2.5">
               <div class="flex-shrink-0 w-5 h-5 rounded-full bg-success-100 dark:bg-success-950 text-success-600 dark:text-success-400 flex items-center justify-center">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <span>Pengecualian Duti Setem 100% (MOT)</span>
+              <span>{{ 'hero.benefit2' | translate }}</span>
             </div>
             <div class="flex items-center gap-2.5">
               <div class="flex-shrink-0 w-5 h-5 rounded-full bg-success-100 dark:bg-success-950 text-success-600 dark:text-success-400 flex items-center justify-center">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <span>Tanpa Slip Gaji? Penyata E-Wallet diterima</span>
+              <span>{{ 'hero.benefit3' | translate }}</span>
             </div>
             <div class="flex items-center gap-2.5">
               <div class="flex-shrink-0 w-5 h-5 rounded-full bg-success-100 dark:bg-success-950 text-success-600 dark:text-success-400 flex items-center justify-center">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
               </div>
-              <span>Kelulusan Bersyarat Pantas 24-48 Jam</span>
+              <span>{{ 'hero.benefit4' | translate }}</span>
             </div>
           </div>
 
@@ -199,7 +201,7 @@
               (click)="register()"
               class="w-full sm:w-auto px-8 py-4 text-base font-bold rounded-xl text-white bg-gradient-to-r from-brand-600 via-brand-500 to-blue-light-500 hover:from-brand-700 hover:to-brand-600 shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:-translate-y-1 transition-all flex items-center justify-center gap-3 cursor-pointer"
             >
-              <span>Daftar Permohonan Sekarang</span>
+              <span>{{ 'hero.ctaRegister' | translate }}</span>
               <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="5" y1="12" x2="19" y2="12"/>
                 <polyline points="12 5 19 12 12 19"/>
@@ -218,20 +220,20 @@
                 <line x1="16" y1="14" x2="16" y2="18"/>
                 <path d="M16 10h.01M12 10h.01M8 10h.01M12 14h.01M8 14h.01M12 18h.01M8 18h.01"/>
               </svg>
-              <span>Kira Kelayakan Pinjaman</span>
+              <span>{{ 'hero.ctaCalc' | translate }}</span>
             </button>
 
           </div>
 
           <!-- Existing user login prompt -->
           <div class="pt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-            Sudah mempunyai permohonan sedia ada?
+            {{ 'hero.existingPrompt' | translate }}
             <button 
               type="button" 
               (click)="login()" 
               class="font-semibold text-brand-600 dark:text-brand-400 hover:underline cursor-pointer ml-1"
             >
-              Log Masuk ke Portal Pemohon &rarr;
+              {{ 'hero.existingLogin' | translate }}
             </button>
           </div>
 
@@ -246,7 +248,7 @@
             <div class="relative overflow-hidden rounded-3xl border-4 border-white dark:border-gray-800 shadow-2xl shadow-gray-900/20 dark:shadow-black/50 group">
               <img 
                 src="/images/mortgage/hero-mortgage.jpg" 
-                alt="Keluarga Malaysia di hadapan rumah baharu"
+                [alt]="'hero.imgAlt' | translate"
                 class="w-full h-auto object-cover transform group-hover:scale-105 transition-transform duration-700"
                 loading="eager"
               />
@@ -258,9 +260,9 @@
               <div class="absolute bottom-4 left-4 right-4 text-white p-3 rounded-xl bg-gray-900/60 backdrop-blur-md border border-white/10">
                 <p class="text-xs sm:text-sm font-semibold flex items-center gap-1.5">
                   <span class="text-amber-400">★★★★★</span>
-                  <span>"MLTF merealisasikan impian kami memiliki rumah pertama!"</span>
+                  <span>"{{ 'hero.testimonialQuote' | translate }}"</span>
                 </p>
-                <p class="text-[11px] text-gray-300 mt-0.5">Keluarga Encik Hafiz & Puan Sarah • Pembiayaan SJKP Diluluskan</p>
+                <p class="text-[11px] text-gray-300 mt-0.5">{{ 'hero.testimonialAuthor' | translate }}</p>
               </div>
             </div>
 
@@ -272,8 +274,8 @@
                 </svg>
               </div>
               <div>
-                <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400">Jaminan Kerajaan SJKP</p>
-                <p class="text-sm font-bold text-gray-900 dark:text-white">100% Margin Diluluskan</p>
+                <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400">{{ 'hero.badge1Title' | translate }}</p>
+                <p class="text-sm font-bold text-gray-900 dark:text-white">{{ 'hero.badge1Subtitle' | translate }}</p>
               </div>
             </div>
 
@@ -287,8 +289,8 @@
                 </svg>
               </div>
               <div>
-                <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400">Kadar Subsidi Khas</p>
-                <p class="text-sm font-bold text-brand-600 dark:text-brand-400">Dari 3.25% Setahun</p>
+                <p class="text-[11px] font-medium text-gray-500 dark:text-gray-400">{{ 'hero.badge2Title' | translate }}</p>
+                <p class="text-sm font-bold text-brand-600 dark:text-brand-400">{{ 'hero.badge2Subtitle' | translate }}</p>
               </div>
             </div>
 
@@ -308,39 +310,39 @@
       <div class="flex flex-wrap items-center justify-center gap-8 md:gap-14 pb-8 border-b border-gray-100 dark:border-gray-800 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
         <span class="flex items-center gap-2">
           <svg class="w-5 h-5 text-brand-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Syarikat Jaminan Kredit Perumahan (SJKP)
+          {{ 'partners.sjkp' | translate }}
         </span>
         <span class="flex items-center gap-2">
           <svg class="w-5 h-5 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
-          Inisiatif i-Biaya KPKT
+          {{ 'partners.kpkt' | translate }}
         </span>
         <span class="flex items-center gap-2">
           <svg class="w-5 h-5 text-blue-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Garis Panduan Bank Negara Malaysia (BNM)
+          {{ 'partners.bnm' | translate }}
         </span>
         <span class="flex items-center gap-2">
           <svg class="w-5 h-5 text-purple-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-          Rakan Pendidikan Kewangan AKPK
+          {{ 'partners.akpk' | translate }}
         </span>
       </div>
 
       <!-- 4 Key Impact Numbers -->
       <div class="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8 text-center">
         <div>
-          <p class="text-3xl sm:text-4xl font-extrabold text-brand-600 dark:text-brand-400">RM 4.8B+</p>
-          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">Jumlah Pembiayaan Diluluskan</p>
+          <p class="text-3xl sm:text-4xl font-extrabold text-brand-600 dark:text-brand-400">{{ 'partners.stat1Value' | translate }}</p>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">{{ 'partners.stat1Label' | translate }}</p>
         </div>
         <div>
-          <p class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">48,500+</p>
-          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">Keluarga Berjaya Memiliki Rumah</p>
+          <p class="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">{{ 'partners.stat2Value' | translate }}</p>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">{{ 'partners.stat2Label' | translate }}</p>
         </div>
         <div>
-          <p class="text-3xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">3.25%</p>
-          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">Kadar Keuntungan Subsidi Terendah</p>
+          <p class="text-3xl sm:text-4xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ 'partners.stat3Value' | translate }}</p>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">{{ 'partners.stat3Label' | translate }}</p>
         </div>
         <div>
-          <p class="text-3xl sm:text-4xl font-extrabold text-purple-600 dark:text-purple-400">100% - 120%</p>
-          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">Margin Pembiayaan (Termasuk MRTT)</p>
+          <p class="text-3xl sm:text-4xl font-extrabold text-purple-600 dark:text-purple-400">{{ 'partners.stat4Value' | translate }}</p>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">{{ 'partners.stat4Label' | translate }}</p>
         </div>
       </div>
 
@@ -354,13 +356,13 @@
       <!-- Section Header -->
       <div class="text-center max-w-3xl mx-auto mb-12">
         <h2 class="text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
-          Pakej Pembiayaan Perumahan
+          {{ 'packages.sectionBadge' | translate }}
         </h2>
         <p class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
-          Pilihan Pembiayaan Disesuaikan Mengikut Pendapatan Anda
+          {{ 'packages.sectionTitle' | translate }}
         </p>
         <p class="text-gray-600 dark:text-gray-400 mt-3 text-sm sm:text-base">
-          Sama ada anda pekerja gig, berpendapatan bawah RM5,250 (B40), atau isi rumah M50, kami mempunyai skim perumahan yang bersesuaian dengan kemampuan anda.
+          {{ 'packages.sectionSubtitle' | translate }}
         </p>
 
         <!-- Package Filter Tabs -->
@@ -371,7 +373,7 @@
             [ngClass]="activePackageTab() === 'all' ? 'bg-brand-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
             class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border border-gray-200 dark:border-gray-700"
           >
-            Semua Pakej
+            {{ 'packages.tabAll' | translate }}
           </button>
           <button
             type="button"
@@ -379,7 +381,7 @@
             [ngClass]="activePackageTab() === 'sjkp' ? 'bg-emerald-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
             class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border border-gray-200 dark:border-gray-700"
           >
-            🛵 Skim SJKP (Gig & Informal)
+            {{ 'packages.tabSjkp' | translate }}
           </button>
           <button
             type="button"
@@ -387,7 +389,7 @@
             [ngClass]="activePackageTab() === 'b40' ? 'bg-blue-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
             class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border border-gray-200 dark:border-gray-700"
           >
-            🏠 Segmen B40 (&lt; RM5,250)
+            {{ 'packages.tabB40' | translate }}
           </button>
           <button
             type="button"
@@ -395,7 +397,7 @@
             [ngClass]="activePackageTab() === 'm50' ? 'bg-purple-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
             class="px-4 py-2 text-xs sm:text-sm font-semibold rounded-xl transition-all cursor-pointer border border-gray-200 dark:border-gray-700"
           >
-            🏢 Segmen M50 (RM5,250 - RM12,500)
+            {{ 'packages.tabM50' | translate }}
           </button>
         </div>
       </div>
@@ -410,7 +412,7 @@
             
             @if (pkg.isPopular) {
               <div class="absolute -top-3.5 right-6 px-3 py-1 rounded-full bg-gradient-to-r from-brand-600 to-blue-light-600 text-white text-xs font-bold uppercase tracking-wider shadow-sm">
-                Paling Popular
+                {{ 'packages.popular' | translate }}
               </div>
             }
 
@@ -433,19 +435,19 @@
               <!-- Key Package Stats Matrix -->
               <div class="grid grid-cols-2 gap-3 my-6 p-4 rounded-2xl bg-gray-50 dark:bg-gray-800/60 border border-gray-100 dark:border-gray-800 text-xs sm:text-sm">
                 <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">Kadar Keuntungan:</span>
+                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">{{ 'packages.rateLabel' | translate }}</span>
                   <span class="font-bold text-brand-600 dark:text-brand-400 text-sm sm:text-base">{{ pkg.profitRate }}</span>
                 </div>
                 <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">Margin Pembiayaan:</span>
+                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">{{ 'packages.marginLabel' | translate }}</span>
                   <span class="font-bold text-gray-900 dark:text-white">{{ pkg.maxFinancing }}</span>
                 </div>
                 <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">Tempoh Maksimum:</span>
+                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">{{ 'packages.tenureLabel' | translate }}</span>
                   <span class="font-bold text-gray-900 dark:text-white">{{ pkg.maxTenure }}</span>
                 </div>
                 <div>
-                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">Kelayakan Pendapatan:</span>
+                  <span class="text-gray-500 dark:text-gray-400 block text-[11px]">{{ 'packages.eligibilityLabel' | translate }}</span>
                   <span class="font-semibold text-gray-800 dark:text-gray-200">{{ pkg.eligibility }}</span>
                 </div>
               </div>
@@ -470,14 +472,14 @@
                 (click)="register()"
                 class="flex-1 py-3 px-4 text-center text-sm font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
               >
-                Mohon Pakej Ini (Daftar)
+                {{ 'packages.applyBtn' | translate }}
               </button>
               <button
                 type="button"
                 (click)="scrollTo('calculator')"
                 class="py-3 px-4 text-sm font-semibold rounded-xl border border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all cursor-pointer"
               >
-                Kira DSR
+                {{ 'packages.calcDsrBtn' | translate }}
               </button>
             </div>
 
@@ -494,13 +496,13 @@
       
       <div class="text-center max-w-3xl mx-auto mb-12">
         <span class="px-3 py-1 rounded-full bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 text-xs font-bold uppercase tracking-wider border border-brand-200 dark:border-brand-800">
-          Kalkulator Pintar Real-Time
+          {{ 'calculator.badge' | translate }}
         </span>
         <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
-          Kalkulator Pinjaman Perumahan & Semakan DSR
+          {{ 'calculator.title' | translate }}
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
-          Laraskan parameter harga rumah, wang pendahuluan, tempoh pinjaman dan pendapatan bulanan untuk melihat anggaran ansuran bulanan serta status kelayakan anda.
+          {{ 'calculator.subtitle' | translate }}
         </p>
       </div>
 
@@ -513,7 +515,7 @@
           <div>
             <div class="flex justify-between items-center mb-2">
               <label for="property-price-range" class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                Harga Hartanah (Property Price)
+                {{ 'calculator.propertyPrice' | translate }}
               </label>
               <div class="text-base font-extrabold text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-900 px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
                 {{ formatCurrency(propertyPrice()) }}
@@ -530,9 +532,9 @@
               class="w-full"
             />
             <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-              <span>RM 100,000 (RMR / PPR)</span>
-              <span>RM 500,000 (Had B40/SJKP)</span>
-              <span>RM 1,200,000</span>
+              <span>{{ 'calculator.priceMinHint' | translate }}</span>
+              <span>{{ 'calculator.priceMidHint' | translate }}</span>
+              <span>{{ 'calculator.priceMaxHint' | translate }}</span>
             </div>
           </div>
 
@@ -540,7 +542,7 @@
           <div>
             <div class="flex justify-between items-center mb-2">
               <label for="down-payment-range" class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                Wang Pendahuluan / Deposit (%)
+                {{ 'calculator.downPayment' | translate }}
               </label>
               <div class="text-base font-extrabold text-gray-900 dark:text-white bg-white dark:bg-gray-900 px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
                 {{ downPaymentPercent() }}% ({{ formatCurrency(downPaymentAmount()) }})
@@ -557,9 +559,9 @@
               class="w-full"
             />
             <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-              <span class="text-brand-600 font-semibold">0% (Skim Rumah Pertamaku / SJKP)</span>
-              <span>10% (Konvensional)</span>
-              <span>30%</span>
+              <span class="text-brand-600 font-semibold">{{ 'calculator.dpMinHint' | translate }}</span>
+              <span>{{ 'calculator.dpMidHint' | translate }}</span>
+              <span>{{ 'calculator.dpMaxHint' | translate }}</span>
             </div>
           </div>
 
@@ -567,10 +569,10 @@
           <div>
             <div class="flex justify-between items-center mb-2">
               <label for="loan-tenure-range" class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                Tempoh Pembiayaan (Loan Tenure)
+                {{ 'calculator.loanTenure' | translate }}
               </label>
               <div class="text-base font-extrabold text-gray-900 dark:text-white bg-white dark:bg-gray-900 px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
-                {{ loanTenureYears() }} Tahun
+                {{ loanTenureYears() }} {{ 'common.year' | translate }}
               </div>
             </div>
             <input 
@@ -584,9 +586,9 @@
               class="w-full"
             />
             <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-              <span>10 Tahun</span>
-              <span>30 Tahun</span>
-              <span>35 Tahun (Maksimum)</span>
+              <span>{{ 'calculator.tenure10' | translate }}</span>
+              <span>{{ 'calculator.tenure30' | translate }}</span>
+              <span>{{ 'calculator.tenure35' | translate }}</span>
             </div>
           </div>
 
@@ -594,7 +596,7 @@
           <div>
             <div class="flex justify-between items-center mb-2">
               <label for="interest-rate-range" class="text-sm font-bold text-gray-800 dark:text-gray-200">
-                Kadar Keuntungan / Faedah (% setahun)
+                {{ 'calculator.interestRate' | translate }}
               </label>
               <div class="text-base font-extrabold text-emerald-600 dark:text-emerald-400 bg-white dark:bg-gray-900 px-3 py-1 rounded-lg border border-gray-200 dark:border-gray-700">
                 {{ interestRate() }}%
@@ -611,9 +613,9 @@
               class="w-full"
             />
             <div class="flex justify-between text-[11px] text-gray-500 dark:text-gray-400 mt-1">
-              <span>3.25% (Subsidi B40)</span>
-              <span>3.65% (M50 Standard)</span>
-              <span>5.50%</span>
+              <span>{{ 'calculator.rateB40' | translate }}</span>
+              <span>{{ 'calculator.rateM50' | translate }}</span>
+              <span>{{ 'calculator.rateMax' | translate }}</span>
             </div>
           </div>
 
@@ -621,7 +623,7 @@
           <div class="pt-4 border-t border-gray-200 dark:border-gray-800 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label for="calc-monthly-income" class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                Pendapatan Bersih Bulanan (RM)
+                {{ 'calculator.monthlyIncome' | translate }}
               </label>
               <input
                 id="calc-monthly-income"
@@ -634,7 +636,7 @@
             </div>
             <div>
               <label for="calc-existing-debt" class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
-                Komitmen Hutang Lain (Kereta, Kad dll)
+                {{ 'calculator.existingDebt' | translate }}
               </label>
               <input
                 id="calc-existing-debt"
@@ -657,21 +659,21 @@
 
           <div>
             <span class="text-xs font-bold uppercase tracking-wider text-brand-300">
-              Anggaran Ansuran Bulanan
+              {{ 'calculator.resultsTitle' | translate }}
             </span>
             <div class="text-4xl sm:text-5xl font-extrabold text-white mt-1 tracking-tight">
               {{ formatCurrency(monthlyInstallment()) }}
-              <span class="text-sm font-normal text-gray-300">/ bulan</span>
+              <span class="text-sm font-normal text-gray-300">{{ 'common.perMonth' | translate }}</span>
             </div>
             <p class="text-xs text-brand-200 mt-1">
-              Berdasarkan pembiayaan {{ formatCurrency(loanAmount()) }} selama {{ loanTenureYears() }} tahun
+              {{ 'calculator.resultsBased' | translate: { loanAmount: formatCurrency(loanAmount()), years: loanTenureYears() } }}
             </p>
           </div>
 
           <!-- DSR Health Box -->
           <div class="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 space-y-2">
             <div class="flex justify-between items-center text-xs">
-              <span class="text-gray-300 font-medium">Nisbah Khidmat Hutang (DSR):</span>
+              <span class="text-gray-300 font-medium">{{ 'calculator.dsrLabel' | translate }}</span>
               <span class="font-bold text-base {{ dsrStatus().color }}">{{ dsrPercentage() }}%</span>
             </div>
             <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
@@ -687,28 +689,28 @@
               ></div>
             </div>
             <p class="text-[11px] {{ dsrStatus().color }} font-semibold">
-              Status: {{ dsrStatus().label }}
+              {{ 'calculator.dsrStatusLabel' | translate }} {{ dsrStatus().label }}
             </p>
           </div>
 
           <!-- Financial Breakdown Details -->
           <div class="space-y-2.5 text-xs text-gray-300 border-t border-white/10 pt-4">
             <div class="flex justify-between">
-              <span>Jumlah Pinjaman Bersih:</span>
+              <span>{{ 'calculator.netLoan' | translate }}</span>
               <span class="font-bold text-white">{{ formatCurrency(loanAmount()) }}</span>
             </div>
             <div class="flex justify-between">
-              <span>Jumlah Keuntungan / Faedah:</span>
+              <span>{{ 'calculator.totalInterest' | translate }}</span>
               <span class="font-bold text-white">{{ formatCurrency(totalInterest()) }}</span>
             </div>
             <div class="flex justify-between">
-              <span>Jumlah Keseluruhan Bayaran:</span>
+              <span>{{ 'calculator.totalRepayment' | translate }}</span>
               <span class="font-bold text-white">{{ formatCurrency(totalRepayment()) }}</span>
             </div>
             @if (stampDutySavings() > 0) {
               <div class="flex justify-between text-emerald-300 font-bold bg-emerald-950/50 p-2.5 rounded-xl border border-emerald-500/30">
-                <span>🎁 Penjimatan Duti Setem Kerajaan:</span>
-                <span>Jimat {{ formatCurrency(stampDutySavings()) }}</span>
+                <span>{{ 'calculator.stampDutySavings' | translate }}</span>
+                <span>{{ 'calculator.saveAmount' | translate: { amount: formatCurrency(stampDutySavings()) } }}</span>
               </div>
             }
           </div>
@@ -719,7 +721,7 @@
             (click)="applyFromCalculator()"
             class="w-full py-4 px-6 text-center text-base font-bold rounded-xl text-gray-900 bg-white hover:bg-brand-50 shadow-lg hover:shadow-xl transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            <span>Daftar Permohonan Dengan Kiraan Ini</span>
+            <span>{{ 'calculator.applyWithCalc' | translate }}</span>
             <svg class="w-5 h-5 text-brand-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <line x1="5" y1="12" x2="19" y2="12"/>
               <polyline points="12 5 19 12 12 19"/>
@@ -727,7 +729,7 @@
           </button>
 
           <p class="text-[10px] text-gray-400 text-center">
-            *Pengiraan adalah anggaran tertakluk kepada semakan kredit CCRIS/CTOS dan kelulusan muktamad MLTF.
+            {{ 'calculator.disclaimer' | translate }}
           </p>
 
         </div>
@@ -750,29 +752,28 @@
           
           <div class="lg:col-span-8 space-y-4">
             <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wider border border-emerald-500/30">
-              Inisiatif Utama Kerajaan MADANI
+              {{ 'sjkpSpotlight.badge' | translate }}
             </div>
             
             <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white">
-              Skim Jaminan Kredit Perumahan (SJKP i-Biaya)
+              {{ 'sjkpSpotlight.title' | translate }}
             </h2>
             
-            <p class="text-gray-300 text-sm sm:text-base leading-relaxed">
-              Bekerja sendiri? Rider Grab/Foodpanda? Pemandu e-hailing? Peniaga gerai? Jangan biarkan ketiadaan slip gaji atau caruman KWSP menghalang anda memiliki rumah. Di bawah SJKP, Kerajaan Malaysia menjamin pembiayaan anda sehingga <strong>RM500,000</strong> dengan margin <strong>100% + 20% (MRTT/Guaman)</strong>!
+            <p class="text-gray-300 text-sm sm:text-base leading-relaxed" [innerHTML]="'sjkpSpotlight.desc' | translate">
             </p>
 
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-xs">
               <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
-                <p class="font-bold text-emerald-400 text-sm mb-1">Tanpa Slip Gaji</p>
-                <p class="text-gray-300">Penyata bank 6 bulan & bukti jualan e-wallet diterima.</p>
+                <p class="font-bold text-emerald-400 text-sm mb-1">{{ 'sjkpSpotlight.feat1Title' | translate }}</p>
+                <p class="text-gray-300">{{ 'sjkpSpotlight.feat1Desc' | translate }}</p>
               </div>
               <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
-                <p class="font-bold text-emerald-400 text-sm mb-1">0% Wang Pendahuluan</p>
-                <p class="text-gray-300">100% pinjaman penuh tanpa perlu simpanan tunai tinggi.</p>
+                <p class="font-bold text-emerald-400 text-sm mb-1">{{ 'sjkpSpotlight.feat2Title' | translate }}</p>
+                <p class="text-gray-300">{{ 'sjkpSpotlight.feat2Desc' | translate }}</p>
               </div>
               <div class="p-3.5 rounded-xl bg-white/5 border border-white/10">
-                <p class="font-bold text-emerald-400 text-sm mb-1">Semua Jenis Rumah</p>
-                <p class="text-gray-300">Hartanah baharu, subsale atau lelongan layak dimohon.</p>
+                <p class="font-bold text-emerald-400 text-sm mb-1">{{ 'sjkpSpotlight.feat3Title' | translate }}</p>
+                <p class="text-gray-300">{{ 'sjkpSpotlight.feat3Desc' | translate }}</p>
               </div>
             </div>
           </div>
@@ -783,10 +784,10 @@
               (click)="register()"
               class="w-full py-4 px-6 rounded-xl font-bold text-gray-950 bg-emerald-400 hover:bg-emerald-300 shadow-xl shadow-emerald-500/20 hover:scale-105 transition-all text-base cursor-pointer"
             >
-              Mohon Skim SJKP Sekarang
+              {{ 'sjkpSpotlight.applyBtn' | translate }}
             </button>
             <p class="text-xs text-gray-400">
-              *Diuruskan sepenuhnya secara digital melalui cawangan MLTF di seluruh Malaysia.
+              {{ 'sjkpSpotlight.note' | translate }}
             </p>
           </div>
 
@@ -803,13 +804,13 @@
       
       <div class="text-center max-w-3xl mx-auto mb-16">
         <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
-          Proses Mudah & Telus
+          {{ 'process.badge' | translate }}
         </span>
         <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
-          5 Langkah Mudah Memiliki Kunci Rumah Anda
+          {{ 'process.title' | translate }}
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
-          Daripada pendaftaran hingga penyerahan kunci, pakar pembiayaan MLTF membimbing anda setiap langkah.
+          {{ 'process.subtitle' | translate }}
         </p>
       </div>
 
@@ -820,9 +821,9 @@
           <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white font-black text-lg flex items-center justify-center mx-auto mb-4 shadow-md shadow-brand-500/20 group-hover:scale-110 transition-transform">
             1
           </div>
-          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">Daftar Dalam Talian</h3>
+          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">{{ 'process.step1Title' | translate }}</h3>
           <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-            Isi borang ringkas dalam masa 2 minit dengan maklumat MyKad dan anggaran pendapatan.
+            {{ 'process.step1Desc' | translate }}
           </p>
         </div>
 
@@ -831,9 +832,9 @@
           <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white font-black text-lg flex items-center justify-center mx-auto mb-4 shadow-md shadow-brand-500/20 group-hover:scale-110 transition-transform">
             2
           </div>
-          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">Muat Naik Dokumen</h3>
+          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">{{ 'process.step2Title' | translate }}</h3>
           <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-            Muat naik penyata bank, slip gaji, atau ringkasan pendapatan gig terus dari telefon anda.
+            {{ 'process.step2Desc' | translate }}
           </p>
         </div>
 
@@ -842,9 +843,9 @@
           <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white font-black text-lg flex items-center justify-center mx-auto mb-4 shadow-md shadow-brand-500/20 group-hover:scale-110 transition-transform">
             3
           </div>
-          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">Kelulusan 24 Jam</h3>
+          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">{{ 'process.step3Title' | translate }}</h3>
           <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-            Sistem penilaian kredit MLTF mengeluarkan Surat Tawaran Bersyarat (Letter of Offer).
+            {{ 'process.step3Desc' | translate }}
           </p>
         </div>
 
@@ -853,9 +854,9 @@
           <div class="w-12 h-12 rounded-2xl bg-brand-500 text-white font-black text-lg flex items-center justify-center mx-auto mb-4 shadow-md shadow-brand-500/20 group-hover:scale-110 transition-transform">
             4
           </div>
-          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">Tandatangan Perjanjian</h3>
+          <h3 class="font-bold text-base text-gray-900 dark:text-white mb-2">{{ 'process.step4Title' | translate }}</h3>
           <p class="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-            Terima tawaran secara digital atau kunjungi peguam panel dan cawangan MLTF terdekat.
+            {{ 'process.step4Desc' | translate }}
           </p>
         </div>
 
@@ -864,9 +865,9 @@
           <div class="w-12 h-12 rounded-2xl bg-white text-brand-600 font-black text-lg flex items-center justify-center mx-auto mb-4 shadow-md group-hover:scale-110 transition-transform">
             5
           </div>
-          <h3 class="font-bold text-base text-white mb-2">Terima Kunci Rumah!</h3>
+          <h3 class="font-bold text-base text-white mb-2">{{ 'process.step5Title' | translate }}</h3>
           <p class="text-xs text-brand-100 leading-relaxed">
-            Pinjaman diagihkan kepada pemaju/penjual dan anda sedia mendiami rumah impian anda!
+            {{ 'process.step5Desc' | translate }}
           </p>
         </div>
 
@@ -879,7 +880,7 @@
           (click)="register()"
           class="inline-flex items-center gap-2 px-8 py-4 text-base font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 shadow-lg hover:shadow-xl transition-all cursor-pointer"
         >
-          <span>Mulakan Langkah 1: Daftar Sekarang</span>
+          <span>{{ 'process.cta' | translate }}</span>
           <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
         </button>
       </div>
@@ -893,13 +894,13 @@
       
       <div class="text-center max-w-3xl mx-auto mb-12">
         <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
-          Senarai Semak Dokumen
+          {{ 'documents.badge' | translate }}
         </span>
         <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
-          Dokumen Yang Diperlukan Mengikut Kategori
+          {{ 'documents.title' | translate }}
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base">
-          Pilih kategori pekerjaan anda untuk melihat dokumen sokongan yang perlu disediakan.
+          {{ 'documents.subtitle' | translate }}
         </p>
 
         <!-- Document Tabs -->
@@ -910,7 +911,7 @@
             [ngClass]="activeDocTab() === 'gig' ? 'bg-brand-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
             class="px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all border border-gray-200 dark:border-gray-700 cursor-pointer"
           >
-            🛵 Pekerja Gig / Rider / E-Hailing (SJKP)
+            {{ 'documents.tabGig' | translate }}
           </button>
           <button
             type="button"
@@ -918,7 +919,7 @@
             [ngClass]="activeDocTab() === 'salaried' ? 'bg-brand-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
             class="px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all border border-gray-200 dark:border-gray-700 cursor-pointer"
           >
-            💼 Pekerja Bergaji (Swasta / Kerajaan)
+            {{ 'documents.tabSalaried' | translate }}
           </button>
           <button
             type="button"
@@ -926,7 +927,7 @@
             [ngClass]="activeDocTab() === 'business' ? 'bg-brand-600 text-white shadow-md' : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
             class="px-5 py-2.5 text-xs sm:text-sm font-bold rounded-xl transition-all border border-gray-200 dark:border-gray-700 cursor-pointer"
           >
-            🏪 Peniaga Kecil / Bekerja Sendiri
+            {{ 'documents.tabBusiness' | translate }}
           </button>
         </div>
       </div>
@@ -938,35 +939,34 @@
           <div class="space-y-6">
             <div class="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300">
               <svg class="w-6 h-6 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              <p class="text-xs sm:text-sm font-medium">
-                <strong>Skim Khas SJKP:</strong> Anda tidak memerlukan slip gaji majikan atau penyata caruman KWSP rasmi!
+              <p class="text-xs sm:text-sm font-medium" [innerHTML]="'documents.sjkpNotice' | translate">
               </p>
             </div>
 
             <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-800 dark:text-gray-200">
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Salinan Kad Pengenalan (MyKad) pemohon & pasangan (jika ada)</span>
+                <span>{{ 'documents.gigDoc1' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Penyata Transaksi Akaun Bank 6 bulan terkini</span>
+                <span>{{ 'documents.gigDoc2' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Ringkasan pendapatan platform gig (Grab, Foodpanda, Shopee, Lalamove dll)</span>
+                <span>{{ 'documents.gigDoc3' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Surat pengesahan pendapatan daripada Penghulu / Ketua Kampung / JKKK (Pilihan)</span>
+                <span>{{ 'documents.gigDoc4' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Salinan Resit Tempahan Rumah (Booking Receipt) atau Draf Perjanjian Jual Beli</span>
+                <span>{{ 'documents.gigDoc5' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Rekod bayaran cukai LHDN (Borang B / e-B) jika ada</span>
+                <span>{{ 'documents.gigDoc6' | translate }}</span>
               </li>
             </ul>
           </div>
@@ -977,27 +977,27 @@
             <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-800 dark:text-gray-200">
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Salinan MyKad Depan & Belakang</span>
+                <span>{{ 'documents.salariedDoc1' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Slip Gaji 3 Bulan Terkini (6 bulan jika ada elaun/komisen)</span>
+                <span>{{ 'documents.salariedDoc2' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Penyata Bank Kemasukan Gaji 3 Bulan Terkini</span>
+                <span>{{ 'documents.salariedDoc3' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Penyata Caruman KWSP (Terkini)</span>
+                <span>{{ 'documents.salariedDoc4' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Borang EA / Penyata Cukai Pendapatan e-BE</span>
+                <span>{{ 'documents.salariedDoc5' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Salinan Perjanjian Jual Beli (SPA) / Surat Tawaran Pemaju</span>
+                <span>{{ 'documents.salariedDoc6' | translate }}</span>
               </li>
             </ul>
           </div>
@@ -1008,27 +1008,27 @@
             <ul class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-800 dark:text-gray-200">
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Salinan MyKad Pemilik Perniagaan</span>
+                <span>{{ 'documents.businessDoc1' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Sijil Pendaftaran Perniagaan SSM (Borang A/B & D)</span>
+                <span>{{ 'documents.businessDoc2' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Penyata Akaun Semasa Syarikat / Peribadi 6 Bulan Terkini</span>
+                <span>{{ 'documents.businessDoc3' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Borang Cukai Pendapatan LHDN (Borang B) & Resit Bayaran Cukai</span>
+                <span>{{ 'documents.businessDoc4' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Lesen Pihak Berkuasa Tempatan (PBT) / Lesen Penjaja</span>
+                <span>{{ 'documents.businessDoc5' | translate }}</span>
               </li>
               <li class="flex items-start gap-3 p-3.5 rounded-xl bg-gray-50 dark:bg-gray-800/50">
                 <span class="text-brand-500 font-bold">✓</span>
-                <span>Dokumen Booking Hartanah / Perjanjian Jual Beli</span>
+                <span>{{ 'documents.businessDoc6' | translate }}</span>
               </li>
             </ul>
           </div>
@@ -1036,14 +1036,14 @@
 
         <div class="mt-8 pt-6 border-t border-gray-200 dark:border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p class="text-xs text-gray-500 dark:text-gray-400 text-center sm:text-left">
-            Ada soalan mengenai dokumen anda? Pegawai kami sedia membantu melalui semakan awal percuma.
+            {{ 'documents.helpPrompt' | translate }}
           </p>
           <button
             type="button"
             (click)="register()"
             class="px-6 py-2.5 text-xs sm:text-sm font-bold rounded-xl text-white bg-brand-600 hover:bg-brand-700 transition-all cursor-pointer whitespace-nowrap"
           >
-            Hantar Dokumen Secara Digital
+            {{ 'documents.submitBtn' | translate }}
           </button>
         </div>
 
@@ -1058,10 +1058,10 @@
       
       <div class="text-center max-w-3xl mx-auto mb-16">
         <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
-          Kisah Kejayaan
+          {{ 'testimonials.badge' | translate }}
         </span>
         <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
-          Mereka Sudah Memiliki Rumah, Kini Giliran Anda
+          {{ 'testimonials.title' | translate }}
         </h2>
       </div>
 
@@ -1072,7 +1072,7 @@
           <div class="space-y-4">
             <div class="flex items-center gap-1 text-amber-400 text-sm">★★★★★</div>
             <p class="text-sm text-gray-700 dark:text-gray-300 italic leading-relaxed">
-              "Sebagai rider sepenuh masa dengan pendapatan tidak menentu, saya selalu ditolak bank lain. Tetapi melalui MLTF dan Skim SJKP, saya dapat pinjaman 100% untuk rumah teres di Shah Alam tanpa sebarang deposit tunai!"
+              {{ 'testimonials.story1Quote' | translate }}
             </p>
           </div>
           <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center gap-3">
@@ -1080,8 +1080,8 @@
               MH
             </div>
             <div>
-              <p class="text-sm font-bold text-gray-900 dark:text-white">Mohd Hafiz</p>
-              <p class="text-xs text-gray-500">Pekerja Gig / Rider • Rumah Teres Shah Alam</p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">{{ 'testimonials.story1Name' | translate }}</p>
+              <p class="text-xs text-gray-500">{{ 'testimonials.story1Role' | translate }}</p>
             </div>
           </div>
         </div>
@@ -1091,7 +1091,7 @@
           <div class="space-y-4">
             <div class="flex items-center gap-1 text-amber-400 text-sm">★★★★★</div>
             <p class="text-sm text-gray-700 dark:text-gray-300 italic leading-relaxed">
-              "Pakej M50 Flexi MLTF sangat menjimatkan faedah dengan kemudahan pautan akaun semasa. Proses kelulusan dalam talian mereka sangat pantas – dalam 2 hari Surat Tawaran sudah siap!"
+              {{ 'testimonials.story2Quote' | translate }}
             </p>
           </div>
           <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center gap-3">
@@ -1099,8 +1099,8 @@
               LW
             </div>
             <div>
-              <p class="text-sm font-bold text-gray-900 dark:text-white">Lim Wei Jian & Isteri</p>
-              <p class="text-xs text-gray-500">Eksekutif IT (M50) • Kondominium Petaling Jaya</p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">{{ 'testimonials.story2Name' | translate }}</p>
+              <p class="text-xs text-gray-500">{{ 'testimonials.story2Role' | translate }}</p>
             </div>
           </div>
         </div>
@@ -1110,7 +1110,7 @@
           <div class="space-y-4">
             <div class="flex items-center gap-1 text-amber-400 text-sm">★★★★★</div>
             <p class="text-sm text-gray-700 dark:text-gray-300 italic leading-relaxed">
-              "Pengecualian duti setem 100% dan rebat yuran guaman banyak membantu kewangan saya sebagai ibu tunggal. Khidmat nasihat pegawai MLTF sangat mesra dan prihatin."
+              {{ 'testimonials.story3Quote' | translate }}
             </p>
           </div>
           <div class="mt-6 pt-4 border-t border-gray-200 dark:border-gray-800 flex items-center gap-3">
@@ -1118,8 +1118,8 @@
               PD
             </div>
             <div>
-              <p class="text-sm font-bold text-gray-900 dark:text-white">Puan Devagi</p>
-              <p class="text-xs text-gray-500">Guru Tadika • Pangsapuri Mampu Milik Johor</p>
+              <p class="text-sm font-bold text-gray-900 dark:text-white">{{ 'testimonials.story3Name' | translate }}</p>
+              <p class="text-xs text-gray-500">{{ 'testimonials.story3Role' | translate }}</p>
             </div>
           </div>
         </div>
@@ -1135,15 +1135,15 @@
       
       <div class="text-center mb-12">
         <span class="text-xs sm:text-sm font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
-          Soalan Lazim
+          {{ 'faq.badge' | translate }}
         </span>
         <h2 class="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-gray-900 dark:text-white mt-2">
-          Soalan Lazim Mengenai Pinjaman Perumahan
+          {{ 'faq.title' | translate }}
         </h2>
       </div>
 
       <div class="space-y-4">
-        @for (faq of faqs; track $index) {
+        @for (faq of faqs(); track $index) {
           <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden transition-colors">
             <button
               type="button"
@@ -1180,11 +1180,11 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-6">
       
       <h2 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight">
-        Bersedia Memiliki Kunci Rumah Idaman Anda?
+        {{ 'ctaFinal.title' | translate }}
       </h2>
       
       <p class="text-brand-100 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
-        Daftar permohonan dalam talian hari ini secara percuma. Pegawai pembiayaan MLTF akan menghubungi anda dalam tempoh 24 jam untuk semakan kelayakan.
+        {{ 'ctaFinal.desc' | translate }}
       </p>
 
       <div class="pt-4 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -1194,7 +1194,7 @@
           (click)="register()"
           class="w-full sm:w-auto px-9 py-4 text-base font-bold rounded-xl text-gray-900 bg-white hover:bg-brand-50 shadow-2xl hover:scale-105 transition-all cursor-pointer"
         >
-          Daftar Permohonan Sekarang (Register Here)
+          {{ 'ctaFinal.registerBtn' | translate }}
         </button>
 
         <!-- Prominent Login Button -->
@@ -1203,20 +1203,17 @@
           (click)="login()"
           class="w-full sm:w-auto px-8 py-4 text-base font-semibold rounded-xl border-2 border-white/80 hover:bg-white/10 text-white transition-all cursor-pointer"
         >
-          Log Masuk Portal Pemohon
+          {{ 'ctaFinal.loginBtn' | translate }}
         </button>
       </div>
 
       <!-- Hotline and support -->
       <div class="pt-6 text-xs sm:text-sm text-brand-200 flex flex-wrap items-center justify-center gap-6">
-        <span class="flex items-center gap-1.5">
-          📞 Talian Bebas Tol: <strong>1-800-88-MLTF (6583)</strong>
+        <span class="flex items-center gap-1.5" [innerHTML]="'ctaFinal.tollFree' | translate">
         </span>
-        <span class="flex items-center gap-1.5">
-          💬 WhatsApp Bantuan: <strong>+60 12-345 6789</strong>
+        <span class="flex items-center gap-1.5" [innerHTML]="'ctaFinal.whatsapp' | translate">
         </span>
-        <span class="flex items-center gap-1.5">
-          ⏰ Isnin – Jumaat: 8:30 Pagi – 5:30 Petang
+        <span class="flex items-center gap-1.5" [innerHTML]="'ctaFinal.operatingHours' | translate">
         </span>
       </div>
 
@@ -1235,52 +1232,52 @@
             <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold">
               M
             </div>
-            <span class="text-base font-bold text-white tracking-tight">MLTF MORTGAGE</span>
+            <span class="text-base font-bold text-white tracking-tight">{{ 'footer.aboutTitle' | translate }}</span>
           </div>
           <p class="text-gray-400 text-xs leading-relaxed">
-            Institusi Pembiayaan Perumahan Khusus untuk memperkasa pemilikan rumah mampu milik bagi golongan B40 dan M50 di seluruh Malaysia.
+            {{ 'footer.aboutDesc' | translate }}
           </p>
           <p class="text-gray-500 text-[11px]">
-            No. Pendaftaran: 202601008941 (145892-X)
+            {{ 'footer.regNo' | translate }}
           </p>
         </div>
 
         <!-- Col 2: Schemes -->
         <div class="space-y-2">
-          <p class="text-white font-bold text-sm">Skim Pembiayaan</p>
+          <p class="text-white font-bold text-sm">{{ 'footer.schemesTitle' | translate }}</p>
           <ul class="space-y-1.5">
-            <li><button (click)="scrollTo('sjkp')" class="hover:text-white transition-colors cursor-pointer">Skim SJKP i-Biaya (Pekerja Gig)</button></li>
-            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">Skim Rumah Pertamaku B40</button></li>
-            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">MLTF Flexi-Aspirasi M50</button></li>
-            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">Pembiayaan Bersama 2 Generasi</button></li>
-            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">Pembiayaan Rumah Hijau (Green Home)</button></li>
+            <li><button (click)="scrollTo('sjkp')" class="hover:text-white transition-colors cursor-pointer">{{ 'footer.schemeSjkp' | translate }}</button></li>
+            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">{{ 'footer.schemeB40' | translate }}</button></li>
+            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">{{ 'footer.schemeM50' | translate }}</button></li>
+            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">{{ 'footer.schemeJoint' | translate }}</button></li>
+            <li><button (click)="scrollTo('packages')" class="hover:text-white transition-colors cursor-pointer">{{ 'footer.schemeGreen' | translate }}</button></li>
           </ul>
         </div>
 
         <!-- Col 3: Branches -->
         <div class="space-y-2">
-          <p class="text-white font-bold text-sm">Rangkaian Cawangan</p>
+          <p class="text-white font-bold text-sm">{{ 'footer.branchesTitle' | translate }}</p>
           <ul class="space-y-1 text-[11px]">
-            <li><strong>Ibu Pejabat:</strong> Menara MLTF, Jalan Tun Razak, 50400 Kuala Lumpur</li>
-            <li><strong>Selangor:</strong> Seksyen 14, Shah Alam</li>
-            <li><strong>Johor:</strong> Medini 9, Iskandar Puteri</li>
-            <li><strong>Pulau Pinang:</strong> Bayan Lepas & Seberang Jaya</li>
-            <li><strong>Sabah & Sarawak:</strong> Kota Kinabalu & Kuching</li>
+            <li [innerHTML]="'footer.hq' | translate"></li>
+            <li [innerHTML]="'footer.selangor' | translate"></li>
+            <li [innerHTML]="'footer.johor' | translate"></li>
+            <li [innerHTML]="'footer.penang' | translate"></li>
+            <li [innerHTML]="'footer.sabahSarawak' | translate"></li>
           </ul>
         </div>
 
         <!-- Col 4: Legal & Security -->
         <div class="space-y-2">
-          <p class="text-white font-bold text-sm">Pematuhan & Perlindungan</p>
+          <p class="text-white font-bold text-sm">{{ 'footer.complianceTitle' | translate }}</p>
           <p class="text-[11px] leading-relaxed text-gray-400">
-            Tertakluk di bawah garis panduan pembiayaan bertanggungjawab Bank Negara Malaysia. Ahli PIDM & Syarikat Jaminan Kredit Perumahan (SJKP).
+            {{ 'footer.complianceDesc' | translate }}
           </p>
           <div class="pt-2 flex items-center gap-3">
             <button (click)="login()" class="px-3 py-1.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-white font-semibold text-xs transition-colors cursor-pointer">
-              Portal Petugas MLTF
+              {{ 'footer.staffPortal' | translate }}
             </button>
             <button (click)="register()" class="px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs transition-colors cursor-pointer">
-              Daftar Pemohon
+              {{ 'footer.applicantRegister' | translate }}
             </button>
           </div>
         </div>
@@ -1288,11 +1285,11 @@
       </div>
 
       <div class="border-t border-gray-800 pt-6 flex flex-col sm:flex-row items-center justify-between text-gray-500 text-[11px] gap-4">
-        <p>© 2026 MLTF Mortgage Berhad. Hak Cipta Terpelihara.</p>
+        <p>{{ 'footer.copyright' | translate }}</p>
         <div class="flex gap-4">
-          <a href="#hero" class="hover:underline">Dasar Privasi</a>
-          <a href="#hero" class="hover:underline">Terma & Syarat</a>
-          <a href="#hero" class="hover:underline">Notis Akta Perlindungan Data Peribadi (PDPA)</a>
+          <a href="#hero" class="hover:underline">{{ 'footer.privacyPolicy' | translate }}</a>
+          <a href="#hero" class="hover:underline">{{ 'footer.terms' | translate }}</a>
+          <a href="#hero" class="hover:underline">{{ 'footer.pdpa' | translate }}</a>
         </div>
       </div>
 
