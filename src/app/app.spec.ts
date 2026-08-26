@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
 import { provideAuth0 } from '@auth0/auth0-angular';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { App } from './app';
@@ -12,6 +13,7 @@ describe('App', () => {
       imports: [App],
       providers: [
         provideRouter(routes),
+        provideHttpClient(),
         provideAuth0({
           domain: environment.auth0.domain,
           clientId: environment.auth0.clientId,

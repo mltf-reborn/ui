@@ -261,7 +261,10 @@
     "statusInReview": "In Review",
     "statusPreApproved": "Pre-Approved",
     "statusSjkpGuaranteed": "SJKP Guaranteed",
-    "statusDisbursed": "Disbursed"
+    "statusDisbursed": "Disbursed",
+    "kycWarning": "Plese do KYC",
+    "kycWarningSubtitle": "Your KYC identity verification is pending. Please complete KYC to proceed with your loan application.",
+    "kycStatusPending": "Status: Pending"
   },
   "sidebar": {
     "menu": "Menu",

@@ -261,7 +261,10 @@
     "statusInReview": "Dalam Semakan",
     "statusPreApproved": "Pra-Kelulusan",
     "statusSjkpGuaranteed": "Dijamin SJKP",
-    "statusDisbursed": "Diagihkan"
+    "statusDisbursed": "Diagihkan",
+    "kycWarning": "Plese do KYC",
+    "kycWarningSubtitle": "Status pengesahan KYC anda adalah Belum Selesai (Pending). Sila lakukan pengesahan KYC untuk meneruskan permohonan pembiayaan anda.",
+    "kycStatusPending": "Status: Pending"
   },
   "sidebar": {
     "menu": "Menu",

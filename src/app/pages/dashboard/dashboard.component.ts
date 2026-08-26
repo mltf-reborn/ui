@@ -1,9 +1,11 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, OnInit, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BreadcrumbComponent } from '../../shared/components/breadcrumb/breadcrumb.component';
 import { TranslationService } from '../../shared/services/translation.service';
 import { TranslatePipe } from '../../shared/pipes/translate.pipe';
+import { KycService } from '../../shared/services/kyc.service';
+import { AppAuthService } from '../../shared/services/auth.service';
 
 export interface LoanApplication {
   id: string;
@@ -25,8 +27,31 @@ export interface LoanApplication {
   imports: [CommonModule, RouterModule, BreadcrumbComponent, TranslatePipe],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   readonly translationService = inject(TranslationService);
+  readonly kycService = inject(KycService);
+  readonly authService = inject(AppAuthService);
+
+  readonly isKycPending = this.kycService.isPendingKyc;
+
+  readonly kycWarningText = computed(() => {
+    const text = this.translationService.translate('dashboard.kycWarning');
+    return text && text !== 'dashboard.kycWarning' ? text : 'Plese do KYC';
+  });
+
+  constructor() {
+    effect(() => {
+      if (this.authService.isAuthenticated()) {
+        this.kycService.checkKycStatus().subscribe();
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    if (this.authService.isAuthenticated()) {
+      this.kycService.checkKycStatus().subscribe();
+    }
+  }
 
   readonly rawApplications: LoanApplication[] = [
     {

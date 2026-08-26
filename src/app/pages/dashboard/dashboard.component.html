@@ -19,6 +19,40 @@
     </div>
   </div>
 
+  <!-- KYC Pending Warning Alert Banner -->
+  @if (isKycPending()) {
+    <div
+      data-testid="kyc-warning-banner"
+      role="alert"
+      class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl border border-amber-300 dark:border-amber-700/60 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200 shadow-sm"
+    >
+      <div class="flex items-start sm:items-center gap-3.5">
+        <div class="shrink-0 flex items-center justify-center w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/60 text-amber-600 dark:text-amber-400 font-bold">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div>
+          <h4 class="font-bold text-sm sm:text-base text-amber-900 dark:text-amber-100">
+            {{ kycWarningText() }}
+          </h4>
+          <p class="text-xs sm:text-sm text-amber-800/90 dark:text-amber-300/80 mt-0.5">
+            {{ 'dashboard.kycWarningSubtitle' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3 shrink-0">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-amber-200/80 dark:bg-amber-900/80 text-amber-900 dark:text-amber-200 border border-amber-300/60 dark:border-amber-700/60">
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+          {{ 'dashboard.kycStatusPending' | translate }}
+        </span>
+      </div>
+    </div>
+  }
+
   <!-- Metric Overview Cards -->
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
     

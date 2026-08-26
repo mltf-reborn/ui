@@ -14,6 +14,7 @@ describe('AppAuthService', () => {
     isAuthenticated$: Observable<boolean>;
     isLoading$: Observable<boolean>;
     error$: Observable<Error | null>;
+    idTokenClaims$: Observable<any>;
   };
 
   beforeEach(() => {
@@ -25,6 +26,7 @@ describe('AppAuthService', () => {
       isAuthenticated$: of(true),
       isLoading$: of(false),
       error$: of(null),
+      idTokenClaims$: of({ __raw: 'mock-id-token-jwt' } as any),
     };
 
     TestBed.configureTestingModule({
@@ -59,5 +61,44 @@ describe('AppAuthService', () => {
   it('should call auth0.logout', () => {
     service.logout();
     expect(mockAuth0.logout).toHaveBeenCalled();
+  });
+
+  it('should return access token silently', () => {
+    let token = '';
+    service.getAccessTokenSilently().subscribe((t) => (token = t));
+    expect(token).toBe('mock-token');
+  });
+
+  it('should return raw ID token from idTokenClaims$', () => {
+    let raw: string | undefined;
+    service.getIdTokenRaw().subscribe((t) => (raw = t));
+    expect(raw).toBe('mock-id-token-jwt');
+  });
+
+  it('should validate 3-part JWT format correctly', () => {
+    expect(service.isValid3PartJwt('header.payload.signature')).toBe(true);
+    expect(service.isValid3PartJwt('Bearer header.payload.signature')).toBe(true);
+    expect(service.isValid3PartJwt('part1.part2.part3.part4.part5')).toBe(false);
+    expect(service.isValid3PartJwt('opaque-token-without-dots')).toBe(false);
+    expect(service.isValid3PartJwt('')).toBe(false);
+    expect(service.isValid3PartJwt(null)).toBe(false);
+  });
+
+  it('should return 3-part ID token if available and valid', () => {
+    mockAuth0.idTokenClaims$ = of({ __raw: 'header.payload.signature' } as any);
+    mockAuth0.getAccessTokenSilently = vi.fn().mockReturnValue(of('five.part.jwe.token.here'));
+
+    let jwt = '';
+    service.getJwtToken().subscribe((t) => (jwt = t));
+    expect(jwt).toBe('header.payload.signature');
+  });
+
+  it('should fallback to 3-part access token if ID token is not valid 3-part', () => {
+    mockAuth0.idTokenClaims$ = of(undefined);
+    mockAuth0.getAccessTokenSilently = vi.fn().mockReturnValue(of('access.jwt.token'));
+
+    let jwt = '';
+    service.getJwtToken().subscribe((t) => (jwt = t));
+    expect(jwt).toBe('access.jwt.token');
   });
 });
