@@ -59,6 +59,16 @@ describe('TranslationService', () => {
     expect(service.translate('common.saveAmount', { amount: 'RM 10,000' })).toBe('Save RM 10,000');
   });
 
+  it('should have supported languages with valid flag icons', () => {
+    expect(service.supportedLanguages.length).toBeGreaterThan(0);
+    for (const lang of service.supportedLanguages) {
+      expect(lang.code).toBeTruthy();
+      expect(lang.label).toBeTruthy();
+      expect(lang.shortLabel).toBeTruthy();
+      expect(lang.flagIcon).toMatch(/^\/images\/flags\/.*\.svg$/);
+    }
+  });
+
   it('should toggle language between ms and en', async () => {
     await service.setLanguage('ms');
     service.toggleLanguage();

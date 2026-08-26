@@ -7,6 +7,7 @@ export interface LanguageOption {
   label: string;
   shortLabel: string;
   flag: string;
+  flagIcon: string;
 }
 
 @Injectable({
@@ -16,8 +17,8 @@ export class TranslationService {
   private readonly STORAGE_KEY = 'mltf_lang';
 
   readonly supportedLanguages: LanguageOption[] = [
-    { code: 'ms', label: 'Bahasa Malaysia', shortLabel: 'BM', flag: '🇲🇾' },
-    { code: 'en', label: 'English', shortLabel: 'EN', flag: '🇬🇧' }
+    { code: 'ms', label: 'Bahasa Malaysia', shortLabel: 'BM', flag: '🇲🇾', flagIcon: '/images/flags/my.svg' },
+    { code: 'en', label: 'English', shortLabel: 'EN', flag: '🇬🇧', flagIcon: '/images/flags/gb.svg' }
   ];
 
   // Active language signal
