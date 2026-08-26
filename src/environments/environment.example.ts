@@ -1,8 +1,8 @@
 export const environment = {
-  production: true,
+  production: false,
   auth0: {
-    domain: '{domainhere}',
-    clientId: '{clientIDhere}',
+    domain: 'your-tenant.auth0.com',
+    clientId: 'your-auth0-client-id',
     authorizationParams: {
       redirect_uri:
         typeof window !== 'undefined' ? window.location.origin : 'http://localhost:4200',
