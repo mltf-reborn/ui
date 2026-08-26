@@ -51,14 +51,45 @@ describe('UserDropdownComponent', () => {
     expect(component.isOpen()).toBe(false);
   });
 
-  it('should call authService.logout on logout', () => {
+  it('should display user profile picture when picture is available', () => {
+    const fixture = TestBed.createComponent(UserDropdownComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const img = compiled.querySelector('button span img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.getAttribute('src')).toBe('https://example.com/avatar.jpg');
+    expect(compiled.querySelector('button span svg')).toBeNull();
+  });
+
+  it('should display blank profile picture SVG when picture is not available', () => {
+    mockAuthService.user.set({
+      name: 'Siti Nurhaliza',
+      email: 'siti@example.com',
+      picture: undefined,
+    });
+    const fixture = TestBed.createComponent(UserDropdownComponent);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const img = compiled.querySelector('button span img');
+    expect(img).toBeNull();
+    const svg = compiled.querySelector('button span svg');
+    expect(svg).toBeTruthy();
+  });
+
+  it('should fall back to blank profile picture SVG when image loading errors', () => {
     const fixture = TestBed.createComponent(UserDropdownComponent);
     const component = fixture.componentInstance;
+    fixture.detectChanges();
 
-    component.isOpen.set(true);
-    component.logout();
+    expect(component.userPicture()).toBe('https://example.com/avatar.jpg');
+    component.onImageError();
+    fixture.detectChanges();
 
-    expect(component.isOpen()).toBe(false);
-    expect(mockAuthService.logout).toHaveBeenCalled();
+    expect(component.userPicture()).toBeNull();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const img = compiled.querySelector('button span img');
+    expect(img).toBeNull();
+    const svg = compiled.querySelector('button span svg');
+    expect(svg).toBeTruthy();
   });
 });

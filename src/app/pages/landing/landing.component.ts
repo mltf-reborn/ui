@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -50,6 +50,26 @@ export class LandingComponent {
   readonly isAuthenticated = this.authService.isAuthenticated;
   readonly user = this.authService.user;
   readonly isLoading = this.authService.isLoading;
+  readonly imageError = signal<boolean>(false);
+
+  readonly userPicture = computed(() => {
+    if (this.imageError()) {
+      return null;
+    }
+    const pic = this.authService.user()?.picture;
+    return pic && pic.trim().length > 0 ? pic : null;
+  });
+
+  constructor() {
+    effect(() => {
+      this.authService.user();
+      this.imageError.set(false);
+    });
+  }
+
+  onImageError(): void {
+    this.imageError.set(true);
+  }
 
   // Auth0 Actions
   login(): void {

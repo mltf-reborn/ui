@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, computed, effect } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { DropdownComponent } from '../../ui/dropdown/dropdown.component';
 import { DropdownItemComponent } from '../../ui/dropdown/dropdown-item.component';
@@ -15,6 +15,27 @@ import { TranslatePipe } from '../../../pipes/translate.pipe';
 export class UserDropdownComponent {
   readonly authService = inject(AppAuthService);
   readonly isOpen = signal<boolean>(false);
+  readonly imageError = signal<boolean>(false);
+
+  readonly userPicture = computed(() => {
+    if (this.imageError()) {
+      return null;
+    }
+    const pic = this.authService.user()?.picture;
+    return pic && pic.trim().length > 0 ? pic : null;
+  });
+
+  constructor() {
+    effect(() => {
+      // Re-evaluate when user changes and reset error state
+      this.authService.user();
+      this.imageError.set(false);
+    });
+  }
+
+  onImageError(): void {
+    this.imageError.set(true);
+  }
 
   toggleDropdown(): void {
     this.isOpen.update(v => !v);

@@ -73,4 +73,29 @@ describe('LandingComponent', () => {
     component.applyFromCalculator();
     expect(mockAuthService.register).toHaveBeenCalledTimes(2);
   });
+
+  it('should render user picture when authenticated and picture is available', () => {
+    mockAuthService.isAuthenticated.set(true);
+    mockAuthService.user.set({ name: 'Faiz', picture: 'https://example.com/pic.jpg' });
+    const fixture = TestBed.createComponent(LandingComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const img = compiled.querySelector('a[href="/dashboard"] img, a[routerlink="/dashboard"] img') as HTMLImageElement;
+    expect(img).toBeTruthy();
+    expect(img.getAttribute('src')).toBe('https://example.com/pic.jpg');
+  });
+
+  it('should render blank profile picture SVG when authenticated and picture is absent', () => {
+    mockAuthService.isAuthenticated.set(true);
+    mockAuthService.user.set({ name: 'Faiz', picture: undefined });
+    const fixture = TestBed.createComponent(LandingComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const img = compiled.querySelector('a[href="/dashboard"] img, a[routerlink="/dashboard"] img');
+    expect(img).toBeNull();
+    const svg = compiled.querySelector('a[href="/dashboard"] span svg, a[routerlink="/dashboard"] span svg');
+    expect(svg).toBeTruthy();
+  });
 });
