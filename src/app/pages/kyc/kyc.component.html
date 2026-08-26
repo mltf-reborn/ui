@@ -1,0 +1,617 @@
+<div class="space-y-6 max-w-7xl mx-auto pb-12">
+  <!-- Breadcrumb -->
+  <app-breadcrumb [pageTitle]="'kyc.pageTitle' | translate" />
+
+  <!-- Hidden canvas for webcam frame extraction -->
+  <canvas #canvasElement class="hidden"></canvas>
+  <input
+    #fileInput
+    type="file"
+    accept="image/jpeg,image/png,image/webp,application/pdf"
+    class="hidden"
+    (change)="onFileSelected($event)"
+  />
+
+
+  <!-- ========================================================================= -->
+  <!-- STEP 1: FORM (DOCUMENT UPLOAD + WEBCAM SELFIE + CONSENT CHECKLIST)        -->
+  <!-- ========================================================================= -->
+  @if (currentStep() === 'form') {
+    <!-- Header Banner & Mode Selector -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 rounded-2xl bg-gradient-to-r from-brand-600 to-brand-800 text-white shadow-lg">
+      <div class="space-y-1">
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-sm">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          {{ 'kyc.step1Badge' | translate }} • {{ 'header.brandTitle' | translate }} e-KYC
+        </div>
+        <h2 class="text-xl sm:text-2xl font-bold tracking-tight">
+          {{ 'kyc.step1Title' | translate }}
+        </h2>
+        <p class="text-xs sm:text-sm text-brand-100 max-w-2xl">
+          {{ 'kyc.step1Desc' | translate }}
+        </p>
+      </div>
+
+      <!-- Simulation Outcome Switcher (Test Helper) -->
+      <div class="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/10 shrink-0">
+        <span class="text-xs text-brand-100 font-medium px-2">{{ 'kyc.demoMode' | translate }}:</span>
+        <button
+          type="button"
+          (click)="setSimulationTarget('success')"
+          class="px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer"
+          [ngClass]="{
+            'bg-emerald-500 text-white shadow': simulationTarget() === 'success',
+            'text-white/70 hover:text-white': simulationTarget() !== 'success'
+          }"
+        >
+          ✓ {{ 'kyc.simSuccess' | translate }}
+        </button>
+        <button
+          type="button"
+          (click)="setSimulationTarget('in_review')"
+          class="px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer"
+          [ngClass]="{
+            'bg-amber-500 text-white shadow': simulationTarget() === 'in_review',
+            'text-white/70 hover:text-white': simulationTarget() !== 'in_review'
+          }"
+        >
+          ⏳ {{ 'kyc.simInReview' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Grid: 2 Columns (Document + Selfie) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <!-- 1. IDENTITY DOCUMENT SECTION -->
+      <div class="flex flex-col p-6 rounded-2xl bg-white dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700/80 shadow-sm">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700/60 mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect width="20" height="14" x="2" y="5" rx="2"/>
+                <line x1="2" x2="22" y1="10" y2="10"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-gray-900 dark:text-white text-base">
+                {{ 'kyc.docSectionTitle' | translate }}
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ 'kyc.docSectionSubtitle' | translate }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Document Preview or Drag & Drop Zone -->
+        @if (selectedDocument() || documentPreviewUrl()) {
+          <div class="relative flex flex-col items-center justify-center p-6 border-2 border-emerald-400/60 dark:border-emerald-500/50 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-2xl">
+            @if (isPdfDocument()) {
+              <div class="flex flex-col items-center gap-3 py-6">
+                <div class="w-16 h-16 rounded-2xl bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 flex items-center justify-center">
+                  <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                  </svg>
+                </div>
+                <span class="text-sm font-bold text-gray-800 dark:text-gray-200">{{ documentFileName() }}</span>
+                <span class="text-xs text-gray-500">{{ documentFileSize() }} • PDF Document</span>
+              </div>
+            } @else {
+              <div class="w-full max-h-56 rounded-xl overflow-hidden shadow-sm border border-emerald-200 dark:border-emerald-800/60 mb-3 bg-black/5 flex items-center justify-center">
+                <img
+                  [src]="documentPreviewUrl()"
+                  [alt]="documentFileName()"
+                  class="max-h-56 w-auto object-contain rounded-xl"
+                />
+              </div>
+              <div class="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400 mb-1">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{{ documentFileName() }} ({{ documentFileSize() }})</span>
+              </div>
+            }
+
+            <div class="flex items-center gap-3 mt-4">
+              <button
+                type="button"
+                (click)="triggerFileInput()"
+                class="px-3.5 py-1.5 text-xs font-semibold text-brand-600 dark:text-brand-400 bg-white dark:bg-gray-800 hover:bg-brand-50 dark:hover:bg-brand-900/30 border border-brand-200 dark:border-brand-800 rounded-xl transition cursor-pointer"
+              >
+                {{ 'kyc.replaceFile' | translate }}
+              </button>
+              <button
+                type="button"
+                (click)="removeDocument()"
+                class="px-3.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 bg-white dark:bg-gray-800 hover:bg-red-50 dark:hover:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-xl transition cursor-pointer"
+              >
+                {{ 'kyc.removeFile' | translate }}
+              </button>
+            </div>
+          </div>
+        } @else {
+          <!-- Drag & Drop Zone -->
+          <div
+            (dragover)="onDragOver($event)"
+            (dragleave)="onDragLeave($event)"
+            (drop)="onFileDropped($event)"
+            (click)="triggerFileInput()"
+            class="flex flex-col items-center justify-center p-8 border-2 border-dashed rounded-2xl text-center transition-colors cursor-pointer"
+            [ngClass]="{
+              'border-brand-500 bg-brand-50/50 dark:bg-brand-950/20': isDragging(),
+              'border-gray-300 dark:border-gray-600 hover:border-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800/60': !isDragging()
+            }"
+          >
+            <div class="w-14 h-14 rounded-2xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-3">
+              <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" x2="12" y1="3" y2="15"/>
+              </svg>
+            </div>
+            <p class="text-sm font-semibold text-gray-800 dark:text-gray-200">
+              {{ 'kyc.dragDropText' | translate }}
+              <span class="text-brand-600 dark:text-brand-400 underline font-bold">{{ 'kyc.browseFiles' | translate }}</span>
+            </p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1.5">
+              {{ 'kyc.supportedFormats' | translate }}
+            </p>
+          </div>
+        }
+
+        <!-- Tip card -->
+        <div class="mt-4 p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800/40 text-blue-900 dark:text-blue-200 text-xs flex items-start gap-2.5">
+          <svg class="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="16" y2="12"/><line x1="12" x2="12.01" y1="8" y2="8"/>
+          </svg>
+          <span>Ensure all four corners of your MyKad are visible with no flash reflections or blurriness.</span>
+        </div>
+      </div>
+
+      <!-- 2. WEBCAM SELFIE SECTION -->
+      <div class="flex flex-col p-6 rounded-2xl bg-white dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700/80 shadow-sm">
+        <div class="flex items-center justify-between pb-4 border-b border-gray-100 dark:border-gray-700/60 mb-5">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                <circle cx="12" cy="13" r="3"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="font-bold text-gray-900 dark:text-white text-base">
+                {{ 'kyc.selfieSectionTitle' | translate }}
+              </h3>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ 'kyc.selfieSectionSubtitle' | translate }}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Camera Container -->
+        <div
+          class="relative w-full h-64 bg-gray-900 rounded-2xl overflow-hidden flex items-center justify-center border shadow-inner transition-colors"
+          [ngClass]="{
+            'border-2 border-dashed border-gray-700 hover:border-emerald-500 cursor-pointer': !capturedSelfie() && !isCameraActive(),
+            'border-gray-700/60': capturedSelfie() || isCameraActive()
+          }"
+        >
+          <!-- State A: Captured Selfie Preview -->
+          @if (capturedSelfie()) {
+            <img
+              [src]="capturedSelfie()"
+              alt="Captured Selfie"
+              class="w-full h-full object-cover"
+            />
+            <div class="absolute top-3 right-3 px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center gap-1.5 shadow">
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+              {{ 'kyc.useSelfie' | translate }}
+            </div>
+          }
+
+          <!-- State B: Active Live Camera Stream -->
+          @else if (isCameraActive()) {
+            <video
+              #videoElement
+              autoplay
+              playsinline
+              muted
+              class="w-full h-full object-cover scale-x-[-1]"
+            ></video>
+
+            <!-- Face Oval Guide Overlay -->
+            <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+              <div class="w-40 h-52 border-2 border-dashed border-emerald-400/80 rounded-[50%] shadow-[0_0_0_9999px_rgba(0,0,0,0.35)]"></div>
+            </div>
+
+            <div class="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-black/60 backdrop-blur-sm text-white text-[11px] font-semibold flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+              {{ 'kyc.livePreview' | translate }}
+            </div>
+          }
+
+          <!-- State C: Camera Idle / Ready to Start (Clickable box) -->
+          @else {
+            <div
+              (click)="startCamera()"
+              class="w-full h-full flex flex-col items-center justify-center gap-3 p-6 text-center text-gray-300 hover:bg-gray-800/80 transition-all group"
+            >
+              <div class="w-14 h-14 rounded-2xl bg-emerald-950/40 border border-emerald-800/50 group-hover:border-emerald-500/70 text-emerald-400 group-hover:bg-emerald-600 group-hover:text-white flex items-center justify-center transition mb-1 group-hover:scale-105">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                  <circle cx="12" cy="13" r="3"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors">
+                  {{ 'kyc.startCamera' | translate }}
+                </p>
+                <p class="text-xs text-gray-400 mt-1.5 max-w-xs">
+                  {{ 'kyc.selfieIdleHint' | translate }}
+                </p>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Camera Controls -->
+        @if (capturedSelfie()) {
+          <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+            <button
+              type="button"
+              (click)="retakeSelfie()"
+              class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-xl transition cursor-pointer"
+            >
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+                <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+                <path d="M8 16H3v5"/>
+              </svg>
+              <span>{{ 'kyc.retakeSelfie' | translate }}</span>
+            </button>
+          </div>
+        } @else if (isCameraActive()) {
+          <div class="flex flex-wrap items-center justify-between gap-3 mt-4">
+            <button
+              type="button"
+              (click)="captureSelfie()"
+              class="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition cursor-pointer"
+            >
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              </svg>
+              <span>{{ 'kyc.takeSelfie' | translate }}</span>
+            </button>
+          </div>
+        }
+
+        @if (cameraError()) {
+          <div class="mt-3 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs">
+            {{ cameraError() }}
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- 3. DECLARATIONS, PDPA CONSENT & SUBMIT SECTION -->
+    <div class="p-6 rounded-2xl bg-white dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700/80 shadow-sm space-y-5">
+      <div class="flex items-center gap-3 pb-3 border-b border-gray-100 dark:border-gray-700/60">
+        <div class="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center font-bold text-sm">
+          3
+        </div>
+        <h3 class="font-bold text-gray-900 dark:text-white text-base">
+          {{ 'kyc.termsTitle' | translate }}
+        </h3>
+      </div>
+
+      <div class="space-y-3.5">
+        <!-- Terms Checkbox -->
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition cursor-pointer">
+          <input
+            type="checkbox"
+            [(ngModel)]="termsAccepted"
+            class="mt-1 w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
+          />
+          <span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            {{ 'kyc.termsCheck' | translate }}
+          </span>
+        </label>
+
+        <!-- PDPA Consent Checkbox -->
+        <label class="flex items-start gap-3 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-50/50 dark:hover:bg-gray-700/30 transition cursor-pointer">
+          <input
+            type="checkbox"
+            [(ngModel)]="pdpaAccepted"
+            class="mt-1 w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-gray-300 dark:border-gray-600 dark:bg-gray-700 cursor-pointer"
+          />
+          <span class="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+            {{ 'kyc.pdpaCheck' | translate }}
+          </span>
+        </label>
+      </div>
+
+      <!-- Action Footer -->
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-gray-100 dark:border-gray-700/60">
+        <a
+          routerLink="/dashboard"
+          class="w-full sm:w-auto px-5 py-2.5 text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition text-center"
+        >
+          {{ 'common.cancel' | translate }}
+        </a>
+
+        <div class="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          @if (!isFormValid()) {
+            <span class="text-xs text-gray-400 dark:text-gray-500 text-center sm:text-right">
+              {{ 'kyc.submitHint' | translate }}
+            </span>
+          }
+          <button
+            type="button"
+            (click)="submitKyc()"
+            [disabled]="!isFormValid()"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold shadow-md transition-all cursor-pointer"
+            [ngClass]="{
+              'bg-brand-600 hover:bg-brand-700 text-white shadow-brand-500/25': isFormValid(),
+              'bg-gray-200 dark:bg-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed': !isFormValid()
+            }"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>{{ 'kyc.submitBtn' | translate }}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- STEP 2: PROCESSING / LOADING PAGE                                         -->
+  <!-- ========================================================================= -->
+  @if (currentStep() === 'processing') {
+    <div class="flex flex-col items-center justify-center p-8 sm:p-14 bg-white dark:bg-gray-800/90 rounded-2xl border border-gray-200 dark:border-gray-700/80 shadow-md max-w-2xl mx-auto my-6 text-center space-y-8">
+      
+      <!-- Animated Scanner Icon -->
+      <div class="relative flex items-center justify-center">
+        <div class="w-28 h-28 rounded-full bg-brand-50 dark:bg-brand-950/50 border-4 border-brand-100 dark:border-brand-900 flex items-center justify-center">
+          <svg class="w-12 h-12 text-brand-600 dark:text-brand-400 animate-pulse" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 3H5a2 2 0 0 0-2 2v4m0 6v4a2 2 0 0 0 2 2h4m6 0h4a2 2 0 0 0 2-2v-4m0-6V5a2 2 0 0 0-2-2h-4"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </div>
+        <span class="absolute w-36 h-36 rounded-full border-2 border-brand-500/40 animate-ping pointer-events-none"></span>
+      </div>
+
+      <!-- Headline -->
+      <div class="space-y-2">
+        <h2 class="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+          {{ 'kyc.processingTitle' | translate }}
+        </h2>
+        <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+          {{ 'kyc.processingSubtitle' | translate }}
+        </p>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full space-y-2">
+        <div class="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+          <div
+            class="bg-gradient-to-r from-brand-500 to-emerald-500 h-2.5 rounded-full transition-all duration-300 ease-out"
+            [style.width.%]="processingProgress()"
+          ></div>
+        </div>
+        <div class="flex justify-between text-xs font-semibold text-gray-400">
+          <span>Processing Pipeline</span>
+          <span>{{ processingProgress() }}%</span>
+        </div>
+      </div>
+
+      <!-- Real-time Verification Steps -->
+      <div class="w-full text-left space-y-3 bg-gray-50 dark:bg-gray-900/60 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+        
+        <div class="flex items-center gap-3 text-xs sm:text-sm" [ngClass]="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': processingStepIndex() >= 1, 'text-gray-400': processingStepIndex() < 1 }">
+          @if (processingStepIndex() > 1) {
+            <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]">✓</span>
+          } @else {
+            <span class="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></span>
+          }
+          <span>{{ 'kyc.stepOcr' | translate }}</span>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs sm:text-sm" [ngClass]="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': processingStepIndex() >= 2, 'text-gray-400': processingStepIndex() < 2 }">
+          @if (processingStepIndex() > 2) {
+            <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]">✓</span>
+          } @else if (processingStepIndex() === 2) {
+            <span class="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></span>
+          } @else {
+            <span class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center text-[10px]">2</span>
+          }
+          <span>{{ 'kyc.stepBiometric' | translate }}</span>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs sm:text-sm" [ngClass]="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': processingStepIndex() >= 3, 'text-gray-400': processingStepIndex() < 3 }">
+          @if (processingStepIndex() > 3) {
+            <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]">✓</span>
+          } @else if (processingStepIndex() === 3) {
+            <span class="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></span>
+          } @else {
+            <span class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center text-[10px]">3</span>
+          }
+          <span>{{ 'kyc.stepAml' | translate }}</span>
+        </div>
+
+        <div class="flex items-center gap-3 text-xs sm:text-sm" [ngClass]="{ 'text-emerald-600 dark:text-emerald-400 font-semibold': processingStepIndex() >= 4, 'text-gray-400': processingStepIndex() < 4 }">
+          @if (processingStepIndex() >= 4 && processingProgress() === 100) {
+            <span class="w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px]">✓</span>
+          } @else if (processingStepIndex() === 4) {
+            <span class="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin"></span>
+          } @else {
+            <span class="w-5 h-5 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-400 flex items-center justify-center text-[10px]">4</span>
+          }
+          <span>{{ 'kyc.stepFinalize' | translate }}</span>
+        </div>
+
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- STEP 3A: SUCCESS PAGE (VERIFIED WITH RETURN DATA)                          -->
+  <!-- ========================================================================= -->
+  @if (currentStep() === 'success') {
+    <div class="max-w-2xl mx-auto space-y-6 my-4">
+      <div class="p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-800/95 border border-emerald-200 dark:border-emerald-800/60 shadow-xl text-center space-y-6">
+        
+        <!-- Big Success Icon -->
+        <div class="mx-auto w-20 h-20 rounded-2xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner">
+          <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+
+        <div class="space-y-2">
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 border border-emerald-300 dark:border-emerald-700">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            {{ 'kyc.verifiedBadge' | translate }}
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+            {{ 'kyc.successTitle' | translate }}
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto">
+            {{ 'kyc.successSubtitle' | translate }}
+          </p>
+        </div>
+
+        <!-- Verified Data Details Card (Returned from Backend) -->
+        <div class="bg-gray-50 dark:bg-gray-900/80 rounded-2xl p-6 border border-gray-200/80 dark:border-gray-700/80 text-left space-y-4 shadow-sm">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-gray-400 dark:text-gray-500 border-b border-gray-200 dark:border-gray-800 pb-2">
+            Verified Identification Profile
+          </h4>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+            <div>
+              <span class="block text-gray-500 dark:text-gray-400 text-xs">{{ 'kyc.fullName' | translate }}</span>
+              <span class="font-bold text-gray-900 dark:text-white">{{ verifiedResult()?.fullName }}</span>
+            </div>
+
+            <div>
+              <span class="block text-gray-500 dark:text-gray-400 text-xs">{{ 'kyc.idNumber' | translate }}</span>
+              <span class="font-bold text-gray-900 dark:text-white">{{ verifiedResult()?.idNumber }}</span>
+            </div>
+
+            <div>
+              <span class="block text-gray-500 dark:text-gray-400 text-xs">{{ 'kyc.nationality' | translate }}</span>
+              <span class="font-semibold text-gray-800 dark:text-gray-200">{{ verifiedResult()?.nationality }}</span>
+            </div>
+
+            <div>
+              <span class="block text-gray-500 dark:text-gray-400 text-xs">{{ 'kyc.dobGender' | translate }}</span>
+              <span class="font-semibold text-gray-800 dark:text-gray-200">{{ verifiedResult()?.dateOfBirth }} • {{ verifiedResult()?.gender }}</span>
+            </div>
+
+            <div>
+              <span class="block text-gray-500 dark:text-gray-400 text-xs">{{ 'kyc.refId' | translate }}</span>
+              <span class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400">{{ verifiedResult()?.referenceId }}</span>
+            </div>
+
+            <div>
+              <span class="block text-gray-500 dark:text-gray-400 text-xs">{{ 'kyc.matchScore' | translate }}</span>
+              <span class="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
+                <span>{{ verifiedResult()?.matchScore }}%</span>
+                <span class="text-[10px] text-emerald-700 dark:text-emerald-300">(High Confidence)</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Button -->
+        <button
+          type="button"
+          (click)="returnToDashboard()"
+          class="w-full inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm sm:text-base font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/25 transition cursor-pointer"
+        >
+          <span>{{ 'kyc.backToDashboard' | translate }}</span>
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </button>
+      </div>
+    </div>
+  }
+
+  <!-- ========================================================================= -->
+  <!-- STEP 3B: "VERIFICATION INPROGRESS" SCREEN (MANUAL REVIEW FALLBACK)         -->
+  <!-- ========================================================================= -->
+  @if (currentStep() === 'in_review') {
+    <div class="max-w-2xl mx-auto space-y-6 my-4">
+      <div class="p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-800/95 border border-amber-200 dark:border-amber-800/60 shadow-xl text-center space-y-6">
+        
+        <!-- Amber Clock / In-Review Icon -->
+        <div class="mx-auto w-20 h-20 rounded-2xl bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
+          <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+
+        <div class="space-y-2">
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+            {{ 'kyc.inReviewBadge' | translate }}
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+            {{ 'kyc.inReviewTitle' | translate }}
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 max-w-md mx-auto leading-relaxed">
+            {{ 'kyc.inReviewSubtitle' | translate }}
+          </p>
+        </div>
+
+        <!-- Manual Review Details Card -->
+        <div class="bg-amber-50/50 dark:bg-amber-950/20 rounded-2xl p-6 border border-amber-200/80 dark:border-amber-800/60 text-left space-y-3.5">
+          <div class="flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-gray-500 dark:text-gray-400">{{ 'kyc.refId' | translate }}:</span>
+            <span class="font-mono font-bold text-amber-800 dark:text-amber-300">{{ verifiedResult()?.referenceId }}</span>
+          </div>
+
+          <div class="flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-gray-500 dark:text-gray-400">{{ 'common.status' | translate }}:</span>
+            <span class="font-bold text-amber-700 dark:text-amber-400">Verification Inprogress (IN_REVIEW)</span>
+          </div>
+
+          <div class="flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-gray-500 dark:text-gray-400">{{ 'kyc.verifiedDate' | translate }}:</span>
+            <span class="font-semibold text-gray-700 dark:text-gray-300">{{ verifiedResult()?.verifiedAt }}</span>
+          </div>
+
+          <div class="pt-3 border-t border-amber-200/60 dark:border-amber-800/60 text-xs text-amber-900/90 dark:text-amber-200/90 flex items-start gap-2">
+            <svg class="w-4 h-4 shrink-0 mt-0.5 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>
+            </svg>
+            <span>{{ 'kyc.inReviewNote' | translate }}</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <button
+            type="button"
+            (click)="returnToDashboard()"
+            class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md transition cursor-pointer"
+          >
+            <span>{{ 'kyc.backToDashboard' | translate }}</span>
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+          
+          <button
+            type="button"
+            (click)="restartKyc()"
+            class="w-full sm:w-auto px-4 py-3 text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition cursor-pointer"
+          >
+            {{ 'kyc.retakeSelfie' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+</div>

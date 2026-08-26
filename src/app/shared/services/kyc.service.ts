@@ -5,6 +5,20 @@ import { catchError, switchMap, tap } from 'rxjs/operators';
 import { AppAuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 
+export interface VerifiedKycData {
+  userId?: string;
+  fullName: string;
+  idNumber: string;
+  idType: string;
+  dateOfBirth?: string;
+  gender?: string;
+  nationality?: string;
+  matchScore?: number;
+  referenceId: string;
+  verifiedAt: string;
+  status: 'APPROVED' | 'IN_REVIEW' | 'PENDING' | 'REJECTED';
+}
+
 export interface KycStatusResponse {
   status?: string;
   Status?: string;
@@ -20,6 +34,7 @@ export interface KycStatusResponse {
   };
   kycStatus?: string;
   KycStatus?: string;
+  verifiedData?: VerifiedKycData;
   [key: string]: any;
 }
 
@@ -32,6 +47,8 @@ export class KycService {
 
   readonly kycStatus = signal<KycStatusResponse | null>(null);
   readonly isPendingKyc = signal<boolean>(false);
+  readonly isKycInReview = signal<boolean>(false);
+  readonly verifiedData = signal<VerifiedKycData | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
 
@@ -61,6 +78,101 @@ export class KycService {
       return val.trim().toLowerCase() === 'pending';
     }
     return false;
+  }
+
+  /**
+   * Helper to check if a KYC status response represents 'IN_REVIEW' (Verification Inprogress)
+   */
+  isStatusInReview(res: KycStatusResponse | string | null | undefined): boolean {
+    if (!res) return false;
+    if (typeof res === 'string') {
+      const s = res.trim().toLowerCase();
+      return s === 'in_review' || s === 'in review' || s === 'verification inprogress' || s === 'verification in progress';
+    }
+    const val =
+      res.Status ??
+      res.status ??
+      res.data?.Status ??
+      res.data?.status ??
+      res.result?.Status ??
+      res.result?.status ??
+      res.KycStatus ??
+      res.kycStatus;
+
+    if (typeof val === 'string') {
+      const s = val.trim().toLowerCase();
+      return s === 'in_review' || s === 'in review' || s === 'verification inprogress' || s === 'verification in progress';
+    }
+    return false;
+  }
+
+  /**
+   * Helper to check if a KYC status response represents 'APPROVED' / 'VERIFIED'
+   */
+  isStatusApproved(res: KycStatusResponse | string | null | undefined): boolean {
+    if (!res) return false;
+    if (typeof res === 'string') {
+      const s = res.trim().toLowerCase();
+      return s === 'approved' || s === 'verified' || s === 'completed';
+    }
+    const val =
+      res.Status ??
+      res.status ??
+      res.data?.Status ??
+      res.data?.status ??
+      res.result?.Status ??
+      res.result?.status;
+
+    if (typeof val === 'string') {
+      const s = val.trim().toLowerCase();
+      return s === 'approved' || s === 'verified' || s === 'completed';
+    }
+    return false;
+  }
+
+  /**
+   * Updates local state when KYC succeeds
+   */
+  setKycSuccess(data: Partial<VerifiedKycData>): void {
+    const fullData: VerifiedKycData = {
+      fullName: data.fullName || 'AHMAD SYAZWAN BIN ABDULLAH',
+      idNumber: data.idNumber || '940822-10-5819',
+      idType: data.idType || 'MyKad (National ID)',
+      dateOfBirth: data.dateOfBirth || '22 Aug 1994',
+      gender: data.gender || 'Male',
+      nationality: data.nationality || 'Malaysian',
+      matchScore: data.matchScore || 99.4,
+      referenceId: data.referenceId || `KYC-2026-MADANI-${Math.floor(1000 + Math.random() * 9000)}`,
+      verifiedAt: data.verifiedAt || new Date().toLocaleString(),
+      status: 'APPROVED',
+    };
+
+    this.verifiedData.set(fullData);
+    this.kycStatus.set({ status: 'APPROVED', verifiedData: fullData });
+    this.isPendingKyc.set(false);
+    this.isKycInReview.set(false);
+    this.error.set(null);
+  }
+
+  /**
+   * Updates local state when KYC enters manual review ('Verification Inprogress')
+   */
+  setKycInReview(data?: Partial<VerifiedKycData>): void {
+    const refId = data?.referenceId || `KYC-REV-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const reviewData: VerifiedKycData = {
+      fullName: data?.fullName || 'Applicant',
+      idNumber: data?.idNumber || 'Pending Verification',
+      idType: data?.idType || 'MyKad / Passport',
+      referenceId: refId,
+      verifiedAt: new Date().toLocaleString(),
+      status: 'IN_REVIEW',
+    };
+
+    this.verifiedData.set(reviewData);
+    this.kycStatus.set({ status: 'IN_REVIEW', verifiedData: reviewData });
+    this.isPendingKyc.set(false);
+    this.isKycInReview.set(true);
+    this.error.set(null);
   }
 
   /**
@@ -100,7 +212,9 @@ export class KycService {
         next: (res) => {
           this.kycStatus.set(res);
           const pending = this.isStatusPending(res);
+          const inReview = this.isStatusInReview(res);
           this.isPendingKyc.set(pending);
+          this.isKycInReview.set(inReview);
           this.isLoading.set(false);
           this.isChecking = false;
         },
@@ -109,10 +223,12 @@ export class KycService {
             // HTTP 404 indicates KYC profile not found -> user has not completed KYC
             this.kycStatus.set({ status: 'PENDING' });
             this.isPendingKyc.set(true);
+            this.isKycInReview.set(false);
             this.error.set(null);
           } else {
             this.error.set(err?.message || 'Failed to check KYC status');
             this.isPendingKyc.set(false);
+            this.isKycInReview.set(false);
           }
           this.isLoading.set(false);
           this.isChecking = false;
@@ -135,7 +251,9 @@ export class KycService {
    */
   reset(): void {
     this.kycStatus.set(null);
+    this.verifiedData.set(null);
     this.isPendingKyc.set(false);
+    this.isKycInReview.set(false);
     this.isLoading.set(false);
     this.error.set(null);
     this.isChecking = false;

@@ -137,6 +137,43 @@ describe('KycService', () => {
     expect(service.isLoading()).toBe(false);
   });
 
+  it('should detect in-review status correctly', () => {
+    expect(service.isStatusInReview({ status: 'IN_REVIEW' })).toBe(true);
+    expect(service.isStatusInReview({ status: 'Verification Inprogress' })).toBe(true);
+    expect(service.isStatusInReview('in_review')).toBe(true);
+    expect(service.isStatusInReview({ status: 'APPROVED' })).toBe(false);
+  });
+
+  it('should detect approved status correctly', () => {
+    expect(service.isStatusApproved({ status: 'APPROVED' })).toBe(true);
+    expect(service.isStatusApproved({ status: 'VERIFIED' })).toBe(true);
+    expect(service.isStatusApproved('approved')).toBe(true);
+    expect(service.isStatusApproved({ status: 'PENDING' })).toBe(false);
+  });
+
+  it('should update state on setKycSuccess', () => {
+    service.setKycSuccess({
+      fullName: 'John Doe',
+      idNumber: '900101-14-1234',
+    });
+
+    expect(service.isPendingKyc()).toBe(false);
+    expect(service.isKycInReview()).toBe(false);
+    expect(service.verifiedData()?.fullName).toBe('John Doe');
+    expect(service.verifiedData()?.status).toBe('APPROVED');
+  });
+
+  it('should update state on setKycInReview', () => {
+    service.setKycInReview({
+      referenceId: 'KYC-REV-9999',
+    });
+
+    expect(service.isPendingKyc()).toBe(false);
+    expect(service.isKycInReview()).toBe(true);
+    expect(service.verifiedData()?.referenceId).toBe('KYC-REV-9999');
+    expect(service.verifiedData()?.status).toBe('IN_REVIEW');
+  });
+
   it('should reset state correctly', () => {
     service.checkKycStatus().subscribe();
     const req = httpTesting.expectOne('/api/v1/kyc/status');
@@ -146,6 +183,8 @@ describe('KycService', () => {
 
     service.reset();
     expect(service.isPendingKyc()).toBe(false);
+    expect(service.isKycInReview()).toBe(false);
+    expect(service.verifiedData()).toBeNull();
     expect(service.kycStatus()).toBeNull();
   });
 });

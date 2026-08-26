@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { LandingComponent } from './landing.component';
 import { AppAuthService } from '../../shared/services/auth.service';
+import { TranslationService } from '../../shared/services/translation.service';
 
 describe('LandingComponent', () => {
   let mockAuthService: {
@@ -25,11 +26,24 @@ describe('LandingComponent', () => {
       isLoading: signal(false),
     };
 
+    const mockTranslationService = {
+      currentLanguage: signal('ms'),
+      supportedLanguages: [
+        { code: 'ms', label: 'Bahasa Malaysia', shortLabel: 'BM', flag: '🇲🇾', flagIcon: '/images/flags/my.svg' },
+        { code: 'en', label: 'English', shortLabel: 'EN', flag: '🇬🇧', flagIcon: '/images/flags/gb.svg' },
+      ],
+      translations: signal({}),
+      isLoaded: signal(true),
+      translate: vi.fn().mockImplementation((key: string) => key),
+      t: vi.fn().mockImplementation((key: string) => key),
+    };
+
     await TestBed.configureTestingModule({
       imports: [LandingComponent],
       providers: [
         provideRouter([]),
         { provide: AppAuthService, useValue: mockAuthService },
+        { provide: TranslationService, useValue: mockTranslationService },
       ],
     }).compileComponents();
   });

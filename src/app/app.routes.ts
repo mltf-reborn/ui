@@ -3,6 +3,7 @@ import { AuthGuard } from '@auth0/auth0-angular';
 import { LandingComponent } from './pages/landing/landing.component';
 import { AppLayoutComponent } from './shared/layouts/app-layout/app-layout.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { KycComponent } from './pages/kyc/kyc.component';
 
 export const routes: Routes = [
   {
@@ -19,6 +20,18 @@ export const routes: Routes = [
         path: '',
         component: DashboardComponent,
         title: 'MLTF - Papan Pemuka Pembiayaan',
+      },
+    ],
+  },
+  {
+    path: 'kyc',
+    component: AppLayoutComponent,
+    canActivate: [AuthGuard],
+    children: [
+      {
+        path: '',
+        component: KycComponent,
+        title: 'MLTF - Pengesahan Identiti Digital e-KYC',
       },
     ],
   },
