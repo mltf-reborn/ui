@@ -15,19 +15,19 @@
     <span>{{ toastMessage()?.text }}</span>
   </div>
 
-  <!-- Page Header & Greeting -->
+  <!-- Page Header -->
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
     <div>
       <div class="flex items-center gap-2.5">
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-          Papan Pemuka Pegawai Operasi
+          Operations Dashboard
         </h1>
         <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
           Ops Queue
         </span>
       </div>
       <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        Senarai semakan pematuhan e-KYC & integriti dokumen dari <code class="font-mono text-xs text-brand-600 dark:text-brand-400">case-management-service (Spanner)</code>.
+        e-KYC compliance &amp; document integrity review queue from <code class="font-mono text-xs text-brand-600 dark:text-brand-400">case-management-service (Spanner)</code>.
       </p>
     </div>
 
@@ -42,18 +42,18 @@
         <svg [class.animate-spin]="caseService.isLoading()" class="w-4 h-4 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
         </svg>
-        <span>Segarkan Data Spanner</span>
+        <span>Refresh Spanner Data</span>
       </button>
     </div>
   </div>
 
-  <!-- KPI Metric Cards Grid -->
+  <!-- KPI Metric Cards -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-    
+
     <!-- Total Cases -->
     <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Jumlah Kes</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Cases</span>
         <div class="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -62,17 +62,15 @@
       </div>
       <div class="mt-4 flex items-baseline gap-2">
         <span class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ caseService.stats().total }}</span>
-        <span class="text-xs text-slate-500 dark:text-slate-400">rekod Spanner</span>
+        <span class="text-xs text-slate-500 dark:text-slate-400">Spanner records</span>
       </div>
-      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Semua rekod kes KYC
-      </div>
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">All KYC case records</div>
     </div>
 
-    <!-- In Progress / In Review -->
+    <!-- In Progress -->
     <div class="bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-900/40 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Perlu Semakan</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Needs Review</span>
         <div class="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
           <svg class="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -83,15 +81,13 @@
         <span class="text-3xl font-extrabold text-amber-600 dark:text-amber-400">{{ caseService.stats().inProgress }}</span>
         <span class="text-xs text-amber-600/80 dark:text-amber-400/80 font-medium">IN_PROGRESS</span>
       </div>
-      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Menunggu keputusan pegawai
-      </div>
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Awaiting officer decision</div>
     </div>
 
-    <!-- Accepted / Approved -->
+    <!-- Accepted -->
     <div class="bg-white dark:bg-slate-900 border border-emerald-200 dark:border-emerald-900/40 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Diluluskan</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Accepted</span>
         <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -102,15 +98,13 @@
         <span class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ caseService.stats().accepted }}</span>
         <span class="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">ACCEPTED</span>
       </div>
-      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Selesai disahkan patuh
-      </div>
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Compliance verified</div>
     </div>
 
     <!-- Rejected -->
     <div class="bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-900/40 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
       <div class="flex items-center justify-between">
-        <span class="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Ditolak</span>
+        <span class="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Rejected</span>
         <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center">
           <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -121,9 +115,7 @@
         <span class="text-3xl font-extrabold text-rose-600 dark:text-rose-400">{{ caseService.stats().rejected }}</span>
         <span class="text-xs text-rose-600/80 dark:text-rose-400/80 font-medium">REJECTED</span>
       </div>
-      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">
-        Gagal semakan / ketidakpadanan
-      </div>
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Failed review / mismatch</div>
     </div>
 
   </div>
@@ -131,7 +123,7 @@
   <!-- Search & Filter Controls -->
   <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-      
+
       <!-- Search Input -->
       <div class="relative flex-1 max-w-md">
         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
@@ -143,7 +135,7 @@
           type="text"
           [ngModel]="searchTerm()"
           (ngModelChange)="searchTerm.set($event)"
-          placeholder="Cari ID Kes, Nama Pemohon, No MyKad, User ID..."
+          placeholder="Search Case ID, Applicant Name, ID Number, User ID..."
           class="block w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
         />
         <button
@@ -165,7 +157,7 @@
           [class]="statusFilter() === 'ALL' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
           class="px-3 py-1.5 rounded-xl transition-all"
         >
-          Semua ({{ caseService.stats().total }})
+          All ({{ caseService.stats().total }})
         </button>
         <button
           type="button"
@@ -200,11 +192,11 @@
           (ngModelChange)="riskFilter.set($event)"
           class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
         >
-          <option value="ALL">Semua Tahap Risiko</option>
-          <option value="LOW">Risiko Rendah (LOW)</option>
-          <option value="MEDIUM">Risiko Sederhana (MEDIUM)</option>
-          <option value="HIGH">Risiko Tinggi (HIGH)</option>
-          <option value="CRITICAL">Kritikal (CRITICAL)</option>
+          <option value="ALL">All Risk Levels</option>
+          <option value="LOW">Low Risk (LOW)</option>
+          <option value="MEDIUM">Medium Risk (MEDIUM)</option>
+          <option value="HIGH">High Risk (HIGH)</option>
+          <option value="CRITICAL">Critical (CRITICAL)</option>
         </select>
 
         <select
@@ -212,32 +204,32 @@
           (ngModelChange)="sortBy.set($event)"
           class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
         >
-          <option value="newest">Terkini Dulu (Newest)</option>
-          <option value="oldest">Terlama Dulu (Oldest)</option>
-          <option value="riskHigh">Skor Risiko Tertinggi</option>
-          <option value="riskLow">Skor Risiko Terendah</option>
+          <option value="newest">Newest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="riskHigh">Highest Risk Score</option>
+          <option value="riskLow">Lowest Risk Score</option>
         </select>
       </div>
 
     </div>
 
-    <!-- Active Filter Chips if any -->
+    <!-- Active Filter Chips -->
     <div *ngIf="searchTerm() || statusFilter() !== 'ALL' || riskFilter() !== 'ALL'" class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
-      <span>Penapis Aktif:</span>
+      <span>Active Filters:</span>
       <span *ngIf="searchTerm()" class="px-2 py-0.5 rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
-        Carian: "{{ searchTerm() }}"
+        Search: "{{ searchTerm() }}"
       </span>
       <span *ngIf="statusFilter() !== 'ALL'" class="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
         Status: {{ statusFilter() }}
       </span>
       <span *ngIf="riskFilter() !== 'ALL'" class="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
-        Risiko: {{ riskFilter() }}
+        Risk: {{ riskFilter() }}
       </span>
       <button
         (click)="searchTerm.set(''); statusFilter.set('ALL'); riskFilter.set('ALL')"
         class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold ml-2"
       >
-        Set Semula Semua
+        Reset All
       </button>
     </div>
   </div>
@@ -250,8 +242,8 @@
         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
       </svg>
     </div>
-    <h3 class="text-base font-bold text-slate-900 dark:text-white">Memuat Turun Kes dari Spanner...</h3>
-    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Mengambil rekod kes daripada jadual <code>case</code>.</p>
+    <h3 class="text-base font-bold text-slate-900 dark:text-white">Loading cases from Spanner...</h3>
+    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Fetching records from the <code>case</code> table.</p>
   </div>
 
   <!-- Error State -->
@@ -261,13 +253,13 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
       </svg>
     </div>
-    <h3 class="font-bold text-base">Gagal Berhubung dengan Case Management Service</h3>
+    <h3 class="font-bold text-base">Failed to connect to Case Management Service</h3>
     <p class="text-xs mt-1 text-rose-600/80 dark:text-rose-400/80">{{ caseService.error() }}</p>
     <button
       (click)="caseService.loadAllCases().subscribe()"
       class="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-sm"
     >
-      Cuba Semula
+      Retry
     </button>
   </div>
 
@@ -278,31 +270,31 @@
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
       </svg>
     </div>
-    <h3 class="text-base font-bold text-slate-900 dark:text-white">Tiada Rekod Kes Dijumpai</h3>
+    <h3 class="text-base font-bold text-slate-900 dark:text-white">No Cases Found</h3>
     <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
-      Tiada rekod sepadan dengan kriteria carian atau penapis anda pada masa ini.
+      No records match your current search criteria or filters.
     </p>
     <button
       (click)="searchTerm.set(''); statusFilter.set('ALL'); riskFilter.set('ALL')"
       class="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 text-white hover:bg-brand-500 transition-colors"
     >
-      Kosongkan Penapis
+      Clear Filters
     </button>
   </div>
 
   <!-- Main Case Data Table -->
   <div *ngIf="!caseService.isLoading() && !caseService.error() && filteredCases().length > 0" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
-    
+
     <!-- Table Header Info Bar -->
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="font-bold text-sm text-slate-900 dark:text-white">Senarai Kes Pematuhan</span>
+        <span class="font-bold text-sm text-slate-900 dark:text-white">Compliance Case List</span>
         <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
-          {{ filteredCases().length }} daripada {{ caseService.cases().length }} kes
+          {{ filteredCases().length }} of {{ caseService.cases().length }} cases
         </span>
       </div>
       <div class="text-xs text-slate-400">
-        Disegerakkan: {{ formatDate(caseService.lastUpdated()?.toISOString()) }}
+        Synced: {{ formatDate(caseService.lastUpdated()?.toISOString()) }}
       </div>
     </div>
 
@@ -311,13 +303,13 @@
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            <th class="py-3.5 px-6">ID Kes</th>
-            <th class="py-3.5 px-6">Maklumat Pemohon</th>
-            <th class="py-3.5 px-6">Penilaian Risiko (AI)</th>
-            <th class="py-3.5 px-6">Status Semakan</th>
-            <th class="py-3.5 px-6">Pegawai Bertanggungjawab</th>
-            <th class="py-3.5 px-6">Tarikh Cipta</th>
-            <th class="py-3.5 px-6 text-right">Tindakan</th>
+            <th class="py-3.5 px-6">Case ID</th>
+            <th class="py-3.5 px-6">Applicant Info</th>
+            <th class="py-3.5 px-6">Risk Assessment (AI)</th>
+            <th class="py-3.5 px-6">Review Status</th>
+            <th class="py-3.5 px-6">Assigned Officer</th>
+            <th class="py-3.5 px-6">Created Date</th>
+            <th class="py-3.5 px-6 text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs sm:text-sm">
@@ -332,8 +324,8 @@
                 <span class="text-brand-600 dark:text-brand-400 group-hover:underline">{{ item.caseId }}</span>
                 <button
                   type="button"
-                  (click)="$event.stopPropagation(); copyToClipboard(item.caseId, 'ID Kes')"
-                  title="Salin ID Kes"
+                  (click)="$event.stopPropagation(); copyToClipboard(item.caseId, 'Case ID')"
+                  title="Copy Case ID"
                   class="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded"
                 >
                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -342,7 +334,7 @@
                 </button>
               </div>
               <div class="text-[10px] text-slate-400 font-sans mt-0.5">
-                Jenis: {{ item.caseType || 'KYC' }}
+                Type: {{ item.caseType || 'KYC' }}
               </div>
             </td>
 
@@ -350,12 +342,12 @@
             <td class="py-4 px-6">
               <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>{{ getApplicantName(item) }}</span>
-                <span *ngIf="hasNameMismatch(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Ketidakpadanan nama dikesan dengan rekod rasmi">
+                <span *ngIf="hasNameMismatch(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Name mismatch detected against official registry">
                   ⚠️ Mismatch
                 </span>
               </div>
               <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                MyKad: {{ getApplicantIdNumber(item) }}
+                ID: {{ getApplicantIdNumber(item) }}
               </div>
               <div class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5">
                 UID: {{ item.userId }}
@@ -365,7 +357,6 @@
             <!-- Risk Assessment -->
             <td class="py-4 px-6">
               <div class="flex items-center gap-2">
-                <!-- Risk Level Badge -->
                 <span
                   [ngClass]="{
                     'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': (item.riskLevel || '').toUpperCase() === 'LOW',
@@ -380,7 +371,6 @@
                   {{ item.riskScore !== undefined ? item.riskScore + '%' : '-' }}
                 </span>
               </div>
-              <!-- Risk Progress Bar -->
               <div class="w-24 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-1.5 overflow-hidden">
                 <div
                   [style.width.%]="item.riskScore || 45"
@@ -403,7 +393,6 @@
                 <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
                 IN_PROGRESS
               </span>
-
               <span
                 *ngIf="(item.caseStatus || '').toUpperCase() === 'ACCEPTED' || (item.caseStatus || '').toUpperCase() === 'APPROVED'"
                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30"
@@ -413,7 +402,6 @@
                 </svg>
                 ACCEPTED
               </span>
-
               <span
                 *ngIf="(item.caseStatus || '').toUpperCase() === 'REJECTED'"
                 class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-rose-500/15 text-rose-700 dark:text-rose-300 border border-rose-500/30"
@@ -432,14 +420,14 @@
                 {{ item.assignedTo || 'supervisor-agent' }}
               </div>
               <div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-xs">
-                {{ item.remarks ? item.remarks.substring(0, 45) + '...' : 'Tiada nota tambahan' }}
+                {{ item.remarks ? item.remarks.substring(0, 45) + '...' : 'No additional notes' }}
               </div>
             </td>
 
             <!-- Created Date -->
             <td class="py-4 px-6 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
               <div>{{ formatDate(item.createdAt) }}</div>
-              <div class="text-[10px] text-slate-400">Kemas kini: {{ formatDate(item.updatedAt) }}</div>
+              <div class="text-[10px] text-slate-400">Updated: {{ formatDate(item.updatedAt) }}</div>
             </td>
 
             <!-- Actions -->
@@ -450,7 +438,7 @@
                   (click)="openCaseReview(item)"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-sm shadow-brand-500/20 transition-all"
                 >
-                  <span>Semak Kes</span>
+                  <span>Review Case</span>
                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                   </svg>
@@ -464,13 +452,13 @@
 
   </div>
 
-  <!-- COMPREHENSIVE CASE REVIEW MODAL / DRAWER -->
+  <!-- CASE REVIEW MODAL -->
   <div *ngIf="isReviewModalOpen() && caseService.selectedCase()" class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex justify-center items-start sm:p-4 md:p-6 animate-in fade-in duration-200">
     <div
       class="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-none sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-200"
       (click)="$event.stopPropagation()"
     >
-      
+
       <!-- Modal Header -->
       <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between sticky top-0 z-10">
         <div class="flex items-center gap-3">
@@ -504,7 +492,7 @@
               </span>
             </div>
             <p class="text-xs text-slate-500 dark:text-slate-400">
-              Diserahkan pada {{ formatDate(caseService.selectedCase()?.createdAt) }} • Pengguna: <span class="font-mono">{{ caseService.selectedCase()?.userId }}</span>
+              Submitted on {{ formatDate(caseService.selectedCase()?.createdAt) }} • User: <span class="font-mono">{{ caseService.selectedCase()?.userId }}</span>
             </p>
           </div>
         </div>
@@ -520,10 +508,10 @@
         </button>
       </div>
 
-      <!-- Modal Body (Scrollable Split View) -->
+      <!-- Modal Body -->
       <div class="flex-1 overflow-y-auto p-6 space-y-6">
-        
-        <!-- Highlight Banner if NAME MISMATCH Detected -->
+
+        <!-- Name Mismatch Banner -->
         <div
           *ngIf="hasNameMismatch(caseService.selectedCase()!)"
           class="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-800 dark:text-amber-300"
@@ -534,14 +522,14 @@
             </svg>
             <div class="text-xs space-y-1">
               <div class="font-bold text-sm text-amber-900 dark:text-amber-200">
-                Peringatan Pematuhan: Ketidakpadanan Nama Dikesan (NAME_MISMATCH_REVIEW)
+                Compliance Alert: Name Mismatch Detected (NAME_MISMATCH_REVIEW)
               </div>
               <p>
-                Nama yang dimasukkan dalam permohonan: <strong class="text-slate-900 dark:text-white underline">{{ caseService.selectedCase()?.kycDetails?.fullName }}</strong><br>
-                Nama rasmi dalam pangkalan data rekod kebangsaan: <strong class="text-slate-900 dark:text-white underline">{{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.fullName }}</strong>
+                Name submitted in application: <strong class="text-slate-900 dark:text-white underline">{{ caseService.selectedCase()?.kycDetails?.fullName }}</strong><br>
+                Official name in national registry: <strong class="text-slate-900 dark:text-white underline">{{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.fullName }}</strong>
               </p>
               <p class="text-amber-700/90 dark:text-amber-400 font-mono text-[11px]">
-                Nota Registry: {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.message || caseService.selectedCase()?.kycDetails?.remarks }}
+                Registry Note: {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.message || caseService.selectedCase()?.kycDetails?.remarks }}
               </p>
             </div>
           </div>
@@ -554,46 +542,46 @@
               <svg class="w-4 h-4 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              1. Profil Pemohon & Semakan Pendaftaran Kebangsaan
+              1. Applicant Profile &amp; National Registry Cross-Check
             </h3>
             <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-              Skor Risiko: {{ caseService.selectedCase()?.riskScore }}%
+              Risk Score: {{ caseService.selectedCase()?.riskScore }}%
             </span>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div>
-              <span class="text-slate-400 block mb-0.5">Nama Penuh (KYC)</span>
+              <span class="text-slate-400 block mb-0.5">Full Name (KYC)</span>
               <span class="font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.kycDetails?.fullName || '-' }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-0.5">No. MyKad / ID</span>
+              <span class="text-slate-400 block mb-0.5">ID Number</span>
               <span class="font-mono font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.kycDetails?.idCardNumber || '-' }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-0.5">Jenis Dokumen</span>
+              <span class="text-slate-400 block mb-0.5">Document Type</span>
               <span class="font-semibold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.kycDetails?.idCardType || 'MyKad' }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-0.5">Tarikh Lahir & Warganegara</span>
+              <span class="text-slate-400 block mb-0.5">Date of Birth &amp; Nationality</span>
               <span class="font-semibold text-slate-900 dark:text-white">
                 {{ caseService.selectedCase()?.kycDetails?.dateOfBirth || '-' }} • {{ caseService.selectedCase()?.kycDetails?.nationality || 'Malaysian' }}
               </span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-0.5">Status AML / Sekatan</span>
+              <span class="text-slate-400 block mb-0.5">AML / Sanctions Status</span>
               <span class="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
                 ✓ {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.amlSanctionsStatus || 'PASS' }}
               </span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-0.5">Status PEP & Skor Kredit</span>
+              <span class="text-slate-400 block mb-0.5">PEP Status &amp; Credit Score</span>
               <span class="font-semibold text-slate-900 dark:text-white">
-                {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.pepStatus || 'NOT_PEP' }} (Skor: {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.creditScore || 650 }})
+                {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.pepStatus || 'NOT_PEP' }} (Score: {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.creditScore || 650 }})
               </span>
             </div>
             <div class="sm:col-span-3">
-              <span class="text-slate-400 block mb-0.5">Alamat Berdaftar</span>
+              <span class="text-slate-400 block mb-0.5">Registered Address</span>
               <span class="font-semibold text-slate-900 dark:text-white">
                 {{ caseService.selectedCase()?.kycDetails?.address }}, {{ caseService.selectedCase()?.kycDetails?.postalCode }} {{ caseService.selectedCase()?.kycDetails?.city }}, {{ caseService.selectedCase()?.kycDetails?.country }}
               </span>
@@ -601,43 +589,43 @@
           </div>
         </div>
 
-        <!-- Section 2: AI Document Forensics (document-processing-agent) -->
+        <!-- Section 2: AI Document Forensics -->
         <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
               <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
-              2. Analisis Forensik Dokumen MyKad (AI OCR & Pengesanan Ubah Suai)
+              2. Identity Document Forensics (AI OCR &amp; Tamper Detection)
             </h3>
             <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              Skor Dokumen: {{ caseService.selectedCase()?.documentVerificationDetails?.documentScore || 96.5 }}%
+              Document Score: {{ caseService.selectedCase()?.documentVerificationDetails?.documentScore || 96.5 }}%
             </span>
           </div>
 
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div>
-              <span class="text-slate-400 block mb-0.5">Nama OCR</span>
+              <span class="text-slate-400 block mb-0.5">OCR Name</span>
               <span class="font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.documentVerificationDetails?.extractedFields?.fullName || '-' }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-0.5">No MyKad OCR</span>
+              <span class="text-slate-400 block mb-0.5">OCR ID Number</span>
               <span class="font-mono font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.documentVerificationDetails?.extractedFields?.idNumber || '-' }}</span>
             </div>
             <div>
-              <span class="text-slate-400 block mb-0.5">Pemeriksaan Piksel (Tampering)</span>
+              <span class="text-slate-400 block mb-0.5">Pixel Tampering Check</span>
               <span class="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
-                ✓ Tiada Manipulasi Piksel (Bebas Palsu)
+                ✓ No Pixel Manipulation (Authentic)
               </span>
             </div>
             <div class="sm:col-span-3">
-              <span class="text-slate-400 block mb-0.5">Dapatan AI Forensik</span>
+              <span class="text-slate-400 block mb-0.5">AI Forensic Findings</span>
               <p class="text-slate-600 dark:text-slate-300 font-mono text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
                 {{ caseService.selectedCase()?.documentVerificationDetails?.pixelLevelCheck?.findings || 'Document image inspected. No pixel manipulations, font splicing, or tamper artifacts detected.' }}
               </p>
             </div>
             <div class="sm:col-span-3 flex items-center justify-between">
-              <span class="text-slate-400">URL GCS Dokumen:</span>
+              <span class="text-slate-400">GCS Document URL:</span>
               <span class="font-mono text-[11px] text-brand-600 dark:text-brand-400 truncate max-w-md">
                 {{ caseService.selectedCase()?.documentUrl }}
               </span>
@@ -645,11 +633,11 @@
 
             <!-- Document Image Preview -->
             <div *ngIf="caseService.selectedCase()?.documentUrl" class="sm:col-span-3">
-              <span class="text-slate-400 block mb-2">Pratonton Dokumen Identiti:</span>
+              <span class="text-slate-400 block mb-2">Identity Document Preview:</span>
               <div class="relative group rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900">
                 <img
                   [src]="'/api/v1/media/image?gcsUrl=' + encodeURIComponent(caseService.selectedCase()?.documentUrl || '')"
-                  alt="Dokumen Identiti"
+                  alt="Identity Document"
                   class="w-full max-h-80 object-contain"
                   (error)="$any($event.target).style.display='none'; $any($event.target).nextElementSibling.style.display='flex'"
                 />
@@ -658,16 +646,16 @@
                   <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span class="text-xs">Gagal memuatkan imej dokumen</span>
+                  <span class="text-xs">Failed to load document image</span>
                 </div>
-                <!-- Full-screen link overlay -->
+                <!-- Hover overlay -->
                 <a
                   [href]="'/api/v1/media/image?gcsUrl=' + encodeURIComponent(caseService.selectedCase()?.documentUrl || '')"
                   target="_blank"
                   class="absolute inset-0 flex items-center justify-center bg-slate-900/0 group-hover:bg-slate-900/40 transition-all opacity-0 group-hover:opacity-100"
                 >
                   <span class="px-3 py-1.5 rounded-xl bg-white/90 text-slate-800 text-xs font-bold shadow">
-                    🔍 Lihat Penuh
+                    🔍 View Full Size
                   </span>
                 </a>
               </div>
@@ -675,36 +663,36 @@
           </div>
         </div>
 
-        <!-- Section 3: Biometric Facial Validation & Liveness (selfie-details) -->
+        <!-- Section 3: Biometric Facial Validation & Liveness -->
         <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
               <svg class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              3. Pengesahan Biometrik Wajah & Liveness (Face Matching)
+              3. Biometric Face Validation &amp; Liveness (Face Matching)
             </h3>
             <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
-              Biometrik: {{ caseService.selectedCase()?.selfieDetails?.confidenceScore || 95.8 }}%
+              Biometric: {{ caseService.selectedCase()?.selfieDetails?.confidenceScore || 95.8 }}%
             </span>
           </div>
 
           <div class="space-y-3 text-xs">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <span class="text-slate-400 block mb-0.5">Status Padanan</span>
+                <span class="text-slate-400 block mb-0.5">Match Status</span>
                 <span class="font-bold text-emerald-600 dark:text-emerald-400">
-                  ✓ {{ caseService.selectedCase()?.selfieDetails?.matchStatus || 'MATCH' }} (Identikal)
+                  ✓ {{ caseService.selectedCase()?.selfieDetails?.matchStatus || 'MATCH' }} (Identical)
                 </span>
               </div>
               <div>
-                <span class="text-slate-400 block mb-0.5">Ujian Liveness (Anti-Spoofing)</span>
+                <span class="text-slate-400 block mb-0.5">Liveness Test (Anti-Spoofing)</span>
                 <span class="font-bold text-emerald-600 dark:text-emerald-400">
-                  ✓ LIVE (Tekstur Kulit Asli & Cahaya Semula Jadi)
+                  ✓ LIVE (Genuine Skin Texture &amp; Natural Lighting)
                 </span>
               </div>
               <div>
-                <span class="text-slate-400 block mb-0.5">Cadangan AI</span>
+                <span class="text-slate-400 block mb-0.5">AI Recommendation</span>
                 <span class="font-bold text-slate-900 dark:text-white uppercase">
                   {{ caseService.selectedCase()?.selfieDetails?.facialComparisonDetails?.recommendation || 'APPROVE' }}
                 </span>
@@ -712,14 +700,14 @@
             </div>
 
             <div>
-              <span class="text-slate-400 block mb-1">Huraian Biometrik AI</span>
+              <span class="text-slate-400 block mb-1">AI Biometric Description</span>
               <p class="text-slate-600 dark:text-slate-300 font-mono text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
                 {{ caseService.selectedCase()?.selfieDetails?.explanation }}
               </p>
             </div>
 
             <div class="flex items-center justify-between text-xs pt-1">
-              <span class="text-slate-400">URL GCS Selfie:</span>
+              <span class="text-slate-400">GCS Selfie URL:</span>
               <span class="font-mono text-[11px] text-purple-600 dark:text-purple-400 truncate max-w-md">
                 {{ caseService.selectedCase()?.selfieUrl }}
               </span>
@@ -727,13 +715,12 @@
 
             <!-- Selfie Image Preview -->
             <div *ngIf="caseService.selectedCase()?.selfieUrl" class="pt-1">
-              <span class="text-slate-400 block mb-2 text-xs">Pratonton Selfie Biometrik:</span>
+              <span class="text-slate-400 block mb-2 text-xs">Biometric Selfie Preview:</span>
               <div class="flex items-start gap-4">
-                <!-- Selfie thumbnail (circular crop for face photo) -->
                 <div class="relative group w-32 h-32 shrink-0 rounded-2xl overflow-hidden border-2 border-purple-300 dark:border-purple-700 bg-slate-100 dark:bg-slate-900 shadow-md">
                   <img
                     [src]="'/api/v1/media/image?gcsUrl=' + encodeURIComponent(caseService.selectedCase()?.selfieUrl || '')"
-                    alt="Selfie Biometrik"
+                    alt="Biometric Selfie"
                     class="w-full h-full object-cover"
                     (error)="$any($event.target).style.display='none'; $any($event.target).nextElementSibling.style.display='flex'"
                   />
@@ -742,7 +729,7 @@
                     <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span class="text-[10px]">Tiada Gambar</span>
+                    <span class="text-[10px]">No Image</span>
                   </div>
                   <!-- Hover overlay -->
                   <a
@@ -750,26 +737,26 @@
                     target="_blank"
                     class="absolute inset-0 flex items-center justify-center bg-purple-900/0 group-hover:bg-purple-900/50 transition-all opacity-0 group-hover:opacity-100"
                   >
-                    <span class="text-white text-[10px] font-bold">🔍 Buka</span>
+                    <span class="text-white text-[10px] font-bold">🔍 Open</span>
                   </a>
                 </div>
 
-                <!-- Biometric score info next to the selfie -->
+                <!-- Biometric score info -->
                 <div class="text-xs space-y-2 pt-1">
                   <div>
-                    <span class="text-slate-400 block">Skor Keyakinan</span>
+                    <span class="text-slate-400 block">Confidence Score</span>
                     <span class="font-bold text-purple-600 dark:text-purple-400 text-lg">
                       {{ caseService.selectedCase()?.selfieDetails?.confidenceScore || 95.8 }}%
                     </span>
                   </div>
                   <div>
-                    <span class="text-slate-400 block">Status Padanan</span>
+                    <span class="text-slate-400 block">Match Status</span>
                     <span class="font-bold text-emerald-600 dark:text-emerald-400">
                       ✓ {{ caseService.selectedCase()?.selfieDetails?.matchStatus || 'MATCH' }}
                     </span>
                   </div>
                   <div>
-                    <span class="text-slate-400 block">Cadangan AI</span>
+                    <span class="text-slate-400 block">AI Recommendation</span>
                     <span class="font-bold text-slate-900 dark:text-white uppercase text-[11px]">
                       {{ caseService.selectedCase()?.selfieDetails?.facialComparisonDetails?.recommendation || 'APPROVE' }}
                     </span>
@@ -780,24 +767,24 @@
           </div>
         </div>
 
-        <!-- Section 4: Officer Decision Action Center -->
+        <!-- Section 4: Officer Decision Console -->
         <div class="bg-gradient-to-br from-brand-950/20 to-slate-900/40 border-2 border-brand-500/40 rounded-3xl p-6 space-y-5">
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <svg class="w-5 h-5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
-              4. Pusat Keputusan Pegawai Pematuhan (Officer Decision Console)
+              4. Officer Decision Console
             </h3>
             <span class="text-xs text-slate-400">
-              Pegawai Bertugas: <strong class="text-emerald-400">{{ opsAuthService.currentUser()?.fullName }}</strong>
+              On-duty Officer: <strong class="text-emerald-400">{{ opsAuthService.currentUser()?.fullName }}</strong>
             </span>
           </div>
 
-          <!-- Status Selector Buttons -->
+          <!-- Status Selector -->
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
-              Pilih Status Akhir Kes:
+              Select Final Case Status:
             </label>
             <div class="grid grid-cols-3 gap-3">
               <button
@@ -809,7 +796,7 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
                 </svg>
-                <span>ACCEPTED (Lulus)</span>
+                <span>ACCEPTED (Approve)</span>
               </button>
 
               <button
@@ -821,7 +808,7 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                <span>REJECTED (Tolak)</span>
+                <span>REJECTED (Reject)</span>
               </button>
 
               <button
@@ -833,54 +820,54 @@
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>IN_PROGRESS (Kekal Semak)</span>
+                <span>IN_PROGRESS (Keep Review)</span>
               </button>
             </div>
           </div>
 
-          <!-- Rejection Reason Dropdown (Only when REJECTED) -->
+          <!-- Rejection Reason (only when REJECTED) -->
           <div *ngIf="targetStatus() === 'REJECTED'" class="space-y-2 animate-in fade-in duration-150">
             <label class="block text-xs font-bold uppercase tracking-wider text-rose-400">
-              Sebab Penolakan Pematuhan:
+              Compliance Rejection Reason:
             </label>
             <select
               (change)="rejectionReason.set($any($event.target).value)"
               class="w-full py-2.5 px-3 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-800 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
             >
-              <option value="">-- Pilih Sebab Penolakan Rasmi --</option>
+              <option value="">-- Select Official Rejection Reason --</option>
               <option *ngFor="let r of predefinedRejectionReasons" [value]="r">{{ r }}</option>
             </select>
             <input
               type="text"
               [ngModel]="rejectionReason()"
               (ngModelChange)="rejectionReason.set($event)"
-              placeholder="Atau taip sebab penolakan terperinci..."
+              placeholder="Or type a detailed rejection reason..."
               class="w-full py-2.5 px-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
             />
           </div>
 
-          <!-- Remarks / Audit Notes -->
+          <!-- Audit Notes -->
           <div>
             <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
-              Nota Audit & Ulasan Pegawai:
+              Audit Notes &amp; Officer Remarks:
             </label>
             <textarea
               [ngModel]="officerRemarks()"
               (ngModelChange)="officerRemarks.set($event)"
               rows="3"
-              placeholder="Masukkan ulasan rasmi semakan pematuhan..."
+              placeholder="Enter official compliance review remarks..."
               class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all font-sans"
             ></textarea>
           </div>
 
-          <!-- Submit Button -->
+          <!-- Submit -->
           <div class="flex items-center justify-end gap-3 pt-2">
             <button
               type="button"
               (click)="closeCaseReview()"
               class="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
             >
-              Batal
+              Cancel
             </button>
             <button
               type="button"
@@ -892,7 +879,7 @@
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span>Simpan Keputusan Pematuhan</span>
+              <span>Save Compliance Decision</span>
             </button>
           </div>
         </div>
