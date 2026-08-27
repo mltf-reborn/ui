@@ -5,6 +5,13 @@ import { catchError, switchMap, tap } from 'rxjs/operators';
 import { AppAuthService } from './auth.service';
 import { environment } from '../../../environments/environment';
 
+export interface KycVerifyResponse {
+  status: string;
+  message?: string;
+  referenceId?: string;
+  verifiedData?: VerifiedKycData;
+}
+
 export interface VerifiedKycData {
   userId?: string;
   fullName: string;
@@ -191,6 +198,68 @@ export class KycService {
         const url = `${baseUrl}${this.kycEndpoint}`;
 
         return this.http.get<KycStatusResponse>(url, { headers });
+      })
+    );
+  }
+
+  /**
+   * Submits KYC documents to POST /api/v1/kyc/verify.
+   * Sends document + selfie as multipart/form-data with Auth0 JWT header.
+   * Updates reactive signals based on the server response.
+   */
+  verifyKyc(
+    document: File,
+    selfie: File,
+    fullName?: string
+  ): Observable<KycVerifyResponse | null> {
+    this.isLoading.set(true);
+    this.error.set(null);
+
+    return this.authService.getJwtToken().pipe(
+      switchMap((token) => {
+        let headers = new HttpHeaders();
+        if (token && token.trim().length > 0) {
+          const cleanToken = token.trim().replace(/^Bearer\s+/i, '');
+          headers = headers.set('Authorization', `Bearer ${cleanToken}`);
+        }
+
+        const formData = new FormData();
+        formData.append('document', document, document.name);
+        formData.append('selfie', selfie, selfie.name);
+        if (fullName) formData.append('fullName', fullName);
+
+        const baseUrl = (environment as any).apiUrl || '';
+        const url = `${baseUrl}/api/v1/kyc/verify`;
+
+        return this.http.post<KycVerifyResponse>(url, formData, { headers });
+      }),
+      tap({
+        next: (res) => {
+          this.isLoading.set(false);
+          if (res?.verifiedData) {
+            this.verifiedData.set(res.verifiedData);
+          }
+          const status = res?.status?.toUpperCase();
+          if (status === 'APPROVED') {
+            this.isPendingKyc.set(false);
+            this.isKycInReview.set(false);
+            this.kycStatus.set({ status: 'APPROVED', verifiedData: res.verifiedData });
+          } else if (status === 'IN_REVIEW') {
+            this.isPendingKyc.set(false);
+            this.isKycInReview.set(true);
+            this.kycStatus.set({ status: 'IN_REVIEW', verifiedData: res.verifiedData });
+          }
+        },
+        error: (err) => {
+          this.isLoading.set(false);
+          this.error.set(err?.message || 'KYC verification submission failed');
+        },
+      }),
+      catchError((err) => {
+        console.error('Error submitting KYC verification:', err);
+        this.isLoading.set(false);
+        this.error.set(err?.message || 'KYC verification submission failed');
+        return of(null);
       })
     );
   }

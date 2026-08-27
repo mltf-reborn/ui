@@ -31,33 +31,6 @@
           {{ 'kyc.step1Desc' | translate }}
         </p>
       </div>
-
-      <!-- Simulation Outcome Switcher (Test Helper) -->
-      <div class="flex items-center gap-2 bg-black/20 p-1.5 rounded-xl border border-white/10 shrink-0">
-        <span class="text-xs text-brand-100 font-medium px-2">{{ 'kyc.demoMode' | translate }}:</span>
-        <button
-          type="button"
-          (click)="setSimulationTarget('success')"
-          class="px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer"
-          [ngClass]="{
-            'bg-emerald-500 text-white shadow': simulationTarget() === 'success',
-            'text-white/70 hover:text-white': simulationTarget() !== 'success'
-          }"
-        >
-          ✓ {{ 'kyc.simSuccess' | translate }}
-        </button>
-        <button
-          type="button"
-          (click)="setSimulationTarget('in_review')"
-          class="px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer"
-          [ngClass]="{
-            'bg-amber-500 text-white shadow': simulationTarget() === 'in_review',
-            'text-white/70 hover:text-white': simulationTarget() !== 'in_review'
-          }"
-        >
-          ⏳ {{ 'kyc.simInReview' | translate }}
-        </button>
-      </div>
     </div>
 
     <!-- Main Grid: 2 Columns (Document + Selfie) -->

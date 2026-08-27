@@ -37,7 +37,6 @@ export class KycComponent implements OnInit, OnDestroy {
 
   // Workflow State
   readonly currentStep = signal<KycStep>('form');
-  readonly simulationTarget = signal<'success' | 'in_review'>('success');
 
   // Document Upload State
   readonly selectedDocument = signal<File | null>(null);
@@ -238,68 +237,78 @@ export class KycComponent implements OnInit, OnDestroy {
     this.processingStepIndex.set(1);
     this.processingProgress.set(15);
 
-    // Dynamic user identity name extraction
-    const authUser = this.authService.user();
-    const userFullName = authUser?.name || 'AHMAD SYAZWAN BIN ABDULLAH';
-    const randomRef = Math.floor(1000 + Math.random() * 9000);
-    const randomId = `${Math.floor(85 + Math.random() * 15)}${String(
-      Math.floor(1 + Math.random() * 12)
-    ).padStart(2, '0')}${String(Math.floor(1 + Math.random() * 28)).padStart(
-      2,
-      '0'
-    )}-10-${String(Math.floor(1000 + Math.random() * 9000))}`;
-
-    // Timeline simulation
+    // Animate progress while the API call is in-flight
     let progress = 15;
     this.processingInterval = setInterval(() => {
-      progress += 18;
-      if (progress >= 100) {
-        progress = 100;
-        this.processingProgress.set(100);
+      progress += 12;
+      if (progress >= 90) {
+        progress = 90; // hold at 90% until API responds
         clearInterval(this.processingInterval);
-
-        setTimeout(() => {
-          if (this.simulationTarget() === 'success') {
-            const successData: VerifiedKycData = {
-              fullName: userFullName.toUpperCase(),
-              idNumber: randomId,
-              idType: 'MyKad (National Identity Card)',
-              dateOfBirth: '22 Aug 1994',
-              gender: 'Male',
-              nationality: 'Malaysian (Warganegara)',
-              matchScore: 99.4,
-              referenceId: `KYC-2026-MADANI-${randomRef}`,
-              verifiedAt: new Date().toLocaleString(),
-              status: 'APPROVED',
-            };
-            this.verifiedResult.set(successData);
-            this.kycService.setKycSuccess(successData);
-            this.currentStep.set('success');
-          } else {
-            const inReviewData: VerifiedKycData = {
-              fullName: userFullName.toUpperCase(),
-              idNumber: randomId,
-              idType: 'MyKad (National Identity Card)',
-              referenceId: `KYC-REV-2026-${randomRef}`,
-              verifiedAt: new Date().toLocaleString(),
-              status: 'IN_REVIEW',
-            };
-            this.verifiedResult.set(inReviewData);
-            this.kycService.setKycInReview(inReviewData);
-            this.currentStep.set('in_review');
-          }
-        }, 600);
-      } else {
-        this.processingProgress.set(progress);
-        if (progress > 30 && progress <= 55) {
-          this.processingStepIndex.set(2);
-        } else if (progress > 55 && progress <= 80) {
-          this.processingStepIndex.set(3);
-        } else if (progress > 80) {
-          this.processingStepIndex.set(4);
-        }
+        this.processingInterval = null;
+      }
+      this.processingProgress.set(progress);
+      if (progress > 30 && progress <= 55) {
+        this.processingStepIndex.set(2);
+      } else if (progress > 55 && progress <= 75) {
+        this.processingStepIndex.set(3);
+      } else if (progress > 75) {
+        this.processingStepIndex.set(4);
       }
     }, 450);
+
+    // Prepare files
+    const documentFile = this.selectedDocument()!;
+    const selfieDataUrl = this.capturedSelfie()!;
+    const authUser = this.authService.user();
+    const userFullName = authUser?.name || '';
+
+    // Convert base64 selfie data-URL to a File object
+    const selfieFile = this.dataUrlToFile(selfieDataUrl, 'selfie.jpg', 'image/jpeg');
+
+    this.kycService
+      .verifyKyc(documentFile, selfieFile, userFullName)
+      .subscribe({
+        next: (res) => {
+          // Complete the progress bar
+          this.processingProgress.set(100);
+          setTimeout(() => {
+            if (!res) {
+              // Network / unexpected error — fall back gracefully
+              this.currentStep.set('form');
+              return;
+            }
+
+            this.verifiedResult.set(res.verifiedData ?? null);
+            const status = res.status?.toUpperCase();
+            if (status === 'APPROVED') {
+              this.currentStep.set('success');
+            } else {
+              // IN_REVIEW or any other non-approved status
+              this.currentStep.set('in_review');
+            }
+          }, 600);
+        },
+        error: () => {
+          if (this.processingInterval) {
+            clearInterval(this.processingInterval);
+            this.processingInterval = null;
+          }
+          this.processingProgress.set(0);
+          this.currentStep.set('form');
+        },
+      });
+  }
+
+  /** Converts a base64 data-URL string into a File object */
+  private dataUrlToFile(dataUrl: string, filename: string, mimeType: string): File {
+    const arr = dataUrl.split(',');
+    const bstr = atob(arr[1]);
+    let n = bstr.length;
+    const u8arr = new Uint8Array(n);
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new File([u8arr], filename, { type: mimeType });
   }
 
   returnToDashboard(): void {
@@ -314,9 +323,6 @@ export class KycComponent implements OnInit, OnDestroy {
     this.pdpaAccepted.set(false);
   }
 
-  setSimulationTarget(target: 'success' | 'in_review'): void {
-    this.simulationTarget.set(target);
-  }
 
   private formatBytes(bytes: number, decimals: number = 1): string {
     if (bytes === 0) return '0 Bytes';
