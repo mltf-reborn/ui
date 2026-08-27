@@ -1,4 +1,4 @@
-import { Component, inject, signal, computed, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -27,8 +27,14 @@ export class OpsDashboardComponent implements OnInit {
   readonly riskFilter = signal<string>('ALL');
   readonly sortBy = signal<string>('newest');
 
+  // Pagination state (20 cases per page)
+  readonly pageSize = signal<number>(20);
+  readonly currentPage = signal<number>(1);
+
   // Modal / Drawer state
   readonly isReviewModalOpen = signal<boolean>(false);
+  readonly isDocVerificationExpanded = signal<boolean>(false);
+  readonly isSelfieDetailsExpanded = signal<boolean>(false);
   readonly isQuickDecisionLoading = signal<boolean>(false);
   readonly copyFeedback = signal<string | null>(null);
   readonly toastMessage = signal<{ text: string; type: 'success' | 'error' } | null>(null);
@@ -45,6 +51,20 @@ export class OpsDashboardComponent implements OnInit {
     'AML / Sanctions check flagged negative records',
     'MyKad number does not match registered official record',
   ];
+
+  constructor() {
+    // Reset to page 1 whenever filters or search terms change
+    effect(
+      () => {
+        this.searchTerm();
+        this.statusFilter();
+        this.riskFilter();
+        this.sortBy();
+        this.currentPage.set(1);
+      },
+      { allowSignalWrites: true }
+    );
+  }
 
   ngOnInit(): void {
     this.caseService.loadAllCases().subscribe();
@@ -115,17 +135,100 @@ export class OpsDashboardComponent implements OnInit {
     return result;
   });
 
+  // Pagination Computations
+  readonly totalPages = computed<number>(() => {
+    const count = this.filteredCases().length;
+    return Math.max(1, Math.ceil(count / this.pageSize()));
+  });
+
+  readonly paginatedCases = computed<CaseItem[]>(() => {
+    const current = Math.min(this.currentPage(), this.totalPages());
+    const size = this.pageSize();
+    const start = (current - 1) * size;
+    return this.filteredCases().slice(start, start + size);
+  });
+
+  readonly startIndex = computed<number>(() => {
+    if (this.filteredCases().length === 0) return 0;
+    const current = Math.min(this.currentPage(), this.totalPages());
+    return (current - 1) * this.pageSize() + 1;
+  });
+
+  readonly endIndex = computed<number>(() => {
+    const current = Math.min(this.currentPage(), this.totalPages());
+    return Math.min(current * this.pageSize(), this.filteredCases().length);
+  });
+
+  readonly pageNumbers = computed<(number | '...')[]>(() => {
+    const total = this.totalPages();
+    const current = Math.min(this.currentPage(), total);
+
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    const pages: (number | '...')[] = [1];
+
+    if (current > 3) {
+      pages.push('...');
+    }
+
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+
+    if (current < total - 2) {
+      pages.push('...');
+    }
+
+    pages.push(total);
+    return pages;
+  });
+
+  // Page Navigation Handlers
+  goToPage(page: number | string): void {
+    if (typeof page !== 'number') return;
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.update((p) => p + 1);
+    }
+  }
+
+  prevPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.update((p) => p - 1);
+    }
+  }
+
   // Open Review Inspector Modal
   openCaseReview(caseItem: CaseItem): void {
     this.caseService.selectCase(caseItem);
     this.targetStatus.set((caseItem.caseStatus as any) || 'ACCEPTED');
     this.officerRemarks.set(caseItem.remarks || '');
     this.rejectionReason.set(caseItem.rejectionReason || '');
+    this.isDocVerificationExpanded.set(false);
+    this.isSelfieDetailsExpanded.set(false);
     this.isReviewModalOpen.set(true);
   }
 
   closeCaseReview(): void {
     this.isReviewModalOpen.set(false);
+  }
+
+  toggleDocVerificationDetails(): void {
+    this.isDocVerificationExpanded.update((v) => !v);
+  }
+
+  toggleSelfieDetails(): void {
+    this.isSelfieDetailsExpanded.update((v) => !v);
   }
 
   // Quick Action from Table (Approve, Reject, In Progress)
@@ -223,9 +326,90 @@ export class OpsDashboardComponent implements OnInit {
     }
   }
 
+  isExternalKycFailed(caseItem?: CaseItem | null): boolean {
+    if (!caseItem?.kycDetails) return false;
+    const summary = caseItem.kycDetails.externalKycSummary;
+    if (!summary) return false;
+
+    const flags = (summary as any).flags;
+    const flag = (summary as any).flag;
+
+    if (Array.isArray(flags) && flags.some((f: string) => typeof f === 'string' && f.toUpperCase().includes('ID_NOT_FOUND'))) return true;
+    if (typeof flags === 'string' && flags.toUpperCase().includes('ID_NOT_FOUND')) return true;
+    if (Array.isArray(flag) && flag.some((f: string) => typeof f === 'string' && f.toUpperCase().includes('ID_NOT_FOUND'))) return true;
+    if (typeof flag === 'string' && flag.toUpperCase().includes('ID_NOT_FOUND')) return true;
+
+    if (summary.registryStatus === 'ID_NOT_FOUND' || summary.registryStatus === 'ID_NOT_FOUND_REVIEW') return true;
+    if ((summary.status || '').toUpperCase() === 'FAILED') return true;
+    if ((caseItem.kycDetails.status || '').toUpperCase() === 'FAILED') return true;
+
+    return false;
+  }
+
+  getExternalKycMessage(caseItem?: CaseItem | null): string {
+    if (!caseItem?.kycDetails) return 'Tiada maklumat rujukan kyc_details.';
+    const summary = caseItem.kycDetails.externalKycSummary;
+    return (
+      summary?.message ||
+      summary?.remarks ||
+      caseItem.kycDetails.remarks ||
+      'External KYC call failed. Rekod pengenalan tidak dijumpai dalam pangkalan data rasmi (ID_NOT_FOUND_REVIEW).'
+    );
+  }
+
+  getRegisteredAddress(caseItem?: CaseItem | null): string {
+    if (!caseItem?.kycDetails || this.isExternalKycFailed(caseItem)) return '-';
+    const kyc = caseItem.kycDetails;
+    const parts = [kyc.address, kyc.postalCode, kyc.city, kyc.country].filter(Boolean);
+    return parts.length > 0 ? parts.join(', ') : '-';
+  }
+
+  getOcrName(caseItem?: CaseItem | null): string {
+    if (!caseItem?.documentVerificationDetails?.extractedFields) return '-';
+    const fields = caseItem.documentVerificationDetails.extractedFields;
+    return fields.name || fields.fullName || '-';
+  }
+
+  getOcrIdNumber(caseItem?: CaseItem | null): string {
+    if (!caseItem?.documentVerificationDetails?.extractedFields) return '-';
+    const fields = caseItem.documentVerificationDetails.extractedFields;
+    return fields.identityNo || fields.idNumber || '-';
+  }
+
+  getDocumentVerificationJson(caseItem?: CaseItem | null): string {
+    if (!caseItem?.documentVerificationDetails) {
+      return JSON.stringify({ message: 'No document_verification_details available for this case' }, null, 2);
+    }
+    try {
+      return JSON.stringify(caseItem.documentVerificationDetails, null, 2);
+    } catch {
+      return String(caseItem.documentVerificationDetails);
+    }
+  }
+
+  getSelfieDetailsJson(caseItem?: CaseItem | null): string {
+    if (!caseItem?.selfieDetails) {
+      return JSON.stringify({ message: 'No selfie_details available for this case' }, null, 2);
+    }
+    try {
+      return JSON.stringify(caseItem.selfieDetails, null, 2);
+    } catch {
+      return String(caseItem.selfieDetails);
+    }
+  }
+
   getApplicantName(caseItem: CaseItem): string {
+    if (this.isExternalKycFailed(caseItem)) {
+      return (
+        caseItem.documentVerificationDetails?.extractedFields?.name ||
+        caseItem.documentVerificationDetails?.extractedFields?.fullName ||
+        caseItem.userId ||
+        'Pemohon'
+      );
+    }
     return (
       caseItem.kycDetails?.fullName ||
+      caseItem.documentVerificationDetails?.extractedFields?.name ||
       caseItem.documentVerificationDetails?.extractedFields?.fullName ||
       caseItem.kycDetails?.externalKycSummary?.fullName ||
       'Pemohon'
@@ -233,8 +417,16 @@ export class OpsDashboardComponent implements OnInit {
   }
 
   getApplicantIdNumber(caseItem: CaseItem): string {
+    if (this.isExternalKycFailed(caseItem)) {
+      return (
+        caseItem.documentVerificationDetails?.extractedFields?.identityNo ||
+        caseItem.documentVerificationDetails?.extractedFields?.idNumber ||
+        '-'
+      );
+    }
     return (
       caseItem.kycDetails?.idCardNumber ||
+      caseItem.documentVerificationDetails?.extractedFields?.identityNo ||
       caseItem.documentVerificationDetails?.extractedFields?.idNumber ||
       caseItem.kycDetails?.externalKycSummary?.idNumber ||
       '-'
@@ -242,9 +434,13 @@ export class OpsDashboardComponent implements OnInit {
   }
 
   hasNameMismatch(caseItem: CaseItem): boolean {
+    if (this.isExternalKycFailed(caseItem)) return false;
     const summary = caseItem.kycDetails?.externalKycSummary;
     if (summary?.registryStatus === 'NAME_MISMATCH') return true;
     if (summary?.flags?.includes('NAME_MISMATCH_REVIEW')) return true;
+    const flag = (summary as any)?.flag;
+    if (typeof flag === 'string' && flag.includes('NAME_MISMATCH_REVIEW')) return true;
+    if (Array.isArray(flag) && flag.includes('NAME_MISMATCH_REVIEW')) return true;
 
     const submitted = (caseItem.kycDetails?.fullName || '').trim().toLowerCase();
     const registry = (summary?.fullName || '').trim().toLowerCase();

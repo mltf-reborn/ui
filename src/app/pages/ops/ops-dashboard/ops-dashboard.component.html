@@ -288,7 +288,7 @@
     <!-- Table Header Info Bar -->
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="font-bold text-sm text-slate-900 dark:text-white">Compliance Case List</span>
+        <span class="font-bold text-sm text-slate-900 dark:text-white">KYC Case List</span>
         <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
           {{ filteredCases().length }} of {{ caseService.cases().length }} cases
         </span>
@@ -305,16 +305,13 @@
           <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <th class="py-3.5 px-6">Case ID</th>
             <th class="py-3.5 px-6">Applicant Info</th>
-            <th class="py-3.5 px-6">Risk Assessment (AI)</th>
             <th class="py-3.5 px-6">Review Status</th>
-            <th class="py-3.5 px-6">Assigned Officer</th>
-            <th class="py-3.5 px-6">Created Date</th>
             <th class="py-3.5 px-6 text-right">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs sm:text-sm">
           <tr
-            *ngFor="let item of filteredCases()"
+            *ngFor="let item of paginatedCases()"
             class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
             (click)="openCaseReview(item)"
           >
@@ -342,7 +339,10 @@
             <td class="py-4 px-6">
               <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>{{ getApplicantName(item) }}</span>
-                <span *ngIf="hasNameMismatch(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Name mismatch detected against official registry">
+                <span *ngIf="isExternalKycFailed(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30" title="External KYC lookup failed (ID Not Found in Registry)">
+                  ❌ KYC Failed
+                </span>
+                <span *ngIf="!isExternalKycFailed(item) && hasNameMismatch(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Name mismatch detected against official registry">
                   ⚠️ Mismatch
                 </span>
               </div>
@@ -351,36 +351,6 @@
               </div>
               <div class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5">
                 UID: {{ item.userId }}
-              </div>
-            </td>
-
-            <!-- Risk Assessment -->
-            <td class="py-4 px-6">
-              <div class="flex items-center gap-2">
-                <span
-                  [ngClass]="{
-                    'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20': (item.riskLevel || '').toUpperCase() === 'LOW',
-                    'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20': (item.riskLevel || '').toUpperCase() === 'MEDIUM',
-                    'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20': (item.riskLevel || '').toUpperCase() === 'HIGH' || (item.riskLevel || '').toUpperCase() === 'CRITICAL'
-                  }"
-                  class="px-2 py-0.5 rounded-md text-[11px] font-bold uppercase tracking-wider border"
-                >
-                  {{ item.riskLevel || 'MEDIUM' }}
-                </span>
-                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300 font-mono">
-                  {{ item.riskScore !== undefined ? item.riskScore + '%' : '-' }}
-                </span>
-              </div>
-              <div class="w-24 bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full mt-1.5 overflow-hidden">
-                <div
-                  [style.width.%]="item.riskScore || 45"
-                  [ngClass]="{
-                    'bg-emerald-500': (item.riskScore || 0) < 30,
-                    'bg-amber-500': (item.riskScore || 0) >= 30 && (item.riskScore || 0) < 70,
-                    'bg-rose-500': (item.riskScore || 0) >= 70
-                  }"
-                  class="h-full rounded-full transition-all"
-                ></div>
               </div>
             </td>
 
@@ -413,23 +383,6 @@
               </span>
             </td>
 
-            <!-- Assigned Officer -->
-            <td class="py-4 px-6">
-              <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <span class="w-2 h-2 rounded-full bg-brand-500"></span>
-                {{ item.assignedTo || 'supervisor-agent' }}
-              </div>
-              <div class="text-[10px] text-slate-400 mt-0.5 truncate max-w-xs">
-                {{ item.remarks ? item.remarks.substring(0, 45) + '...' : 'No additional notes' }}
-              </div>
-            </td>
-
-            <!-- Created Date -->
-            <td class="py-4 px-6 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-              <div>{{ formatDate(item.createdAt) }}</div>
-              <div class="text-[10px] text-slate-400">Updated: {{ formatDate(item.updatedAt) }}</div>
-            </td>
-
             <!-- Actions -->
             <td class="py-4 px-6 text-right whitespace-nowrap" (click)="$event.stopPropagation()">
               <div class="flex items-center justify-end gap-2">
@@ -448,6 +401,58 @@
           </tr>
         </tbody>
       </table>
+    </div>
+
+    <!-- Pagination Footer Controls (20 cases per page) -->
+    <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div class="text-xs text-slate-500 dark:text-slate-400">
+        Showing <span class="font-bold text-slate-900 dark:text-white">{{ startIndex() }}</span> to
+        <span class="font-bold text-slate-900 dark:text-white">{{ endIndex() }}</span> of
+        <span class="font-bold text-slate-900 dark:text-white">{{ filteredCases().length }}</span> cases
+        <span class="text-slate-400"> (20 cases / page)</span>
+      </div>
+
+      <div class="flex items-center gap-1.5" *ngIf="totalPages() > 1">
+        <!-- Prev Button -->
+        <button
+          type="button"
+          (click)="prevPage()"
+          [disabled]="currentPage() === 1"
+          class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+        >
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          <span>Prev</span>
+        </button>
+
+        <!-- Page Numbers -->
+        <ng-container *ngFor="let p of pageNumbers()">
+          <button
+            *ngIf="p !== '...'"
+            type="button"
+            (click)="goToPage(p)"
+            [class]="currentPage() === p ? 'bg-brand-600 text-white font-bold shadow-sm shadow-brand-500/20' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 font-medium'"
+            class="min-w-[32px] h-8 px-2 rounded-xl text-xs flex items-center justify-center transition-all"
+          >
+            {{ p }}
+          </button>
+          <span *ngIf="p === '...'" class="px-1 text-xs text-slate-400 font-bold select-none">...</span>
+        </ng-container>
+
+        <!-- Next Button -->
+        <button
+          type="button"
+          (click)="nextPage()"
+          [disabled]="currentPage() === totalPages()"
+          class="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-sm"
+        >
+          <span>Next</span>
+          <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </div>
     </div>
 
   </div>
@@ -511,6 +516,27 @@
       <!-- Modal Body -->
       <div class="flex-1 overflow-y-auto p-6 space-y-6">
 
+        <!-- External KYC Failed Alert Banner -->
+        <div
+          *ngIf="isExternalKycFailed(caseService.selectedCase()!)"
+          class="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-800 dark:text-rose-300"
+        >
+          <div class="flex items-start gap-3">
+            <svg class="w-5 h-5 text-rose-500 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <div class="text-xs space-y-1">
+              <div class="font-bold text-sm text-rose-900 dark:text-rose-200 flex items-center gap-2">
+                <span>Compliance Alert: External KYC Verification Failed (ID_NOT_FOUND_REVIEW)</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-600 text-white uppercase">FAILED</span>
+              </div>
+              <p class="text-rose-700 dark:text-rose-300 font-mono text-[11px]">
+                {{ getExternalKycMessage(caseService.selectedCase()!) }}
+              </p>
+            </div>
+          </div>
+        </div>
+
         <!-- Name Mismatch Banner -->
         <div
           *ngIf="hasNameMismatch(caseService.selectedCase()!)"
@@ -544,54 +570,93 @@
               </svg>
               1. Applicant Profile &amp; National Registry Cross-Check
             </h3>
-            <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
-              Risk Score: {{ caseService.selectedCase()?.riskScore }}%
-            </span>
+            <div class="flex items-center gap-2">
+              <span
+                *ngIf="isExternalKycFailed(caseService.selectedCase()!)"
+                class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+              >
+                Status: FAILED
+              </span>
+              <span
+                *ngIf="!isExternalKycFailed(caseService.selectedCase()!)"
+                class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+              >
+                Status: PASSED
+              </span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+                Risk Score: {{ caseService.selectedCase()?.riskScore ?? '-' }}%
+              </span>
+            </div>
           </div>
 
+          <!-- Failed external KYC message callout inside section -->
+          <div *ngIf="isExternalKycFailed(caseService.selectedCase()!)" class="mb-4 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs text-rose-800 dark:text-rose-300">
+            <div class="font-bold flex items-center gap-1.5 mb-1">
+              <svg class="w-4 h-4 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>External Registry Message:</span>
+            </div>
+            <p class="font-mono text-[11px] text-rose-700 dark:text-rose-300">
+              {{ getExternalKycMessage(caseService.selectedCase()!) }}
+            </p>
+          </div>
+
+          <!-- Section 1 Details Grid -->
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div>
               <span class="text-slate-400 block mb-0.5">Full Name (KYC)</span>
-              <span class="font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.kycDetails?.fullName || '-' }}</span>
+              <span class="font-bold text-slate-900 dark:text-white">
+                {{ isExternalKycFailed(caseService.selectedCase()!) ? '-' : (caseService.selectedCase()?.kycDetails?.fullName || '-') }}
+              </span>
             </div>
             <div>
               <span class="text-slate-400 block mb-0.5">ID Number</span>
-              <span class="font-mono font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.kycDetails?.idCardNumber || '-' }}</span>
+              <span class="font-mono font-bold text-slate-900 dark:text-white">
+                {{ isExternalKycFailed(caseService.selectedCase()!) ? '-' : (caseService.selectedCase()?.kycDetails?.idCardNumber || '-') }}
+              </span>
             </div>
             <div>
               <span class="text-slate-400 block mb-0.5">Document Type</span>
-              <span class="font-semibold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.kycDetails?.idCardType || 'MyKad' }}</span>
+              <span class="font-semibold text-slate-900 dark:text-white">
+                {{ isExternalKycFailed(caseService.selectedCase()!) ? '-' : (caseService.selectedCase()?.kycDetails?.idCardType || 'MyKad') }}
+              </span>
             </div>
             <div>
               <span class="text-slate-400 block mb-0.5">Date of Birth &amp; Nationality</span>
               <span class="font-semibold text-slate-900 dark:text-white">
-                {{ caseService.selectedCase()?.kycDetails?.dateOfBirth || '-' }} • {{ caseService.selectedCase()?.kycDetails?.nationality || 'Malaysian' }}
+                <ng-container *ngIf="isExternalKycFailed(caseService.selectedCase()!)">-</ng-container>
+                <ng-container *ngIf="!isExternalKycFailed(caseService.selectedCase()!)">
+                  {{ caseService.selectedCase()?.kycDetails?.dateOfBirth || '-' }} • {{ caseService.selectedCase()?.kycDetails?.nationality || 'Malaysian' }}
+                </ng-container>
               </span>
             </div>
             <div>
               <span class="text-slate-400 block mb-0.5">AML / Sanctions Status</span>
-              <span class="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
+              <span *ngIf="isExternalKycFailed(caseService.selectedCase()!)" class="text-slate-400 font-semibold">-</span>
+              <span *ngIf="!isExternalKycFailed(caseService.selectedCase()!)" class="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
                 ✓ {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.amlSanctionsStatus || 'PASS' }}
               </span>
             </div>
             <div>
               <span class="text-slate-400 block mb-0.5">PEP Status &amp; Credit Score</span>
-              <span class="font-semibold text-slate-900 dark:text-white">
+              <span *ngIf="isExternalKycFailed(caseService.selectedCase()!)" class="text-slate-400 font-semibold">-</span>
+              <span *ngIf="!isExternalKycFailed(caseService.selectedCase()!)" class="font-semibold text-slate-900 dark:text-white">
                 {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.pepStatus || 'NOT_PEP' }} (Score: {{ caseService.selectedCase()?.kycDetails?.externalKycSummary?.creditScore || 650 }})
               </span>
             </div>
             <div class="sm:col-span-3">
               <span class="text-slate-400 block mb-0.5">Registered Address</span>
               <span class="font-semibold text-slate-900 dark:text-white">
-                {{ caseService.selectedCase()?.kycDetails?.address }}, {{ caseService.selectedCase()?.kycDetails?.postalCode }} {{ caseService.selectedCase()?.kycDetails?.city }}, {{ caseService.selectedCase()?.kycDetails?.country }}
+                {{ getRegisteredAddress(caseService.selectedCase()) }}
               </span>
             </div>
           </div>
         </div>
 
         <!-- Section 2: AI Document Forensics -->
-        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
-          <div class="flex items-center justify-between mb-4">
+        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
               <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -606,22 +671,25 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 text-xs">
             <div>
               <span class="text-slate-400 block mb-0.5">OCR Name</span>
-              <span class="font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.documentVerificationDetails?.extractedFields?.fullName || '-' }}</span>
+              <span class="font-bold text-slate-900 dark:text-white">{{ getOcrName(caseService.selectedCase()) }}</span>
             </div>
             <div>
               <span class="text-slate-400 block mb-0.5">OCR ID Number</span>
-              <span class="font-mono font-bold text-slate-900 dark:text-white">{{ caseService.selectedCase()?.documentVerificationDetails?.extractedFields?.idNumber || '-' }}</span>
+              <span class="font-mono font-bold text-slate-900 dark:text-white">{{ getOcrIdNumber(caseService.selectedCase()) }}</span>
             </div>
             <div>
               <span class="text-slate-400 block mb-0.5">Pixel Tampering Check</span>
-              <span class="inline-flex items-center gap-1 font-bold text-emerald-600 dark:text-emerald-400">
-                ✓ No Pixel Manipulation (Authentic)
+              <span
+                [ngClass]="caseService.selectedCase()?.documentVerificationDetails?.tampered ? 'text-rose-600 dark:text-rose-400 font-bold' : 'text-emerald-600 dark:text-emerald-400 font-bold'"
+                class="inline-flex items-center gap-1"
+              >
+                {{ caseService.selectedCase()?.documentVerificationDetails?.tampered ? '⚠️ Tampering Detected' : '✓ No Pixel Manipulation (Authentic)' }}
               </span>
             </div>
             <div class="sm:col-span-3">
               <span class="text-slate-400 block mb-0.5">AI Forensic Findings</span>
               <p class="text-slate-600 dark:text-slate-300 font-mono text-[11px] bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                {{ caseService.selectedCase()?.documentVerificationDetails?.pixelLevelCheck?.findings || 'Document image inspected. No pixel manipulations, font splicing, or tamper artifacts detected.' }}
+                {{ caseService.selectedCase()?.documentVerificationDetails?.pixelLevelCheck?.findings || caseService.selectedCase()?.documentVerificationDetails?.message || 'Document image inspected. No pixel manipulations, font splicing, or tamper artifacts detected.' }}
               </p>
             </div>
             <div class="sm:col-span-3 flex items-center justify-between">
@@ -661,11 +729,62 @@
               </div>
             </div>
           </div>
+
+          <!-- Collapsible Document Verification Details (document_verification_details) -->
+          <div class="pt-2 border-t border-slate-200/80 dark:border-slate-700/60">
+            <button
+              type="button"
+              (click)="toggleDocVerificationDetails()"
+              class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700/80 transition-colors text-xs font-semibold text-slate-700 dark:text-slate-200"
+            >
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span>Document Verification Full Details (document_verification_details)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-slate-400 font-mono">
+                  {{ isDocVerificationExpanded() ? 'Hide details' : 'Show details' }}
+                </span>
+                <svg
+                  [class.rotate-180]="isDocVerificationExpanded()"
+                  class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </button>
+
+            <!-- Collapsible Payload Body -->
+            <div *ngIf="isDocVerificationExpanded()" class="mt-3 space-y-2 animate-in fade-in duration-200">
+              <div class="flex items-center justify-between px-1 text-xs">
+                <span class="text-slate-500 dark:text-slate-400 font-medium">
+                  Full <code>document_verification_details</code> object:
+                </span>
+                <button
+                  type="button"
+                  (click)="copyToClipboard(getDocumentVerificationJson(caseService.selectedCase()), 'Document Verification JSON')"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                  <span>Copy JSON</span>
+                </button>
+              </div>
+
+              <pre class="p-4 rounded-2xl bg-slate-950 text-emerald-400 font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 max-h-80 shadow-inner"><code>{{ getDocumentVerificationJson(caseService.selectedCase()) }}</code></pre>
+            </div>
+          </div>
         </div>
 
         <!-- Section 3: Biometric Facial Validation & Liveness -->
-        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-800">
-          <div class="flex items-center justify-between mb-4">
+        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-4">
+          <div class="flex items-center justify-between">
             <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
               <svg class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -763,6 +882,57 @@
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- Collapsible Selfie Details (selfie_details) -->
+          <div class="pt-2 border-t border-slate-200/80 dark:border-slate-700/60">
+            <button
+              type="button"
+              (click)="toggleSelfieDetails()"
+              class="w-full flex items-center justify-between px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700/80 transition-colors text-xs font-semibold text-slate-700 dark:text-slate-200"
+            >
+              <div class="flex items-center gap-2">
+                <svg class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+                </svg>
+                <span>Biometric Validation Full Details (selfie_details)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-slate-400 font-mono">
+                  {{ isSelfieDetailsExpanded() ? 'Hide details' : 'Show details' }}
+                </span>
+                <svg
+                  [class.rotate-180]="isSelfieDetailsExpanded()"
+                  class="w-4 h-4 text-slate-400 transition-transform duration-200"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </button>
+
+            <!-- Collapsible Payload Body -->
+            <div *ngIf="isSelfieDetailsExpanded()" class="mt-3 space-y-2 animate-in fade-in duration-200">
+              <div class="flex items-center justify-between px-1 text-xs">
+                <span class="text-slate-500 dark:text-slate-400 font-medium">
+                  Full <code>selfie_details</code> object from Spanner:
+                </span>
+                <button
+                  type="button"
+                  (click)="copyToClipboard(getSelfieDetailsJson(caseService.selectedCase()), 'Selfie Details JSON')"
+                  class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-all"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                  </svg>
+                  <span>Copy JSON</span>
+                </button>
+              </div>
+
+              <pre class="p-4 rounded-2xl bg-slate-950 text-purple-400 font-mono text-[11px] leading-relaxed overflow-x-auto border border-slate-800 max-h-80 shadow-inner"><code>{{ getSelfieDetailsJson(caseService.selectedCase()) }}</code></pre>
             </div>
           </div>
         </div>

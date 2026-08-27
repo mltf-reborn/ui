@@ -5,7 +5,9 @@ import { environment } from '../../../environments/environment';
 
 export interface ExtractedFields {
   fullName?: string;
+  name?: string;
   idNumber?: string;
+  identityNo?: string;
   idType?: string;
   dateOfBirth?: string;
   gender?: string;
