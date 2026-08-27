@@ -29,14 +29,20 @@ export interface VerifiedKycData {
 export interface KycStatusResponse {
   status?: string;
   Status?: string;
+  message?: string;
+  rejectionReason?: string;
   data?: {
     status?: string;
     Status?: string;
+    message?: string;
+    rejectionReason?: string;
     [key: string]: any;
   };
   result?: {
     status?: string;
     Status?: string;
+    message?: string;
+    rejectionReason?: string;
     [key: string]: any;
   };
   kycStatus?: string;
@@ -55,6 +61,7 @@ export class KycService {
   readonly kycStatus = signal<KycStatusResponse | null>(null);
   readonly isPendingKyc = signal<boolean>(false);
   readonly isKycInReview = signal<boolean>(false);
+  readonly isKycRejected = signal<boolean>(false);
   readonly verifiedData = signal<VerifiedKycData | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly error = signal<string | null>(null);
@@ -138,6 +145,32 @@ export class KycService {
   }
 
   /**
+   * Helper to check if a KYC status response represents 'REJECTED'
+   */
+  isStatusRejected(res: KycStatusResponse | string | null | undefined): boolean {
+    if (!res) return false;
+    if (typeof res === 'string') {
+      const s = res.trim().toLowerCase();
+      return s === 'rejected' || s === 'reject' || s === 'declined' || s === 'failed';
+    }
+    const val =
+      res.Status ??
+      res.status ??
+      res.data?.Status ??
+      res.data?.status ??
+      res.result?.Status ??
+      res.result?.status ??
+      res.KycStatus ??
+      res.kycStatus;
+
+    if (typeof val === 'string') {
+      const s = val.trim().toLowerCase();
+      return s === 'rejected' || s === 'reject' || s === 'declined' || s === 'failed';
+    }
+    return false;
+  }
+
+  /**
    * Updates local state when KYC succeeds
    */
   setKycSuccess(data: Partial<VerifiedKycData>): void {
@@ -158,6 +191,7 @@ export class KycService {
     this.kycStatus.set({ status: 'APPROVED', verifiedData: fullData });
     this.isPendingKyc.set(false);
     this.isKycInReview.set(false);
+    this.isKycRejected.set(false);
     this.error.set(null);
   }
 
@@ -171,7 +205,7 @@ export class KycService {
       idNumber: data?.idNumber || 'Pending Verification',
       idType: data?.idType || 'MyKad / Passport',
       referenceId: refId,
-      verifiedAt: new Date().toLocaleString(),
+      verifiedAt: data?.verifiedAt || new Date().toLocaleString(),
       status: 'IN_REVIEW',
     };
 
@@ -179,6 +213,29 @@ export class KycService {
     this.kycStatus.set({ status: 'IN_REVIEW', verifiedData: reviewData });
     this.isPendingKyc.set(false);
     this.isKycInReview.set(true);
+    this.isKycRejected.set(false);
+    this.error.set(null);
+  }
+
+  /**
+   * Updates local state when KYC is rejected
+   */
+  setKycRejected(data?: Partial<VerifiedKycData>, rejectionReason?: string): void {
+    const refId = data?.referenceId || `KYC-REJ-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+    const rejectedData: VerifiedKycData = {
+      fullName: data?.fullName || 'Applicant',
+      idNumber: data?.idNumber || 'Verification Failed',
+      idType: data?.idType || 'MyKad / Passport',
+      referenceId: refId,
+      verifiedAt: data?.verifiedAt || new Date().toLocaleString(),
+      status: 'REJECTED',
+    };
+
+    this.verifiedData.set(rejectedData);
+    this.kycStatus.set({ status: 'REJECTED', verifiedData: rejectedData, message: rejectionReason });
+    this.isPendingKyc.set(false);
+    this.isKycInReview.set(false);
+    this.isKycRejected.set(true);
     this.error.set(null);
   }
 
@@ -243,11 +300,18 @@ export class KycService {
           if (status === 'APPROVED') {
             this.isPendingKyc.set(false);
             this.isKycInReview.set(false);
+            this.isKycRejected.set(false);
             this.kycStatus.set({ status: 'APPROVED', verifiedData: res.verifiedData });
           } else if (status === 'IN_REVIEW') {
             this.isPendingKyc.set(false);
             this.isKycInReview.set(true);
+            this.isKycRejected.set(false);
             this.kycStatus.set({ status: 'IN_REVIEW', verifiedData: res.verifiedData });
+          } else if (status === 'REJECTED') {
+            this.isPendingKyc.set(false);
+            this.isKycInReview.set(false);
+            this.isKycRejected.set(true);
+            this.kycStatus.set({ status: 'REJECTED', verifiedData: res.verifiedData, message: res.message });
           }
         },
         error: (err) => {
@@ -258,6 +322,18 @@ export class KycService {
       catchError((err) => {
         console.error('Error submitting KYC verification:', err);
         this.isLoading.set(false);
+        if (err?.error?.status && err.error.status.toUpperCase() === 'REJECTED') {
+          const rejData: KycVerifyResponse = {
+            status: 'REJECTED',
+            message: err.error.message || err.error.error || 'Verification rejected',
+            verifiedData: err.error.verifiedData,
+          };
+          this.isPendingKyc.set(false);
+          this.isKycInReview.set(false);
+          this.isKycRejected.set(true);
+          this.kycStatus.set({ status: 'REJECTED', verifiedData: err.error.verifiedData, message: rejData.message });
+          return of(rejData);
+        }
         this.error.set(err?.message || 'KYC verification submission failed');
         return of(null);
       })
@@ -282,8 +358,13 @@ export class KycService {
           this.kycStatus.set(res);
           const pending = this.isStatusPending(res);
           const inReview = this.isStatusInReview(res);
+          const rejected = this.isStatusRejected(res);
           this.isPendingKyc.set(pending);
           this.isKycInReview.set(inReview);
+          this.isKycRejected.set(rejected);
+          if (res?.verifiedData) {
+            this.verifiedData.set(res.verifiedData);
+          }
           this.isLoading.set(false);
           this.isChecking = false;
         },
@@ -293,11 +374,13 @@ export class KycService {
             this.kycStatus.set({ status: 'PENDING' });
             this.isPendingKyc.set(true);
             this.isKycInReview.set(false);
+            this.isKycRejected.set(false);
             this.error.set(null);
           } else {
             this.error.set(err?.message || 'Failed to check KYC status');
             this.isPendingKyc.set(false);
             this.isKycInReview.set(false);
+            this.isKycRejected.set(false);
           }
           this.isLoading.set(false);
           this.isChecking = false;
@@ -323,6 +406,7 @@ export class KycService {
     this.verifiedData.set(null);
     this.isPendingKyc.set(false);
     this.isKycInReview.set(false);
+    this.isKycRejected.set(false);
     this.isLoading.set(false);
     this.error.set(null);
     this.isChecking = false;

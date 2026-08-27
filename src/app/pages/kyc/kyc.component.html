@@ -587,4 +587,110 @@
       </div>
     </div>
   }
+
+  <!-- ========================================================================= -->
+  <!-- STEP 3C: REJECTED PAGE (REJECTION DETAILS WITH ABILITY TO REDO)           -->
+  <!-- ========================================================================= -->
+  @if (currentStep() === 'rejected') {
+    <div class="max-w-2xl mx-auto space-y-6 my-4" data-testid="kyc-rejected-page">
+      <div class="p-8 sm:p-10 rounded-3xl bg-white dark:bg-gray-800/95 border border-red-200 dark:border-red-800/60 shadow-xl text-center space-y-6">
+        
+        <!-- Big Red / Alert Icon -->
+        <div class="mx-auto w-20 h-20 rounded-2xl bg-red-100 dark:bg-red-900/50 text-red-600 dark:text-red-400 flex items-center justify-center shadow-inner">
+          <svg class="w-10 h-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+        </div>
+
+        <div class="space-y-2">
+          <span class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-red-100 dark:bg-red-900/60 text-red-800 dark:text-red-200 border border-red-300 dark:border-red-700">
+            <span class="w-2 h-2 rounded-full bg-red-500"></span>
+            {{ 'kyc.rejectedBadge' | translate }}
+          </span>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">
+            {{ 'kyc.rejectedTitle' | translate }}
+          </h2>
+          <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 max-w-md mx-auto leading-relaxed">
+            {{ 'kyc.rejectedSubtitle' | translate }}
+          </p>
+        </div>
+
+        <!-- Rejection Details Card -->
+        <div class="bg-red-50/50 dark:bg-red-950/20 rounded-2xl p-6 border border-red-200/80 dark:border-red-800/60 text-left space-y-4 shadow-sm">
+          @if (verifiedResult()?.referenceId) {
+            <div class="flex items-center justify-between text-xs sm:text-sm">
+              <span class="text-gray-500 dark:text-gray-400">{{ 'kyc.refId' | translate }}:</span>
+              <span class="font-mono font-bold text-red-800 dark:text-red-300">{{ verifiedResult()?.referenceId }}</span>
+            </div>
+          }
+
+          <div class="flex items-center justify-between text-xs sm:text-sm">
+            <span class="text-gray-500 dark:text-gray-400">{{ 'common.status' | translate }}:</span>
+            <span class="font-bold text-red-600 dark:text-red-400 uppercase">REJECTED</span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-white/80 dark:bg-gray-900/70 border border-red-200/80 dark:border-red-800/60 space-y-1">
+            <span class="text-xs font-bold text-red-900 dark:text-red-200 flex items-center gap-1.5">
+              <svg class="w-4 h-4 text-red-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {{ 'kyc.rejectionReasonTitle' | translate }}
+            </span>
+            <p class="text-xs text-red-700 dark:text-red-300 pl-5.5 leading-relaxed" data-testid="rejection-reason">
+              {{ rejectionReason() || ('kyc.defaultRejectionReason' | translate) }}
+            </p>
+          </div>
+
+          <!-- Helpful Checklist for Redo -->
+          <div class="pt-3 border-t border-red-200/60 dark:border-red-800/60 space-y-2">
+            <span class="text-xs font-bold text-gray-700 dark:text-gray-300 block">
+              {{ 'kyc.rejectionTipsTitle' | translate }}
+            </span>
+            <ul class="space-y-1.5 text-xs text-gray-600 dark:text-gray-300">
+              <li class="flex items-start gap-2">
+                <svg class="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{{ 'kyc.tip1' | translate }}</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg class="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{{ 'kyc.tip2' | translate }}</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <svg class="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                <span>{{ 'kyc.tip3' | translate }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- Action Buttons (Redo Ability) -->
+        <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            type="button"
+            (click)="redoKyc()"
+            data-testid="redo-kyc-button"
+            class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl text-sm sm:text-base font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-lg shadow-brand-500/25 transition cursor-pointer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/>
+              <path d="M21 3v5h-5"/>
+              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/>
+              <path d="M8 16H3v5"/>
+            </svg>
+            <span>{{ 'kyc.redoBtn' | translate }}</span>
+          </button>
+          
+          <button
+            type="button"
+            (click)="returnToDashboard()"
+            class="w-full sm:w-auto px-6 py-3.5 text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-200 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded-xl transition cursor-pointer"
+          >
+            {{ 'kyc.backToDashboard' | translate }}
+          </button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

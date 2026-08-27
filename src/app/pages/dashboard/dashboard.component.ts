@@ -34,6 +34,7 @@ export class DashboardComponent implements OnInit {
 
   readonly isKycPending = this.kycService.isPendingKyc;
   readonly isKycInReview = this.kycService.isKycInReview;
+  readonly isKycRejected = this.kycService.isKycRejected;
 
   readonly kycWarningText = computed(() => {
     const text = this.translationService.translate('dashboard.kycWarning');

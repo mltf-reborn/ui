@@ -18,6 +18,7 @@ export class NotificationDropdownComponent {
   readonly isOpen = signal<boolean>(false);
   readonly notifying = signal<boolean>(true);
   readonly isPendingKyc = this.kycService.isPendingKyc;
+  readonly isKycRejected = this.kycService.isKycRejected;
 
   toggleDropdown(): void {
     this.isOpen.update((v) => !v);

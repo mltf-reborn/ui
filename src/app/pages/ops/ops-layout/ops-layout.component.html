@@ -1,0 +1,166 @@
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
+  
+  <!-- Ops Top Navigation Bar -->
+  <header class="sticky top-0 z-40 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Left: Logo & Ops Branding -->
+        <div class="flex items-center gap-4">
+          <a routerLink="/ops/dashboard" class="flex items-center gap-3 group">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-emerald-500 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-brand-500/20 group-hover:scale-105 transition-transform">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-extrabold tracking-tight text-slate-900 dark:text-white text-base">MLTF OPS</span>
+                <span class="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  Compliance Console
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                Case Management Service • Spanner DB
+              </p>
+            </div>
+          </a>
+
+          <!-- Spanner Live Indicator -->
+          <div class="hidden md:flex items-center gap-2 pl-4 border-l border-slate-200 dark:border-slate-800">
+            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Spanner Connected
+            </span>
+          </div>
+        </div>
+
+        <!-- Right Controls & Officer Profile -->
+        <div class="flex items-center gap-3 sm:gap-4">
+          
+          <!-- Refresh Button -->
+          <button
+            type="button"
+            (click)="refreshCases()"
+            [disabled]="caseService.isLoading()"
+            title="Refresh Data from Spanner"
+            class="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors disabled:opacity-50"
+          >
+            <svg [class.animate-spin]="caseService.isLoading()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+
+          <!-- Language Switcher -->
+          <app-language-toggle></app-language-toggle>
+
+          <!-- Theme Toggle -->
+          <app-theme-toggle></app-theme-toggle>
+
+          <!-- Officer Profile Dropdown -->
+          <div class="relative" (clickOutside)="closeUserMenu()">
+            <button
+              type="button"
+              (click)="toggleUserMenu()"
+              class="flex items-center gap-2.5 p-1.5 sm:px-3 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all text-left"
+            >
+              <div class="w-8 h-8 rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-400 font-bold flex items-center justify-center text-sm border border-brand-500/20">
+                OP
+              </div>
+              <div class="hidden sm:block">
+                <div class="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                  {{ opsAuthService.currentUser()?.fullName || 'Ops Officer' }}
+                </div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400">
+                  {{ opsAuthService.currentUser()?.badgeNumber || 'MLTF-OPS-042' }}
+                </div>
+              </div>
+              <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div
+              *ngIf="isUserMenuOpen()"
+              class="absolute right-0 mt-2 w-72 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl py-2 z-50 animate-in fade-in zoom-in-95 duration-100"
+            >
+              <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
+                <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Pegawai Yang Disahkan
+                </p>
+                <p class="text-sm font-bold text-slate-900 dark:text-white mt-0.5">
+                  {{ opsAuthService.currentUser()?.fullName }}
+                </p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {{ opsAuthService.currentUser()?.email }}
+                </p>
+                <div class="mt-2 inline-block px-2 py-0.5 rounded text-[10px] font-semibold bg-brand-50 text-brand-700 dark:bg-brand-950/60 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
+                  {{ opsAuthService.currentUser()?.department }}
+                </div>
+              </div>
+
+              <div class="p-1">
+                <a
+                  routerLink="/"
+                  (click)="closeUserMenu()"
+                  class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl transition-colors"
+                >
+                  <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                  </svg>
+                  <span>Portal Awam MLTF (Public Home)</span>
+                </a>
+
+                <a
+                  routerLink="/dashboard"
+                  (click)="closeUserMenu()"
+                  class="flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 rounded-xl transition-colors"
+                >
+                  <svg class="w-4 h-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  <span>Papan Pemuka Pemohon (Applicant View)</span>
+                </a>
+              </div>
+
+              <div class="p-1 border-t border-slate-100 dark:border-slate-700">
+                <button
+                  type="button"
+                  (click)="logout()"
+                  class="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl transition-colors text-left"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span>Log Keluar Pegawai</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 dark:text-slate-400">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>Google Cloud Spanner: <code class="font-mono text-slate-700 dark:text-slate-300">mortgage_db.case</code></span>
+      </div>
+      <div>
+        MLTF Operations & Case Management Service v1.0 • Kementerian Perumahan dan Kerajaan Tempatan
+      </div>
+    </div>
+  </footer>
+
+</div>

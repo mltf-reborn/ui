@@ -17,7 +17,7 @@ import { TranslatePipe } from '../../shared/pipes/translate.pipe';
 import { KycService, VerifiedKycData } from '../../shared/services/kyc.service';
 import { AppAuthService } from '../../shared/services/auth.service';
 
-export type KycStep = 'form' | 'processing' | 'success' | 'in_review';
+export type KycStep = 'form' | 'processing' | 'success' | 'in_review' | 'rejected';
 
 @Component({
   selector: 'app-kyc',
@@ -37,6 +37,7 @@ export class KycComponent implements OnInit, OnDestroy {
 
   // Workflow State
   readonly currentStep = signal<KycStep>('form');
+  readonly rejectionReason = signal<string | null>(null);
 
   // Document Upload State
   readonly selectedDocument = signal<File | null>(null);
@@ -75,14 +76,26 @@ export class KycComponent implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
+    if (this.router.url.includes('rejected')) {
+      this.currentStep.set('rejected');
+    }
+
     // If the user lands here and already has an active verified profile, check status
     const existing = this.kycService.verifiedData();
+    const kycStatus = this.kycService.kycStatus();
     if (existing) {
       this.verifiedResult.set(existing);
       if (existing.status === 'APPROVED') {
         this.currentStep.set('success');
       } else if (existing.status === 'IN_REVIEW') {
         this.currentStep.set('in_review');
+      } else if (existing.status === 'REJECTED') {
+        this.currentStep.set('rejected');
+      }
+    } else if (this.kycService.isStatusRejected(kycStatus)) {
+      this.currentStep.set('rejected');
+      if (kycStatus?.message || kycStatus?.rejectionReason) {
+        this.rejectionReason.set(kycStatus.message || kycStatus.rejectionReason || null);
       }
     }
   }
@@ -279,9 +292,14 @@ export class KycComponent implements OnInit, OnDestroy {
             }
 
             this.verifiedResult.set(res.verifiedData ?? null);
+            if (res.message) {
+              this.rejectionReason.set(res.message);
+            }
             const status = res.status?.toUpperCase();
             if (status === 'APPROVED') {
               this.currentStep.set('success');
+            } else if (status === 'REJECTED') {
+              this.currentStep.set('rejected');
             } else {
               // IN_REVIEW or any other non-approved status
               this.currentStep.set('in_review');
@@ -315,12 +333,21 @@ export class KycComponent implements OnInit, OnDestroy {
     this.router.navigate(['/dashboard']);
   }
 
+  redoKyc(): void {
+    this.restartKyc();
+    if (this.router.url.includes('rejected')) {
+      this.router.navigate(['/kyc']);
+    }
+  }
+
   restartKyc(): void {
     this.currentStep.set('form');
     this.removeDocument();
     this.capturedSelfie.set(null);
     this.termsAccepted.set(false);
     this.pdpaAccepted.set(false);
+    this.rejectionReason.set(null);
+    this.kycService.isKycRejected.set(false);
   }
 
 

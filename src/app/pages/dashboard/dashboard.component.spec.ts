@@ -12,6 +12,7 @@ describe('DashboardComponent', () => {
   let mockKycService: {
     isPendingKyc: ReturnType<typeof signal<boolean>>;
     isKycInReview: ReturnType<typeof signal<boolean>>;
+    isKycRejected: ReturnType<typeof signal<boolean>>;
     isLoading: ReturnType<typeof signal<boolean>>;
     checkKycStatus: ReturnType<typeof vi.fn>;
   };
@@ -27,6 +28,7 @@ describe('DashboardComponent', () => {
     mockKycService = {
       isPendingKyc: signal<boolean>(false),
       isKycInReview: signal<boolean>(false),
+      isKycRejected: signal<boolean>(false),
       isLoading: signal<boolean>(false),
       checkKycStatus: vi.fn().mockReturnValue(of(null)),
     };
@@ -45,6 +47,9 @@ describe('DashboardComponent', () => {
         if (key === 'dashboard.startKycBtn') return 'Lengkapkan KYC Sekarang';
         if (key === 'dashboard.kycInReviewTitle') return 'Pengesahan KYC Sedang Diproses';
         if (key === 'dashboard.kycStatusInReview') return 'Status: Verification Inprogress';
+        if (key === 'dashboard.kycRejectedTitle') return 'Pengesahan KYC Ditolak';
+        if (key === 'dashboard.kycStatusRejected') return 'Status: Ditolak';
+        if (key === 'dashboard.redoKycBtn') return 'Lakukan Semula KYC';
         return key;
       }),
     };
@@ -99,6 +104,24 @@ describe('DashboardComponent', () => {
     const inReviewBanner = compiled.querySelector('[data-testid="kyc-in-review-banner"]');
     expect(inReviewBanner).toBeTruthy();
     expect(inReviewBanner?.textContent).toContain('Pengesahan KYC Sedang Diproses');
+  });
+
+  it('should display the rejected banner when KYC status is REJECTED', () => {
+    mockKycService.isPendingKyc.set(false);
+    mockKycService.isKycInReview.set(false);
+    mockKycService.isKycRejected.set(true);
+
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const rejectedBanner = compiled.querySelector('[data-testid="kyc-rejected-banner"]');
+    expect(rejectedBanner).toBeTruthy();
+    expect(rejectedBanner?.textContent).toContain('Pengesahan KYC Ditolak');
+
+    const redoBtn = compiled.querySelector('[data-testid="redo-kyc-btn"]');
+    expect(redoBtn).toBeTruthy();
+    expect(redoBtn?.getAttribute('href')).toBe('/kyc');
   });
 
   it('should NOT display the KYC warning message when KYC status is not Pending', () => {

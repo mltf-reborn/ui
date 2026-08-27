@@ -268,13 +268,18 @@
     "startKycBtn": "Lengkapkan KYC Sekarang",
     "kycStatusInReview": "Status: Verification Inprogress",
     "kycInReviewTitle": "Pengesahan KYC Sedang Diproses",
-    "kycInReviewSubtitle": "Dokumen pengenalan diri anda sedang disemak secara manual oleh pegawai pengesahan kami."
+    "kycInReviewSubtitle": "Dokumen pengenalan diri anda sedang disemak secara manual oleh pegawai pengesahan kami.",
+    "kycStatusRejected": "Status: Ditolak",
+    "kycRejectedTitle": "Pengesahan KYC Ditolak",
+    "kycRejectedSubtitle": "Pengesahan identiti KYC anda tidak berjaya. Sila semak butiran dan lakukan semula pengesahan.",
+    "redoKycBtn": "Lakukan Semula KYC"
   },
   "sidebar": {
     "menu": "Menu",
     "others": "Lain-lain",
     "dashboard": "Papan Pemuka (Dashboard)",
     "kyc": "Pengesahan KYC",
+    "opsPortal": "Pengurusan Kes Ops (Spanner)",
     "home": "Laman Utama (Home)",
     "portal": "Portal Pembiayaan",
     "sjkpGig": "Semakan SJKP (Gig)",
@@ -287,6 +292,7 @@
   "userMenu": {
     "dashboard": "Papan Pemuka",
     "kyc": "Pengesahan KYC",
+    "opsPortal": "Portal Pegawai Ops",
     "home": "Laman Utama",
     "signOut": "Log Keluar (Sign Out)"
   },
@@ -295,6 +301,8 @@
     "viewAll": "Lihat Semua Pemberitahuan",
     "kycActionRequired": "Tindakan Diperlukan: Lengkapkan KYC Anda",
     "kycActionDesc": "Sahkan identiti anda untuk meneruskan kelulusan pembiayaan perumahan.",
+    "kycRejectedTitle": "Tindakan Diperlukan: Pengesahan KYC Ditolak",
+    "kycRejectedDesc": "Pengesahan identiti anda tidak berjaya. Sila klik di sini untuk melakukan semula pengesahan.",
     "requestPermission": "memohon kebenaran untuk mengubah",
     "projectDashboard": "Papan Pemuka Projek",
     "designSystem": "Sistem Reka Bentuk",
@@ -353,6 +361,16 @@
     "inReviewSubtitle": "Pasukan pematuhan kami sedang menyemak dokumen anda secara manual untuk memastikan ketepatan. Proses ini biasanya mengambil masa 1-2 jam.",
     "inReviewBadge": "Verification Inprogress",
     "inReviewNote": "Anda akan menerima notifikasi SMS dan e-mel sebaik sahaja semakan selesai. Anda boleh meneruskan penggunaan papan pemuka.",
+    "rejectedBadge": "PENGESAHAN DITOLAK",
+    "rejectedTitle": "Pengesahan KYC Tidak Berjaya",
+    "rejectedSubtitle": "Kami tidak dapat mengesahkan identiti anda berdasarkan dokumen atau foto yang dimuat naik. Anda boleh melakukan semula pengesahan pada bila-bila masa.",
+    "rejectionReasonTitle": "Sebab Penolakan",
+    "defaultRejectionReason": "Kejelasan dokumen atau padanan biometrik wajah tidak mencapai tahap piawaian minimum pengesahan.",
+    "rejectionTipsTitle": "Panduan untuk pengesahan berjaya semasa mengulang semula:",
+    "tip1": "Pastikan gambar MyKad jelas, cukup pencahayaan dan kesemua 4 bucu kelihatan.",
+    "tip2": "Elakkan pantulan cahaya lampu (glare) atau gambar yang kabur pada dokumen.",
+    "tip3": "Ambil swafoto di kawasan terang dengan memandang terus ke kamera tanpa topi atau pelitup muka.",
+    "redoBtn": "Lakukan Semula Pengesahan KYC",
     "simSuccess": "Simulasi Berjaya",
     "simInReview": "Simulasi Sedang Diproses",
     "demoMode": "Sasaran Simulasi"

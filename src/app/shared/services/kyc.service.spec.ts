@@ -151,6 +151,31 @@ describe('KycService', () => {
     expect(service.isStatusApproved({ status: 'PENDING' })).toBe(false);
   });
 
+  it('should detect rejected status correctly', () => {
+    expect(service.isStatusRejected({ status: 'REJECTED' })).toBe(true);
+    expect(service.isStatusRejected({ Status: 'Rejected' })).toBe(true);
+    expect(service.isStatusRejected({ status: 'declined' })).toBe(true);
+    expect(service.isStatusRejected({ status: 'failed' })).toBe(true);
+    expect(service.isStatusRejected('rejected')).toBe(true);
+    expect(service.isStatusRejected({ status: 'APPROVED' })).toBe(false);
+    expect(service.isStatusRejected({ status: 'PENDING' })).toBe(false);
+  });
+
+  it('should set isKycRejected to true when response is Status=Rejected', () => {
+    expect(service.isKycRejected()).toBe(false);
+
+    service.checkKycStatus().subscribe();
+
+    const req = httpTesting.expectOne('/api/v1/kyc/status');
+    req.flush({ status: 'REJECTED', message: 'Facial match failed' });
+
+    expect(service.isKycRejected()).toBe(true);
+    expect(service.isPendingKyc()).toBe(false);
+    expect(service.isKycInReview()).toBe(false);
+    expect(service.kycStatus()).toEqual({ status: 'REJECTED', message: 'Facial match failed' });
+    expect(service.isLoading()).toBe(false);
+  });
+
   it('should update state on setKycSuccess', () => {
     service.setKycSuccess({
       fullName: 'John Doe',
@@ -159,6 +184,7 @@ describe('KycService', () => {
 
     expect(service.isPendingKyc()).toBe(false);
     expect(service.isKycInReview()).toBe(false);
+    expect(service.isKycRejected()).toBe(false);
     expect(service.verifiedData()?.fullName).toBe('John Doe');
     expect(service.verifiedData()?.status).toBe('APPROVED');
   });
@@ -170,20 +196,64 @@ describe('KycService', () => {
 
     expect(service.isPendingKyc()).toBe(false);
     expect(service.isKycInReview()).toBe(true);
+    expect(service.isKycRejected()).toBe(false);
     expect(service.verifiedData()?.referenceId).toBe('KYC-REV-9999');
     expect(service.verifiedData()?.status).toBe('IN_REVIEW');
+  });
+
+  it('should update state on setKycRejected', () => {
+    service.setKycRejected(
+      { referenceId: 'KYC-REJ-8888', fullName: 'Jane Doe' },
+      'Document unreadable'
+    );
+
+    expect(service.isPendingKyc()).toBe(false);
+    expect(service.isKycInReview()).toBe(false);
+    expect(service.isKycRejected()).toBe(true);
+    expect(service.verifiedData()?.referenceId).toBe('KYC-REJ-8888');
+    expect(service.verifiedData()?.status).toBe('REJECTED');
+    expect(service.kycStatus()?.message).toBe('Document unreadable');
+  });
+
+  it('should handle verifyKyc with REJECTED response', () => {
+    const doc = new File(['doc'], 'mykad.jpg', { type: 'image/jpeg' });
+    const selfie = new File(['selfie'], 'selfie.jpg', { type: 'image/jpeg' });
+
+    service.verifyKyc(doc, selfie, 'Ahmad Syazwan').subscribe((res) => {
+      expect(res?.status).toBe('REJECTED');
+    });
+
+    const req = httpTesting.expectOne('/api/v1/kyc/verify');
+    expect(req.request.method).toBe('POST');
+    req.flush({
+      status: 'REJECTED',
+      message: 'Photo is too blurry',
+      verifiedData: {
+        referenceId: 'KYC-REJ-1234',
+        fullName: 'Ahmad Syazwan',
+        idNumber: '940822-10-5819',
+        idType: 'MyKad',
+        status: 'REJECTED',
+        verifiedAt: '2026-08-27',
+      },
+    });
+
+    expect(service.isKycRejected()).toBe(true);
+    expect(service.isPendingKyc()).toBe(false);
+    expect(service.isKycInReview()).toBe(false);
   });
 
   it('should reset state correctly', () => {
     service.checkKycStatus().subscribe();
     const req = httpTesting.expectOne('/api/v1/kyc/status');
-    req.flush({ Status: 'Pending' });
+    req.flush({ Status: 'Rejected' });
 
-    expect(service.isPendingKyc()).toBe(true);
+    expect(service.isKycRejected()).toBe(true);
 
     service.reset();
     expect(service.isPendingKyc()).toBe(false);
     expect(service.isKycInReview()).toBe(false);
+    expect(service.isKycRejected()).toBe(false);
     expect(service.verifiedData()).toBeNull();
     expect(service.kycStatus()).toBeNull();
   });

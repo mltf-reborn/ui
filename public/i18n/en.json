@@ -268,13 +268,18 @@
     "startKycBtn": "Complete KYC Now",
     "kycStatusInReview": "Status: Verification Inprogress",
     "kycInReviewTitle": "KYC Verification In Progress",
-    "kycInReviewSubtitle": "Your identity documents are currently under manual review by our verification officers."
+    "kycInReviewSubtitle": "Your identity documents are currently under manual review by our verification officers.",
+    "kycStatusRejected": "Status: Rejected",
+    "kycRejectedTitle": "KYC Verification Rejected",
+    "kycRejectedSubtitle": "Your KYC identity verification was not approved. Please review the reasons and redo the verification.",
+    "redoKycBtn": "Redo KYC Now"
   },
   "sidebar": {
     "menu": "Menu",
     "others": "Others",
     "dashboard": "Dashboard",
     "kyc": "KYC Verification",
+    "opsPortal": "Ops Cases (Spanner)",
     "home": "Home",
     "portal": "Financing Portal",
     "sjkpGig": "SJKP Check (Gig)",
@@ -287,6 +292,7 @@
   "userMenu": {
     "dashboard": "Dashboard",
     "kyc": "KYC Verification",
+    "opsPortal": "Ops Compliance Portal",
     "home": "Home",
     "signOut": "Sign Out"
   },
@@ -295,6 +301,8 @@
     "viewAll": "View All Notifications",
     "kycActionRequired": "Action Required: Complete Your KYC",
     "kycActionDesc": "Please verify your identity to proceed with your housing loan approval.",
+    "kycRejectedTitle": "Action Required: KYC Verification Rejected",
+    "kycRejectedDesc": "Your identity verification was unsuccessful. Click here to redo your verification.",
     "requestPermission": "requests permission to change",
     "projectDashboard": "Project Dashboard",
     "designSystem": "Design System",
@@ -353,6 +361,16 @@
     "inReviewSubtitle": "Our verification team is reviewing your documents manually to ensure accuracy. This usually takes 1-2 hours.",
     "inReviewBadge": "Verification Inprogress",
     "inReviewNote": "You will receive an SMS and email notification once review is complete. You can continue exploring your dashboard.",
+    "rejectedBadge": "VERIFICATION REJECTED",
+    "rejectedTitle": "KYC Verification Unsuccessful",
+    "rejectedSubtitle": "We could not verify your identity with the documents or photo provided. You can redo the verification anytime.",
+    "rejectionReasonTitle": "Reason for Rejection",
+    "defaultRejectionReason": "Document clarity or facial biometric match did not meet verification thresholds.",
+    "rejectionTipsTitle": "Tips for a successful verification on redo:",
+    "tip1": "Ensure your MyKad photo is clear, well-lit, with all 4 corners visible.",
+    "tip2": "Avoid glare, flash reflections, or blurry captures of your document.",
+    "tip3": "Take your selfie in a bright room facing the camera directly without headwear or masks.",
+    "redoBtn": "Redo KYC Verification",
     "simSuccess": "Simulate Success",
     "simInReview": "Simulate In Progress",
     "demoMode": "Simulation Target"
