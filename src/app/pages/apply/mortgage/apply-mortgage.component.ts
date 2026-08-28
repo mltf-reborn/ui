@@ -1,9 +1,15 @@
-import { Component, signal, computed, ViewChild, ElementRef } from '@angular/core';
+import { Component, signal, computed, ViewChild, ElementRef, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
 import { BreadcrumbComponent } from '../../../shared/components/breadcrumb/breadcrumb.component';
+import { AppAuthService } from '../../../shared/services/auth.service';
+import { LoanApplicationService } from '../../../shared/services/loan-application.service';
+import { environment } from '../../../../environments/environment';
 
 export type FileStatus = 'uploading' | 'ok' | 'error';
+
+export type UploadedFileStatus = 'processing';
 
 export interface QueuedFile {
   id: string;
@@ -15,9 +21,22 @@ export interface QueuedFile {
   errorMessage?: string;
 }
 
+export interface UploadedFile extends Omit<QueuedFile, 'status' | 'progress'> {
+  status: UploadedFileStatus;
+}
+
 export interface DocItem {
   label: string;
   checked: boolean;
+}
+
+interface CreateApplicationResponse {
+  transactionId?: string;
+  applicationId?: string;
+  id?: string;
+  status?: string;
+  data?: CreateApplicationResponse;
+  result?: CreateApplicationResponse;
 }
 
 @Component({
@@ -26,15 +45,31 @@ export interface DocItem {
   imports: [CommonModule, RouterModule, BreadcrumbComponent],
   templateUrl: './apply-mortgage.component.html',
 })
-export class ApplyMortgageComponent {
+export class ApplyMortgageComponent implements OnInit {
+
+  private readonly http = inject(HttpClient);
+  private readonly authService = inject(AppAuthService);
+  private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly loanApplicationService = inject(LoanApplicationService);
+  private readonly applicationEndpoint = `${(environment as any).apiUrl || ''}/api/v1/application`;
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
   readonly isDragging = signal<boolean>(false);
   readonly uploadQueue = signal<QueuedFile[]>([]);
+  readonly uploadedDocuments = signal<UploadedFile[]>([]);
+  readonly applicationId = signal<string | null>(null);
+  readonly applicationStatus = signal<string | null>(null);
+  readonly isCreatingApplication = signal<boolean>(false);
+  readonly applicationError = signal<string | null>(null);
+  readonly isUploadDisabled = computed(() => this.applicationError() !== null);
 
   readonly processingCount = computed(() =>
     this.uploadQueue().filter(f => f.status === 'uploading').length
+  );
+
+  readonly canSubmitDocuments = computed(() =>
+    this.uploadQueue().some(f => f.status === 'ok')
   );
 
   readonly employeeDocs: DocItem[] = [
@@ -51,6 +86,54 @@ export class ApplyMortgageComponent {
     { label: 'Latest 2 years Income Tax (B/BE Form)', checked: false },
     { label: 'IC/ID copy', checked: false },
   ];
+
+  ngOnInit(): void {
+    const existingApplicationId = this.activatedRoute.snapshot.queryParamMap.get('application');
+    if (existingApplicationId) {
+      this.applicationId.set(existingApplicationId);
+      const existingApplication = this.loanApplicationService.applications().find(
+        application => application.applicationReferenceNumber === existingApplicationId
+      );
+      this.applicationStatus.set(existingApplication?.applicationStatus?.toUpperCase() ?? 'IN_PROGRESS');
+      return;
+    }
+
+    this.createApplication();
+  }
+
+  private createApplication(): void {
+    this.isCreatingApplication.set(true);
+    this.applicationError.set(null);
+
+    this.authService.getJwtToken().subscribe({
+      next: token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+
+        const params = new HttpParams().set('action', 'create');
+        this.http.post<CreateApplicationResponse>(this.applicationEndpoint, null, { headers, params }).subscribe({
+          next: response => {
+            const application = response.data ?? response.result ?? response;
+            this.applicationId.set(application.transactionId ?? application.applicationId ?? application.id ?? null);
+            this.applicationStatus.set(application.status?.toUpperCase() ?? 'NEW');
+            this.isCreatingApplication.set(false);
+          },
+          error: (error: HttpErrorResponse) => {
+            this.applicationError.set(error.status === 409
+              ? 'An incomplete loan application was detected. Please edit or delete it before continuing.'
+              : 'Unable to create the application. Please try again.');
+            this.isCreatingApplication.set(false);
+          },
+        });
+      },
+      error: () => {
+        this.applicationError.set('Unable to authenticate the application request. Please try again.');
+        this.isCreatingApplication.set(false);
+      },
+    });
+  }
 
   triggerFileInput(): void {
     this.fileInput?.nativeElement.click();
@@ -86,6 +169,8 @@ export class ApplyMortgageComponent {
   }
 
   private processFiles(files: File[]): void {
+    if (this.isUploadDisabled()) return;
+
     for (const file of files) {
       const MAX_MB = 10;
       const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
@@ -146,6 +231,20 @@ export class ApplyMortgageComponent {
       q.map(f => f.id === id ? { ...f, status: 'uploading', progress: 0, errorMessage: undefined } : f)
     );
     this.simulateUpload(id);
+  }
+
+  submitDocuments(): void {
+    const filesToSubmit = this.uploadQueue().filter(file => file.status === 'ok');
+    if (filesToSubmit.length === 0) return;
+
+    this.uploadedDocuments.update(documents => [
+      ...documents,
+      ...filesToSubmit.map(({ status, progress, ...file }) => ({
+        ...file,
+        status: 'processing' as const,
+      })),
+    ]);
+    this.uploadQueue.update(queue => queue.filter(file => file.status !== 'ok'));
   }
 
   private formatBytes(bytes: number): string {

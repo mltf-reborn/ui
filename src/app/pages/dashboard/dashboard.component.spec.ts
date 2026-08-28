@@ -7,6 +7,7 @@ import { DashboardComponent } from './dashboard.component';
 import { KycService } from '../../shared/services/kyc.service';
 import { AppAuthService } from '../../shared/services/auth.service';
 import { TranslationService } from '../../shared/services/translation.service';
+import { LoanApplicationService } from '../../shared/services/loan-application.service';
 
 describe('DashboardComponent', () => {
   let mockKycService: {
@@ -18,6 +19,13 @@ describe('DashboardComponent', () => {
   };
   let mockAuthService: {
     isAuthenticated: ReturnType<typeof signal<boolean>>;
+    getJwtToken: ReturnType<typeof vi.fn>;
+  };
+  let mockLoanApplicationService: {
+    applications: ReturnType<typeof signal>;
+    isLoading: ReturnType<typeof signal<boolean>>;
+    error: ReturnType<typeof signal<string | null>>;
+    loadApplications: ReturnType<typeof vi.fn>;
   };
   let mockTranslationService: {
     currentLanguage: ReturnType<typeof signal<string>>;
@@ -35,6 +43,14 @@ describe('DashboardComponent', () => {
 
     mockAuthService = {
       isAuthenticated: signal<boolean>(true),
+      getJwtToken: vi.fn().mockReturnValue(of('mock-jwt-token')),
+    };
+
+    mockLoanApplicationService = {
+      applications: signal([]),
+      isLoading: signal<boolean>(false),
+      error: signal<string | null>(null),
+      loadApplications: vi.fn(),
     };
 
     mockTranslationService = {
@@ -61,6 +77,7 @@ describe('DashboardComponent', () => {
         { provide: KycService, useValue: mockKycService },
         { provide: AppAuthService, useValue: mockAuthService },
         { provide: TranslationService, useValue: mockTranslationService },
+        { provide: LoanApplicationService, useValue: mockLoanApplicationService },
       ],
     }).compileComponents();
   });

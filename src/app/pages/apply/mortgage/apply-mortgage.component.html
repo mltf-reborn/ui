@@ -2,7 +2,7 @@
 
   <!-- Hidden file input -->
   <input #fileInput type="file" accept=".pdf,.jpg,.jpeg,.png" multiple class="hidden"
-    (change)="onFileSelected($event)" />
+    [disabled]="isUploadDisabled()" (change)="onFileSelected($event)" />
 
   <!-- Breadcrumb -->
   <app-breadcrumb [pageTitle]="'Mortgage Loan Application'" />
@@ -25,6 +25,16 @@
         Complete all sections below to submit your mortgage loan application. Our team will review your submission
         within 3–5 business days.
       </p>
+      <div class="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2 text-xs text-brand-100">
+        @if (isCreatingApplication()) {
+        <span>Creating application...</span>
+        } @else if (applicationError()) {
+        <span class="font-semibold text-red-200">{{ applicationError() }}</span>
+        } @else if (applicationId()) {
+        <span><span class="font-semibold text-white">Application ID:</span> {{ applicationId() }}</span>
+        <span><span class="font-semibold text-white">Status:</span> {{ applicationStatus() }}</span>
+        }
+      </div>
     </div>
 
     <div class="shrink-0 flex items-center justify-center w-16 h-16 rounded-2xl bg-white/15 backdrop-blur-sm">
@@ -35,6 +45,16 @@
       </svg>
     </div>
   </div>
+
+  @if (applicationError()) {
+  <div role="alert" class="flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-800 shadow-sm dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-200">
+    <svg class="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="m12 3 10 18H2L12 3Z" />
+      <path d="M12 9v4M12 17h.01" />
+    </svg>
+    <p class="text-sm font-semibold">{{ applicationError() }}</p>
+  </div>
+  }
 
   <!-- ========================================================================= -->
   <!-- DOCUMENT UPLOAD SECTION                                                     -->
@@ -65,8 +85,9 @@
         class="flex flex-col items-center justify-center p-10 border-2 border-dashed rounded-2xl text-center transition-colors cursor-pointer select-none"
         [ngClass]="{
           'border-brand-500 bg-brand-50/50 dark:bg-brand-950/20': isDragging(),
-          'border-gray-300 dark:border-gray-600 hover:border-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800/60': !isDragging()
-        }" (click)="triggerFileInput()">
+          'border-gray-300 dark:border-gray-600 hover:border-brand-400 hover:bg-gray-50 dark:hover:bg-gray-800/60': !isDragging(),
+          'pointer-events-none cursor-not-allowed opacity-60': isUploadDisabled()
+        }" (click)="!isUploadDisabled() && triggerFileInput()">
         <div
           class="w-16 h-16 rounded-2xl bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center mb-4">
           <svg class="w-8 h-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -82,6 +103,7 @@
           Support for PDF, JPG, or PNG. Maximum file size per document is 10MB.
         </p>
         <button type="button"
+          [disabled]="isUploadDisabled()"
           class="mt-5 inline-flex items-center gap-2 px-5 py-2.5 text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 rounded-xl shadow-md shadow-brand-500/20 transition cursor-pointer"
           (click)="$event.stopPropagation(); triggerFileInput()">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -192,9 +214,36 @@
         </div>
         }
         <button type="button"
+          (click)="submitDocuments()"
+          [disabled]="!canSubmitDocuments()"
           class="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-brand-600 hover:bg-brand-700 shadow-md shadow-brand-500/20 transition cursor-pointer">
           <span>Submit Documents</span>
         </button>
+      </div>
+
+      }
+
+      @if (uploadedDocuments().length > 0) {
+      <div class="rounded-2xl bg-white dark:bg-gray-800/90 border border-gray-200 dark:border-gray-700/80 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100 dark:border-gray-700/60">
+          <h4 class="font-bold text-gray-900 dark:text-white text-sm">Uploaded Documents</h4>
+        </div>
+        <div class="px-5">
+          <div class="grid grid-cols-[minmax(0,1fr)_auto] gap-4 py-3 border-b border-gray-100 dark:border-gray-700/60 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+            <span>Document Name</span>
+            <span>Status</span>
+          </div>
+          @for (file of uploadedDocuments(); track file.id) {
+          <div class="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 py-3 border-b border-gray-100 last:border-b-0 dark:border-gray-700/60">
+            <span class="min-w-0 truncate text-sm font-medium text-gray-800 dark:text-gray-200">{{ file.name }}</span>
+            <span class="text-xs font-bold uppercase" [ngClass]="{
+              'text-brand-600 dark:text-brand-400': file.status === 'processing'
+            }">
+              {{ file.status }}
+            </span>
+          </div>
+          }
+        </div>
       </div>
       }
 
@@ -288,6 +337,63 @@
           </p>
         </div>
       </div>
+      <!-- Loan application review -->
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-800/90 p-5 shadow-sm space-y-5">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-brand-50 dark:bg-brand-900/40 text-brand-600 dark:text-brand-400 flex items-center justify-center">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3a9 9 0 1 0 9 9" />
+              <path d="M12 7v5l3 2" />
+              <path d="M16 3h5v5" />
+              <path d="m21 3-5 5" />
+            </svg>
+          </div>
+          <h4 class="text-sm font-bold text-gray-900 dark:text-white">Loan Application Review <span class="text-brand-600 dark:text-brand-400">(by AI)</span></h4>
+        </div>
+
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-[11px] font-bold uppercase tracking-wide text-gray-500 dark:text-gray-400">Application Completeness</span>
+            <span class="text-lg font-bold text-brand-600 dark:text-brand-400">85%</span>
+          </div>
+          <div class="h-2 overflow-hidden rounded-full bg-gray-100 dark:bg-gray-700">
+            <div class="h-full w-[85%] rounded-full bg-brand-500"></div>
+          </div>
+        </div>
+
+        <div class="space-y-2.5">
+          <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-red-600 dark:text-red-400">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m12 3 10 18H2L12 3Z" />
+              <path d="M12 9v4" />
+              <path d="M12 17h.01" />
+            </svg>
+            Missing Requirements
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <span class="rounded-md border border-red-100 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">Latest 3 months payslips</span>
+            <span class="rounded-md border border-red-100 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">Latest 6 months bank statements</span>
+            <span class="rounded-md border border-red-100 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">Completed Sales and Purchase Agreement (SPA)</span>
+            <span class="rounded-md border border-red-100 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">Employment confirmation letter</span>
+            <span class="rounded-md border border-red-100 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 dark:border-red-900/60 dark:bg-red-950/30 dark:text-red-300">Evidence of spouse income, if applicable</span>
+          </div>
+        </div>
+
+        <div class="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
+          <div class="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-gray-600 dark:text-gray-300">
+            <svg class="w-4 h-4 text-brand-600 dark:text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8.5 12a3.5 3.5 0 0 1 7 0" />
+              <path d="M12 8.5v7" />
+            </svg>
+            AI Analysis Summary
+          </div>
+          <p class="text-xs leading-relaxed text-gray-600 dark:text-gray-300">
+            The application is well-supported by the primary documents provided. Additional income and property documents are required to complete the assessment and proceed with the loan review.
+          </p>
+        </div>
+      </div>
+
     </div>
 
   </div>
