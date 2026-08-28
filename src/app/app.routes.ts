@@ -3,6 +3,7 @@ import { AuthGuard } from '@auth0/auth0-angular';
 import { LandingComponent } from './pages/landing/landing.component';
 import { AppLayoutComponent } from './shared/layouts/app-layout/app-layout.component';
 import { DashboardComponent } from './pages/dashboard/dashboard.component';
+import { ApplyMortgageComponent } from './pages/apply/mortgage/apply-mortgage.component';
 import { KycComponent } from './pages/kyc/kyc.component';
 import { OpsLoginComponent } from './pages/ops/ops-login/ops-login.component';
 import { OpsLayoutComponent } from './pages/ops/ops-layout/ops-layout.component';
@@ -55,6 +56,11 @@ export const routes: Routes = [
         path: '',
         component: DashboardComponent,
         title: 'MLTF - Papan Pemuka Pembiayaan',
+      },
+      {
+        path: 'apply/mortgage',
+        component: ApplyMortgageComponent,
+        title: 'MLTF - Permohonan Pinjaman Gadai Janji',
       },
     ],
   },
