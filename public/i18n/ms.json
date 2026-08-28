@@ -292,6 +292,12 @@
   "userMenu": {
     "dashboard": "Papan Pemuka",
     "kyc": "Pengesahan KYC",
+    "kycStatus": "Status KYC",
+    "kycStatusApproved": "Diluluskan",
+    "kycStatusInReview": "Dalam semakan",
+    "kycStatusPending": "Belum selesai",
+    "kycStatusRejected": "Ditolak",
+    "kycStatusNotStarted": "Belum dimulakan",
     "opsPortal": "Portal Pegawai Ops",
     "home": "Laman Utama",
     "signOut": "Log Keluar (Sign Out)"

@@ -4,6 +4,7 @@ import { RouterModule } from '@angular/router';
 import { DropdownComponent } from '../../ui/dropdown/dropdown.component';
 import { DropdownItemComponent } from '../../ui/dropdown/dropdown-item.component';
 import { AppAuthService } from '../../../services/auth.service';
+import { KycService } from '../../../services/kyc.service';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 
 @Component({
@@ -14,8 +15,19 @@ import { TranslatePipe } from '../../../pipes/translate.pipe';
 })
 export class UserDropdownComponent {
   readonly authService = inject(AppAuthService);
+  readonly kycService = inject(KycService);
   readonly isOpen = signal<boolean>(false);
   readonly imageError = signal<boolean>(false);
+
+  readonly kycStatusKey = computed(() => {
+    if (this.kycService.isKycRejected()) return 'userMenu.kycStatusRejected';
+    if (this.kycService.isKycInReview()) return 'userMenu.kycStatusInReview';
+    if (this.kycService.isPendingKyc()) return 'userMenu.kycStatusPending';
+    if (this.kycService.verifiedData()?.status === 'APPROVED' || this.kycService.isStatusApproved(this.kycService.kycStatus())) {
+      return 'userMenu.kycStatusApproved';
+    }
+    return 'userMenu.kycStatusNotStarted';
+  });
 
   readonly userPicture = computed(() => {
     if (this.imageError()) {

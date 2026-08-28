@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { signal } from '@angular/core';
 import { UserDropdownComponent } from './user-dropdown.component';
 import { AppAuthService } from '../../../services/auth.service';
+import { KycService } from '../../../services/kyc.service';
 
 describe('UserDropdownComponent', () => {
   let mockAuthService: {
@@ -11,6 +12,14 @@ describe('UserDropdownComponent', () => {
     user: ReturnType<typeof signal>;
     isAuthenticated: ReturnType<typeof signal>;
     isLoading: ReturnType<typeof signal>;
+  };
+  let mockKycService: {
+    isPendingKyc: ReturnType<typeof signal>;
+    isKycInReview: ReturnType<typeof signal>;
+    isKycRejected: ReturnType<typeof signal>;
+    verifiedData: ReturnType<typeof signal>;
+    kycStatus: ReturnType<typeof signal>;
+    isStatusApproved: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(async () => {
@@ -24,12 +33,21 @@ describe('UserDropdownComponent', () => {
       isAuthenticated: signal(true),
       isLoading: signal(false),
     };
+    mockKycService = {
+      isPendingKyc: signal(false),
+      isKycInReview: signal(false),
+      isKycRejected: signal(false),
+      verifiedData: signal(null),
+      kycStatus: signal(null),
+      isStatusApproved: vi.fn().mockReturnValue(false),
+    };
 
     await TestBed.configureTestingModule({
       imports: [UserDropdownComponent],
       providers: [
         provideRouter([]),
         { provide: AppAuthService, useValue: mockAuthService },
+        { provide: KycService, useValue: mockKycService },
       ],
     }).compileComponents();
   });
@@ -49,6 +67,15 @@ describe('UserDropdownComponent', () => {
     expect(component.isOpen()).toBe(true);
     component.closeDropdown();
     expect(component.isOpen()).toBe(false);
+  });
+
+  it('should display the current KYC status', () => {
+    mockKycService.isKycInReview.set(true);
+    const fixture = TestBed.createComponent(UserDropdownComponent);
+    fixture.componentInstance.toggleDropdown();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.kycStatusKey()).toBe('userMenu.kycStatusInReview');
   });
 
   it('should display user profile picture when picture is available', () => {

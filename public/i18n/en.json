@@ -292,6 +292,12 @@
   "userMenu": {
     "dashboard": "Dashboard",
     "kyc": "KYC Verification",
+    "kycStatus": "KYC status",
+    "kycStatusApproved": "Approved",
+    "kycStatusInReview": "In review",
+    "kycStatusPending": "Pending",
+    "kycStatusRejected": "Rejected",
+    "kycStatusNotStarted": "Not started",
     "opsPortal": "Ops Compliance Portal",
     "home": "Home",
     "signOut": "Sign Out"
