@@ -1,4 +1,35 @@
-<div class="flex items-center justify-center min-h-[60vh]">
+<div class="space-y-6">
+  @if (kycService.isPendingKyc()) {
+    <section data-testid="kyc-warning-banner" class="flex flex-col gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-lg font-bold">{{ translationService.translate('dashboard.kycWarning') }}</h2>
+        <p class="mt-1 text-sm text-amber-800">{{ translationService.translate('dashboard.kycWarningSubtitle') }}</p>
+        <p class="mt-2 text-sm font-semibold">{{ translationService.translate('dashboard.kycStatusPending') }}</p>
+      </div>
+      <a data-testid="do-kyc-btn" routerLink="/kyc" class="inline-flex shrink-0 items-center justify-center rounded-xl bg-amber-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-amber-700">
+        {{ translationService.translate('dashboard.startKycBtn') }}
+      </a>
+    </section>
+  } @else if (kycService.isKycInReview()) {
+    <section data-testid="kyc-in-review-banner" class="rounded-2xl border border-blue-200 bg-blue-50 p-5 text-blue-950">
+      <h2 class="text-lg font-bold">{{ translationService.translate('dashboard.kycInReviewTitle') }}</h2>
+      <p class="mt-1 text-sm text-blue-800">{{ translationService.translate('dashboard.kycInReviewSubtitle') }}</p>
+      <p class="mt-2 text-sm font-semibold">{{ translationService.translate('dashboard.kycStatusInReview') }}</p>
+    </section>
+  } @else if (kycService.isKycRejected()) {
+    <section data-testid="kyc-rejected-banner" class="flex flex-col gap-4 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-950 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-lg font-bold">{{ translationService.translate('dashboard.kycRejectedTitle') }}</h2>
+        <p class="mt-1 text-sm text-red-800">{{ translationService.translate('dashboard.kycRejectedSubtitle') }}</p>
+        <p class="mt-2 text-sm font-semibold">{{ translationService.translate('dashboard.kycStatusRejected') }}</p>
+      </div>
+      <a data-testid="redo-kyc-btn" routerLink="/kyc" class="inline-flex shrink-0 items-center justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white transition-colors hover:bg-red-700">
+        {{ translationService.translate('dashboard.redoKycBtn') }}
+      </a>
+    </section>
+  }
+
+  <div class="flex min-h-[60vh] items-center justify-center">
   <button
     id="apply-mortgage-loan-btn"
     routerLink="/dashboard/apply/mortgage"
@@ -14,4 +45,5 @@
       <path d="m12 5 7 7-7 7"/>
     </svg>
   </button>
+  </div>
 </div>
