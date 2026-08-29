@@ -94,6 +94,21 @@ export class LoanApplicationService {
     );
   }
 
+  deleteDocument(applicationId: string, documentId: string): Observable<void> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.delete<void>(`${this.endpoint}/document`, {
+          headers,
+          params: { applicationID: applicationId, documentID: documentId },
+        });
+      })
+    );
+  }
+
   getApplicationInquiry(applicationId: string): Observable<ApplicationInquiryResponse> {
     return this.authService.getJwtToken().pipe(
       switchMap(token => {

@@ -65,6 +65,8 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
   readonly isDragging = signal<boolean>(false);
   readonly uploadQueue = signal<QueuedFile[]>([]);
   readonly uploadedDocuments = signal<UploadedFile[]>([]);
+  readonly expandedErrorDocumentIds = signal<Set<string>>(new Set());
+  readonly deletedDocumentIds = signal<Set<string>>(new Set());
   readonly applicationId = signal<string | null>(null);
   readonly applicationStatus = signal<string | null>(null);
   readonly isLoadingApplication = signal<boolean>(false);
@@ -94,6 +96,58 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
     { label: 'Latest 2 years Income Tax (B/BE Form)', checked: false },
     { label: 'IC/ID copy', checked: false },
   ];
+
+  toggleErrorDetails(docId: string | undefined): void {
+    if (!docId) return;
+    this.expandedErrorDocumentIds.update(ids => {
+      const next = new Set(ids);
+      if (next.has(docId)) {
+        next.delete(docId);
+      } else {
+        next.add(docId);
+      }
+      return next;
+    });
+  }
+
+  isErrorDetailsExpanded(docId: string | undefined): boolean {
+    if (!docId) return false;
+    return this.expandedErrorDocumentIds().has(docId);
+  }
+
+  isImageFile(ext: string | undefined): boolean {
+    if (!ext) return false;
+    return ['png', 'jpg', 'jpeg', 'gif', 'webp', 'heic', 'tiff'].includes(ext.toLowerCase());
+  }
+
+  truncateId(id: string | undefined): string {
+    if (!id) return '';
+    if (id.length <= 8) return id.toUpperCase();
+    return `${id.substring(0, 8).toUpperCase()}...`;
+  }
+
+  deleteDocument(docId: string | undefined): void {
+    if (!docId) return;
+    const applicationId = this.applicationId();
+    if (!applicationId) return;
+
+    this.deletedDocumentIds.update(ids => {
+      const next = new Set(ids);
+      next.add(docId);
+      return next;
+    });
+
+    this.uploadedDocuments.update(docs => docs.filter(d => d.id !== docId && d.documentId !== docId));
+
+    this.loanApplicationService.deleteDocument(applicationId, docId).subscribe({
+      next: () => {
+        console.log(`Document ${docId} deleted successfully.`);
+      },
+      error: (err) => {
+        console.error(`Failed to delete document ${docId}:`, err);
+      }
+    });
+  }
 
   ngOnInit(): void {
     const existingApplicationId = this.activatedRoute.snapshot.queryParamMap.get('application');
@@ -400,15 +454,24 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
   ): void {
     if (!inquiryDocs) return;
 
+    // Filter out deleted documents from incoming inquiry docs
+    const activeInquiryDocs = inquiryDocs.filter(d => !d.id || !this.deletedDocumentIds().has(d.id));
+
     this.uploadedDocuments.update(currentList => {
+      // Filter out deleted documents from currentList just in case
+      const activeCurrentList = currentList.filter(item => {
+        const idToCheck = item.documentId || item.id;
+        return !idToCheck || !this.deletedDocumentIds().has(idToCheck);
+      });
+
       const matchedBackendIds = new Set<string>();
 
       // Update existing documents matching by document ID first, fallback to filename
-      const updated = currentList.map(item => {
-        const match = inquiryDocs.find(d => {
+      const updated = activeCurrentList.map(item => {
+        const match = activeInquiryDocs.find(d => {
           if (!d.id) return false;
           return (item.documentId && d.id === item.documentId) || (item.id && d.id === item.id);
-        }) ?? inquiryDocs.find(d => {
+        }) ?? activeInquiryDocs.find(d => {
           if (item.documentId) return false;
           if (matchedBackendIds.has(d.id)) return false;
           return d.filename && item.name && d.filename.toLowerCase() === item.name.toLowerCase();
@@ -431,7 +494,7 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
       });
 
       // Check document ID before adding new documents from inquiry
-      for (const backendDoc of inquiryDocs) {
+      for (const backendDoc of activeInquiryDocs) {
         if (!backendDoc.id) continue;
 
         const exists = updated.some(item =>

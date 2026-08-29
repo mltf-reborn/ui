@@ -18,6 +18,7 @@ describe('ApplyMortgageComponent', () => {
   let mockLoanApplicationService: {
     uploadDocument: ReturnType<typeof vi.fn>;
     getApplicationInquiry: ReturnType<typeof vi.fn>;
+    deleteDocument: ReturnType<typeof vi.fn>;
   };
   let mockActivatedRoute: {
     snapshot: {
@@ -49,6 +50,7 @@ describe('ApplyMortgageComponent', () => {
         status: 'IN_PROGRESS',
         documents: [],
       })),
+      deleteDocument: vi.fn().mockReturnValue(of(undefined)),
     };
 
     mockActivatedRoute = {
@@ -194,5 +196,83 @@ describe('ApplyMortgageComponent', () => {
 
     component.ngOnDestroy();
     expect(unsubscribeSpy).toHaveBeenCalled();
+  });
+
+  it('should support document deletion when document fails', () => {
+    const fixture = TestBed.createComponent(ApplyMortgageComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component.uploadedDocuments.set([
+      {
+        id: 'doc-failed',
+        documentId: 'doc-failed',
+        name: 'payslip.pdf',
+        size: '',
+        ext: 'pdf',
+        status: 'FAILED',
+        documentMessage: 'Unreadable image',
+      },
+      {
+        id: 'doc-success',
+        documentId: 'doc-success',
+        name: 'ic.pdf',
+        size: '',
+        ext: 'pdf',
+        status: 'SUCCESS',
+      }
+    ]);
+
+    expect(component.uploadedDocuments().length).toBe(2);
+
+    component.deleteDocument('doc-failed');
+
+    expect(component.uploadedDocuments().length).toBe(1);
+    expect(component.uploadedDocuments()[0].id).toBe('doc-success');
+    expect(mockLoanApplicationService.deleteDocument).toHaveBeenCalledWith('APP-100', 'doc-failed');
+  });
+
+  it('should support toggling collapsible error details', () => {
+    const fixture = TestBed.createComponent(ApplyMortgageComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.isErrorDetailsExpanded('doc-1')).toBe(false);
+
+    component.toggleErrorDetails('doc-1');
+    expect(component.isErrorDetailsExpanded('doc-1')).toBe(true);
+
+    component.toggleErrorDetails('doc-1');
+    expect(component.isErrorDetailsExpanded('doc-1')).toBe(false);
+  });
+
+  it('should ignore deleted document IDs in polling updates', () => {
+    const fixture = TestBed.createComponent(ApplyMortgageComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    component.uploadedDocuments.set([
+      {
+        id: 'doc-1',
+        documentId: 'doc-1',
+        name: 'payslip.pdf',
+        size: '',
+        ext: 'pdf',
+        status: 'FAILED',
+      }
+    ]);
+
+    // Mark doc-1 as deleted
+    component.deleteDocument('doc-1');
+
+    // Run inquiry update with doc-1 again
+    (component as any).updateDocumentsFromInquiry([
+      { id: 'doc-1', filename: 'payslip.pdf', status: 'FAILED' },
+      { id: 'doc-2', filename: 'ic.pdf', status: 'VALID' }
+    ]);
+
+    // doc-1 should not be in the list, but doc-2 should be added
+    expect(component.uploadedDocuments().length).toBe(1);
+    expect(component.uploadedDocuments()[0].id).toBe('doc-2');
   });
 });
