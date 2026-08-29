@@ -26,6 +26,7 @@ describe('DashboardComponent', () => {
     isLoading: ReturnType<typeof signal<boolean>>;
     error: ReturnType<typeof signal<string | null>>;
     loadApplications: ReturnType<typeof vi.fn>;
+    getApplications: ReturnType<typeof vi.fn>;
   };
   let mockTranslationService: {
     currentLanguage: ReturnType<typeof signal<string>>;
@@ -51,6 +52,7 @@ describe('DashboardComponent', () => {
       isLoading: signal<boolean>(false),
       error: signal<string | null>(null),
       loadApplications: vi.fn(),
+      getApplications: vi.fn().mockReturnValue(of([])),
     };
 
     mockTranslationService = {

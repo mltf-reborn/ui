@@ -1,10 +1,12 @@
-import { Component, signal, computed, ViewChild, ElementRef, OnInit, inject } from '@angular/core';
+import { Component, signal, computed, ViewChild, ElementRef, OnInit, OnDestroy, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams } from '@angular/common/http';
+import { forkJoin, Observable, of, timer, Subscription } from 'rxjs';
+import { catchError, switchMap, take, takeWhile } from 'rxjs/operators';
 import { BreadcrumbComponent } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { AppAuthService } from '../../../shared/services/auth.service';
-import { LoanApplicationService } from '../../../shared/services/loan-application.service';
+import { LoanApplicationService, ApplicationDocumentResponse } from '../../../shared/services/loan-application.service';
 import { environment } from '../../../../environments/environment';
 
 export type FileStatus = 'uploading' | 'ok' | 'error';
@@ -18,11 +20,14 @@ export interface QueuedFile {
   ext: string;
   status: FileStatus;
   progress: number;
+  file?: File;
   errorMessage?: string;
 }
 
-export interface UploadedFile extends Omit<QueuedFile, 'status' | 'progress'> {
-  status: UploadedFileStatus;
+export interface UploadedFile extends Omit<QueuedFile, 'status' | 'progress' | 'file'> {
+  status: string;
+  documentId?: string;
+  documentMessage?: string;
 }
 
 export interface DocItem {
@@ -45,7 +50,7 @@ interface CreateApplicationResponse {
   imports: [CommonModule, RouterModule, BreadcrumbComponent],
   templateUrl: './apply-mortgage.component.html',
 })
-export class ApplyMortgageComponent implements OnInit {
+export class ApplyMortgageComponent implements OnInit, OnDestroy {
 
   private readonly http = inject(HttpClient);
   private readonly authService = inject(AppAuthService);
@@ -55,11 +60,14 @@ export class ApplyMortgageComponent implements OnInit {
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
+  private pollingSubscription?: Subscription;
+
   readonly isDragging = signal<boolean>(false);
   readonly uploadQueue = signal<QueuedFile[]>([]);
   readonly uploadedDocuments = signal<UploadedFile[]>([]);
   readonly applicationId = signal<string | null>(null);
   readonly applicationStatus = signal<string | null>(null);
+  readonly isLoadingApplication = signal<boolean>(false);
   readonly isCreatingApplication = signal<boolean>(false);
   readonly applicationError = signal<string | null>(null);
   readonly isUploadDisabled = computed(() => this.applicationError() !== null);
@@ -90,15 +98,44 @@ export class ApplyMortgageComponent implements OnInit {
   ngOnInit(): void {
     const existingApplicationId = this.activatedRoute.snapshot.queryParamMap.get('application');
     if (existingApplicationId) {
-      this.applicationId.set(existingApplicationId);
-      const existingApplication = this.loanApplicationService.applications().find(
-        application => application.applicationReferenceNumber === existingApplicationId
-      );
-      this.applicationStatus.set(existingApplication?.applicationStatus?.toUpperCase() ?? 'IN_PROGRESS');
+      this.loadExistingApplication(existingApplicationId);
       return;
     }
 
     this.createApplication();
+  }
+
+  ngOnDestroy(): void {
+    this.pollingSubscription?.unsubscribe();
+  }
+
+  private loadExistingApplication(applicationId: string): void {
+    this.isLoadingApplication.set(true);
+    this.applicationError.set(null);
+    this.loanApplicationService.getApplicationInquiry(applicationId).subscribe({
+      next: response => {
+        this.applicationId.set(response.applicationID || applicationId);
+        this.applicationStatus.set(response.status?.toUpperCase() || 'IN_PROGRESS');
+        this.uploadedDocuments.set((response.documents ?? []).map(document => ({
+          id: document.id,
+          name: document.filename,
+          size: '',
+          ext: document.filename.split('.').pop()?.toLowerCase() ?? '',
+          status: this.normalizeDocumentStatus(document.status),
+          documentId: document.id,
+          documentMessage: document.message,
+        })));
+        this.isLoadingApplication.set(false);
+
+        if (this.uploadedDocuments().some(doc => !this.isTerminalDocumentStatus(doc.status))) {
+          this.pollDocumentStatuses(response.applicationID || applicationId);
+        }
+      },
+      error: () => {
+        this.applicationError.set('Unable to load the loan application. Please try again.');
+        this.isLoadingApplication.set(false);
+      },
+    });
   }
 
   private createApplication(): void {
@@ -183,6 +220,7 @@ export class ApplyMortgageComponent implements OnInit {
         ext,
         status: 'uploading',
         progress: 0,
+        file,
       };
 
       // Validation
@@ -198,10 +236,10 @@ export class ApplyMortgageComponent implements OnInit {
     }
   }
 
-  /** Simulates an upload with progress ticks — replace with real HTTP call */
+  /** Simulates an upload with progress ticks */
   private simulateUpload(id: string): void {
-    const TICK_MS = 120;
-    const STEP = Math.floor(Math.random() * 12) + 8; // 8–19% per tick
+    const TICK_MS = 80;
+    const STEP = Math.floor(Math.random() * 15) + 10;
 
     const interval = setInterval(() => {
       this.uploadQueue.update(queue =>
@@ -210,11 +248,7 @@ export class ApplyMortgageComponent implements OnInit {
           const next = Math.min(f.progress + STEP, 100);
           if (next === 100) {
             clearInterval(interval);
-            // ~10% chance of simulated error for demo
-            const isError = Math.random() < 0.1;
-            return isError
-              ? { ...f, progress: 100, status: 'error', errorMessage: 'Image quality too low. Please re-scan in 300dpi.' }
-              : { ...f, progress: 100, status: 'ok' };
+            return { ...f, progress: 100, status: 'ok' };
           }
           return { ...f, progress: next };
         })
@@ -235,16 +269,217 @@ export class ApplyMortgageComponent implements OnInit {
 
   submitDocuments(): void {
     const filesToSubmit = this.uploadQueue().filter(file => file.status === 'ok');
-    if (filesToSubmit.length === 0) return;
+    const applicationId = this.applicationId();
+    if (filesToSubmit.length === 0 || !applicationId) return;
 
+    this.uploadQueue.update(queue => queue.filter(file => !filesToSubmit.includes(file)));
     this.uploadedDocuments.update(documents => [
       ...documents,
-      ...filesToSubmit.map(({ status, progress, ...file }) => ({
-        ...file,
-        status: 'processing' as const,
+      ...filesToSubmit.map(({ file, ...queuedFile }) => ({
+        ...queuedFile,
+        status: 'PROCESSING',
       })),
     ]);
-    this.uploadQueue.update(queue => queue.filter(file => file.status !== 'ok'));
+
+    // Start auto-polling backend immediately so status updates without waiting
+    this.pollDocumentStatuses(applicationId);
+
+    // Fire off uploads
+    for (const queuedFile of filesToSubmit) {
+      this.uploadDocument(applicationId, queuedFile).subscribe({
+        next: result => {
+          this.applyUploadResult(result);
+          this.pollDocumentStatuses(applicationId);
+        },
+        error: error => {
+          this.uploadedDocuments.update(docs => docs.map(doc => {
+            if (doc.id === queuedFile.id || (doc.name && doc.name === queuedFile.name)) {
+              return {
+                ...doc,
+                status: 'FAILED',
+                errorMessage: error?.message || 'Upload failed',
+              };
+            }
+            return doc;
+          }));
+        },
+      });
+    }
+  }
+
+  private applyUploadResult(result: {
+    requestId: string;
+    response: ApplicationDocumentResponse;
+    errorMessage?: string;
+  }): void {
+    this.uploadedDocuments.update(documents => documents.map(document => {
+      const isMatch = document.id === result.requestId ||
+        (result.response?.documentFilename && document.name === result.response.documentFilename);
+      if (!isMatch) return document;
+      return {
+        ...document,
+        id: result.response.documentId || document.id,
+        documentId: result.response.documentId || document.documentId,
+        name: result.response.documentFilename || document.name,
+        status: this.mapAgentStatusToDocumentStatus(result.response.documentStatus),
+        documentMessage: result.response.documentMessage || document.documentMessage,
+        errorMessage: result.errorMessage,
+      };
+    }));
+  }
+
+  private pollDocumentStatuses(applicationId: string): void {
+    if (!applicationId) return;
+
+    this.pollingSubscription?.unsubscribe();
+
+    // Make immediate inquiry call
+    this.loanApplicationService.getApplicationInquiry(applicationId).subscribe({
+      next: response => {
+        if (!response) return;
+        if (response.status) {
+          this.applicationStatus.set(response.status.toUpperCase());
+        }
+        if (Array.isArray(response.documents)) {
+          this.updateDocumentsFromInquiry(response.documents);
+        }
+      },
+      error: () => {},
+    });
+
+    // Continue periodic polling every 2 seconds
+    this.pollingSubscription = timer(2000, 2000).pipe(
+      switchMap(() => this.loanApplicationService.getApplicationInquiry(applicationId)),
+      catchError(() => of(null))
+    ).subscribe(response => {
+      if (!response) return;
+
+      if (response.status) {
+        this.applicationStatus.set(response.status.toUpperCase());
+      }
+
+      if (Array.isArray(response.documents)) {
+        this.updateDocumentsFromInquiry(response.documents);
+      }
+
+      const docs = this.uploadedDocuments();
+      const hasPending = docs.length === 0 || docs.some(d => !this.isTerminalDocumentStatus(d.status));
+      if (!hasPending) {
+        this.pollingSubscription?.unsubscribe();
+      }
+    });
+  }
+
+  private updateDocumentsFromInquiry(
+    inquiryDocs: Array<{ id: string; filename: string; status: string; message?: string }>
+  ): void {
+    if (!inquiryDocs) return;
+
+    this.uploadedDocuments.update(currentList => {
+      const updated = currentList.map(item => {
+        const match = inquiryDocs.find(d =>
+          (item.documentId && d.id === item.documentId) ||
+          (item.id && d.id === item.id) ||
+          (d.filename && item.name && d.filename.toLowerCase() === item.name.toLowerCase())
+        );
+
+        if (!match) return item;
+
+        return {
+          ...item,
+          id: match.id || item.id,
+          documentId: match.id || item.documentId,
+          name: match.filename || item.name,
+          status: this.normalizeDocumentStatus(match.status),
+          documentMessage: match.message ?? item.documentMessage,
+        };
+      });
+
+      for (const backendDoc of inquiryDocs) {
+        const exists = updated.some(item =>
+          item.documentId === backendDoc.id ||
+          item.id === backendDoc.id ||
+          (backendDoc.filename && item.name && backendDoc.filename.toLowerCase() === item.name.toLowerCase())
+        );
+
+        if (!exists) {
+          updated.push({
+            id: backendDoc.id,
+            documentId: backendDoc.id,
+            name: backendDoc.filename,
+            size: '',
+            ext: backendDoc.filename ? (backendDoc.filename.split('.').pop()?.toLowerCase() ?? '') : '',
+            status: this.normalizeDocumentStatus(backendDoc.status),
+            documentMessage: backendDoc.message,
+          });
+        }
+      }
+
+      return updated;
+    });
+  }
+
+  private normalizeDocumentStatus(status: string | undefined): string {
+    const normalized = status?.toUpperCase();
+    if (!normalized) return 'PROCESSING';
+    if (normalized === 'ERROR') return 'FAILED';
+    if (normalized === 'VALID' || normalized === 'APPROVED') return 'SUCCESS';
+    if (normalized === 'REJECTED') return 'FAILED';
+    return normalized;
+  }
+
+  private mapAgentStatusToDocumentStatus(agentStatus: string | undefined): string {
+    const status = agentStatus?.toUpperCase();
+    if (status === 'VALID' || status === 'APPROVED' || status === 'SUCCESS' || status === 'COMPLETED') return 'SUCCESS';
+    if (status === 'REJECTED' || status === 'FAILED' || status === 'ERROR') return 'FAILED';
+    if (status === 'REVIEW_REQUIRED') return 'REVIEW_REQUIRED';
+    if (status === 'PROCESSING' || status === 'PENDING' || status === 'IN_PROGRESS' || status === 'QUEUED') return 'PROCESSING';
+    return status || 'PROCESSING';
+  }
+
+  private isTerminalDocumentStatus(status: string | undefined): boolean {
+    const normalized = this.normalizeDocumentStatus(status);
+    return (
+      normalized === 'SUCCESS' ||
+      normalized === 'FAILED' ||
+      normalized === 'REVIEW_REQUIRED' ||
+      normalized === 'COMPLETED' ||
+      normalized === 'REJECTED' ||
+      normalized === 'APPROVED' ||
+      normalized === 'VALID'
+    );
+  }
+
+  private uploadDocument(applicationId: string, queuedFile: QueuedFile): Observable<{
+    requestId: string;
+    response: ApplicationDocumentResponse;
+    errorMessage?: string;
+  }> {
+    if (!queuedFile.file) {
+      return of({
+        requestId: queuedFile.id,
+        response: {
+          documentFilename: queuedFile.name,
+          documentId: '',
+          documentStatus: 'FAILED',
+          documentMessage: 'The selected file is no longer available. Please upload it again.',
+        },
+      });
+    }
+
+    return this.loanApplicationService.uploadDocument(applicationId, queuedFile.file).pipe(
+      switchMap(response => of({ requestId: queuedFile.id, response })),
+      catchError((error: HttpErrorResponse) => of({
+        requestId: queuedFile.id,
+        response: {
+          documentFilename: queuedFile.name,
+          documentId: '',
+          documentStatus: 'FAILED',
+          documentMessage: error.error?.message || error.message || 'Unable to process this document.',
+        },
+        errorMessage: error.error?.message || error.message,
+      }))
+    );
   }
 
   private formatBytes(bytes: number): string {

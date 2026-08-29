@@ -1,5 +1,6 @@
-import { Component, effect, inject } from '@angular/core';
+import { Component, effect, inject, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { Subscription, timer } from 'rxjs';
 import { AppAuthService } from '../../shared/services/auth.service';
 import { KycService } from '../../shared/services/kyc.service';
 import { TranslationService } from '../../shared/services/translation.service';
@@ -11,12 +12,13 @@ import { LoanApplicationService } from '../../shared/services/loan-application.s
   imports: [RouterModule],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit, OnDestroy {
   readonly authService = inject(AppAuthService);
   readonly kycService = inject(KycService);
   readonly translationService = inject(TranslationService);
   readonly loanApplicationService = inject(LoanApplicationService);
   private readonly router = inject(Router);
+  private autoRefreshSub?: Subscription;
 
   constructor() {
     effect(() => {
@@ -25,6 +27,21 @@ export class DashboardComponent {
         this.loanApplicationService.loadApplications();
       }
     });
+  }
+
+  ngOnInit(): void {
+    this.autoRefreshSub = timer(5000, 5000).pipe().subscribe(() => {
+      if (this.authService.isAuthenticated()) {
+        this.loanApplicationService.getApplications().subscribe({
+          next: applications => this.loanApplicationService.applications.set(applications),
+          error: () => {},
+        });
+      }
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.autoRefreshSub?.unsubscribe();
   }
 
   formatCurrency(amount: number): string {
