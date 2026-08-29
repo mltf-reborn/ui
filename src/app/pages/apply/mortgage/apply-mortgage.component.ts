@@ -116,7 +116,17 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
       next: response => {
         this.applicationId.set(response.applicationID || applicationId);
         this.applicationStatus.set(response.status?.toUpperCase() || 'IN_PROGRESS');
-        this.uploadedDocuments.set((response.documents ?? []).map(document => ({
+        const rawDocs = response.documents ?? [];
+        const seenDocIds = new Set<string>();
+        const uniqueDocs = rawDocs.filter(doc => {
+          if (doc.id) {
+            if (seenDocIds.has(doc.id)) return false;
+            seenDocIds.add(doc.id);
+          }
+          return true;
+        });
+
+        this.uploadedDocuments.set(uniqueDocs.map(document => ({
           id: document.id,
           name: document.filename,
           size: '',
@@ -312,20 +322,35 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
     response: ApplicationDocumentResponse;
     errorMessage?: string;
   }): void {
-    this.uploadedDocuments.update(documents => documents.map(document => {
-      const isMatch = document.id === result.requestId ||
-        (result.response?.documentFilename && document.name === result.response.documentFilename);
-      if (!isMatch) return document;
-      return {
-        ...document,
-        id: result.response.documentId || document.id,
-        documentId: result.response.documentId || document.documentId,
-        name: result.response.documentFilename || document.name,
-        status: this.mapAgentStatusToDocumentStatus(result.response.documentStatus),
-        documentMessage: result.response.documentMessage || document.documentMessage,
-        errorMessage: result.errorMessage,
-      };
-    }));
+    this.uploadedDocuments.update(documents => {
+      const docId = result.response?.documentId;
+      const updated = documents.map(document => {
+        const isMatch = document.id === result.requestId ||
+          (docId && (document.documentId === docId || document.id === docId)) ||
+          (result.response?.documentFilename && document.name === result.response.documentFilename);
+        if (!isMatch) return document;
+        return {
+          ...document,
+          id: docId || document.id,
+          documentId: docId || document.documentId,
+          name: result.response?.documentFilename || document.name,
+          status: this.mapAgentStatusToDocumentStatus(result.response?.documentStatus),
+          documentMessage: result.response?.documentMessage || document.documentMessage,
+          errorMessage: result.errorMessage,
+        };
+      });
+
+      // Deduplicate document list by documentId / id
+      const seen = new Set<string>();
+      return updated.filter(doc => {
+        const idToCheck = doc.documentId || doc.id;
+        if (idToCheck) {
+          if (seen.has(idToCheck)) return false;
+          seen.add(idToCheck);
+        }
+        return true;
+      });
+    });
   }
 
   private pollDocumentStatuses(applicationId: string): void {
@@ -376,14 +401,24 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
     if (!inquiryDocs) return;
 
     this.uploadedDocuments.update(currentList => {
+      const matchedBackendIds = new Set<string>();
+
+      // Update existing documents matching by document ID first, fallback to filename
       const updated = currentList.map(item => {
-        const match = inquiryDocs.find(d =>
-          (item.documentId && d.id === item.documentId) ||
-          (item.id && d.id === item.id) ||
-          (d.filename && item.name && d.filename.toLowerCase() === item.name.toLowerCase())
-        );
+        const match = inquiryDocs.find(d => {
+          if (!d.id) return false;
+          return (item.documentId && d.id === item.documentId) || (item.id && d.id === item.id);
+        }) ?? inquiryDocs.find(d => {
+          if (item.documentId) return false;
+          if (matchedBackendIds.has(d.id)) return false;
+          return d.filename && item.name && d.filename.toLowerCase() === item.name.toLowerCase();
+        });
 
         if (!match) return item;
+
+        if (match.id) {
+          matchedBackendIds.add(match.id);
+        }
 
         return {
           ...item,
@@ -395,14 +430,18 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
         };
       });
 
+      // Check document ID before adding new documents from inquiry
       for (const backendDoc of inquiryDocs) {
+        if (!backendDoc.id) continue;
+
         const exists = updated.some(item =>
           item.documentId === backendDoc.id ||
           item.id === backendDoc.id ||
-          (backendDoc.filename && item.name && backendDoc.filename.toLowerCase() === item.name.toLowerCase())
+          matchedBackendIds.has(backendDoc.id)
         );
 
         if (!exists) {
+          matchedBackendIds.add(backendDoc.id);
           updated.push({
             id: backendDoc.id,
             documentId: backendDoc.id,
@@ -415,7 +454,22 @@ export class ApplyMortgageComponent implements OnInit, OnDestroy {
         }
       }
 
-      return updated;
+      // Check document ID before returning final list to prevent duplicates
+      const seenDocumentIds = new Set<string>();
+      const resultList: UploadedFile[] = [];
+
+      for (const doc of updated) {
+        const idToCheck = doc.documentId || doc.id;
+        if (idToCheck) {
+          if (seenDocumentIds.has(idToCheck)) {
+            continue;
+          }
+          seenDocumentIds.add(idToCheck);
+        }
+        resultList.push(doc);
+      }
+
+      return resultList;
     });
   }
 

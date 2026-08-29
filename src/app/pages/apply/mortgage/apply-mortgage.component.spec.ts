@@ -153,6 +153,37 @@ describe('ApplyMortgageComponent', () => {
     expect(mockLoanApplicationService.getApplicationInquiry).toHaveBeenCalledWith('APP-100');
   });
 
+  it('should prevent duplicated documents during status update by checking document ID', () => {
+    mockActivatedRoute.snapshot.queryParamMap.get.mockReturnValue('APP-EXISTING');
+    mockLoanApplicationService.getApplicationInquiry.mockReturnValue(of({
+      applicationID: 'APP-EXISTING',
+      status: 'IN_PROGRESS',
+      documents: [
+        { id: 'doc-1', filename: 'payslip.pdf', status: 'PROCESSING' },
+      ],
+    }));
+
+    const fixture = TestBed.createComponent(ApplyMortgageComponent);
+    const component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.uploadedDocuments().length).toBe(1);
+
+    // Call updateDocumentsFromInquiry with same document id plus duplicate doc-1 and a new doc-2
+    (component as any).updateDocumentsFromInquiry([
+      { id: 'doc-1', filename: 'payslip.pdf', status: 'APPROVED', message: 'Verification passed' },
+      { id: 'doc-1', filename: 'payslip_copy.pdf', status: 'APPROVED' },
+      { id: 'doc-2', filename: 'ic.pdf', status: 'VALID' },
+      { id: 'doc-2', filename: 'ic_duplicate.pdf', status: 'VALID' },
+    ]);
+
+    expect(component.uploadedDocuments().length).toBe(2);
+    expect(component.uploadedDocuments()[0].id).toBe('doc-1');
+    expect(component.uploadedDocuments()[0].status).toBe('SUCCESS');
+    expect(component.uploadedDocuments()[1].id).toBe('doc-2');
+    expect(component.uploadedDocuments()[1].name).toBe('ic.pdf');
+  });
+
   it('should unsubscribe from polling on ngOnDestroy', () => {
     const fixture = TestBed.createComponent(ApplyMortgageComponent);
     const component = fixture.componentInstance;
