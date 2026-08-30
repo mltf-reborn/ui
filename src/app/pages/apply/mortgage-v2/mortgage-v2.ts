@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators, AbstractControl } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { HttpErrorResponse } from '@angular/common/http';
 import { BreadcrumbComponent } from '../../../shared/components/breadcrumb/breadcrumb.component';
@@ -343,10 +343,10 @@ export class MortgageV2 implements OnInit {
             salutation: applicant.spouse_salutation || 'Puan',
             fullName: applicant.spouse_full_name || '',
             idType: applicant.spouse_id_type || 'new_nric',
-            newNric: applicant.spouse_id_no || '',
-            oldNric: '',
-            passportNo: '',
-            otherIdNo: '',
+            newNric: applicant.spouse_id_type === 'new_nric' ? (applicant.spouse_id_no || '') : '',
+            oldNric: applicant.spouse_id_type === 'old_nric' ? (applicant.spouse_id_no || '') : '',
+            passportNo: applicant.spouse_id_type === 'passport' ? (applicant.spouse_id_no || '') : '',
+            otherIdNo: (applicant.spouse_id_type !== 'new_nric' && applicant.spouse_id_type !== 'old_nric' && applicant.spouse_id_type !== 'passport') ? (applicant.spouse_id_no || '') : '',
             otherIdType: applicant.spouse_other_id_type || '',
             nationality: applicant.spouse_nationality || 'Malaysia',
             race: applicant.spouse_race || 'Melayu',
@@ -522,6 +522,10 @@ export class MortgageV2 implements OnInit {
           }
         });
 
+        this.setupIdTypeValidation('primaryPersonal');
+        this.setupIdTypeValidation('spousePersonal');
+        this.setupIdTypeValidation('jointPersonal');
+
         if (applicant.other_commitments) {
           try {
             const commitments = JSON.parse(applicant.other_commitments);
@@ -542,6 +546,26 @@ export class MortgageV2 implements OnInit {
             console.error('Failed to parse close relatives JSON', e);
           }
         }
+
+        // Load existing documents
+        this.loanApplicationService.getApplicationInquiry(applicationId).subscribe({
+          next: inquiry => {
+            if (inquiry && Array.isArray(inquiry.documents)) {
+              this.uploadedFiles = inquiry.documents.map((doc: any) => ({
+                id: doc.id,
+                name: doc.filename,
+                size: 0,
+                type: '',
+                documentType: '',
+                progress: 100,
+                file: null as any
+              }));
+            }
+          },
+          error: err => {
+            console.error('Failed to load application documents', err);
+          }
+        });
       },
       error: err => {
         this.isCreatingApplication.set(false);
@@ -1285,7 +1309,16 @@ export class MortgageV2 implements OnInit {
       this.setupIdTypeValidation('jointPersonal');
     });
 
-    // Trigger initial calculations
+    // 11. Category/Marital changes -> Dynamic validation updates
+    this.loanForm.get('applicationDetails.applicationCategory')?.valueChanges.subscribe(() => {
+      this.setupIdTypeValidation('jointPersonal');
+      this.setupIdTypeValidation('spousePersonal');
+    });
+    this.loanForm.get('primaryPersonal.maritalStatus')?.valueChanges.subscribe(() => {
+      this.setupIdTypeValidation('spousePersonal');
+    });
+
+    // Trigger initial calculations & validations
     const primaryDob = this.loanForm.get('primaryPersonal.dob')?.value;
     if (primaryDob) {
       this.loanForm.get('primaryPersonal.age')?.setValue(this.calculateAge(primaryDob), { emitEvent: false });
@@ -1304,6 +1337,10 @@ export class MortgageV2 implements OnInit {
     if (spouseIncome) {
       this.loanForm.get('spouseEmployment.annualGrossIncome')?.setValue(spouseIncome * 12, { emitEvent: false });
     }
+
+    this.setupIdTypeValidation('primaryPersonal');
+    this.setupIdTypeValidation('spousePersonal');
+    this.setupIdTypeValidation('jointPersonal');
   }
 
   setupIdTypeValidation(groupName: 'primaryPersonal' | 'spousePersonal' | 'jointPersonal') {
@@ -1324,15 +1361,24 @@ export class MortgageV2 implements OnInit {
     otherIdNo?.clearValidators();
     otherIdType?.clearValidators();
 
-    if (idType === 'new_nric') {
-      newNric?.setValidators([Validators.required, Validators.pattern(/^\d{6}-\d{2}-\d{4}$|^\d{12}$/)]);
-    } else if (idType === 'old_nric') {
-      oldNric?.setValidators([Validators.required]);
-    } else if (idType === 'passport') {
-      passportNo?.setValidators([Validators.required]);
-    } else if (idType === 'other_id') {
-      otherIdNo?.setValidators([Validators.required]);
-      otherIdType?.setValidators([Validators.required]);
+    const isJoint = this.loanForm.get('applicationDetails.applicationCategory')?.value === 'joint';
+    const isMarried = this.loanForm.get('primaryPersonal.maritalStatus')?.value === 'married';
+
+    if (groupName === 'jointPersonal' && !isJoint) {
+      // jointPersonal is not validated in single mode
+    } else if (groupName === 'spousePersonal' && (!isMarried || isJoint)) {
+      // spousePersonal is not validated if unmarried or in joint mode
+    } else {
+      if (idType === 'new_nric') {
+        newNric?.setValidators([Validators.required, Validators.pattern(/^\d{6}-\d{2}-\d{4}$|^\d{12}$/)]);
+      } else if (idType === 'old_nric') {
+        oldNric?.setValidators([Validators.required]);
+      } else if (idType === 'passport') {
+        passportNo?.setValidators([Validators.required]);
+      } else if (idType === 'other_id') {
+        otherIdNo?.setValidators([Validators.required]);
+        otherIdType?.setValidators([Validators.required]);
+      }
     }
 
     newNric?.updateValueAndValidity({ emitEvent: false });
@@ -1441,7 +1487,9 @@ export class MortgageV2 implements OnInit {
       case 'financials':
         return (this.loanForm.get('emergencyContact')?.valid && this.otherCommitments.valid) ?? false;
       case 'declarations':
-        return (this.loanForm.get('declarations')?.valid && this.loanForm.get('signatures.primarySignatureName')?.valid) ?? false;
+        return (this.loanForm.get('declarations')?.valid && 
+                this.loanForm.get('signatures')?.valid && 
+                this.closeRelatives.valid) ?? false;
       default:
         return false;
     }
@@ -1505,6 +1553,28 @@ export class MortgageV2 implements OnInit {
         markGroup(this.loanForm.get('signatures') as FormGroup);
         break;
     }
+  }
+
+  logValidationErrors(): string[] {
+    const findErrors = (control: AbstractControl, path = ''): string[] => {
+      const errors: string[] = [];
+      if (control instanceof FormGroup) {
+        Object.keys(control.controls).forEach(key => {
+          errors.push(...findErrors(control.get(key)!, path ? `${path}.${key}` : key));
+        });
+      } else if (control instanceof FormArray) {
+        control.controls.forEach((ctrl, index) => {
+          errors.push(...findErrors(ctrl, `${path}[${index}]`));
+        });
+      } else if (control.invalid) {
+        errors.push(`${path}`);
+      }
+      return errors;
+    };
+
+    const invalidFields = findErrors(this.loanForm);
+    console.warn('--- Invalid Form Fields ---', invalidFields);
+    return invalidFields;
   }
 
   // Signature Canvas drawing handlers
@@ -1618,15 +1688,31 @@ export class MortgageV2 implements OnInit {
       });
     } else {
       // Find invalid step and go to it
+      let foundInvalidStep = false;
+      const invalidFields = this.logValidationErrors();
+      const fieldsList = invalidFields.length > 0 
+        ? '\n\n' + (this.translationService.currentLanguage() === 'en' ? 'Invalid fields: ' : 'Medan tidak sah: ') + invalidFields.join(', ')
+        : '';
+
       for (let i = 0; i < this.steps.length; i++) {
         if (!this.isStepValid(this.steps[i].id)) {
           this.currentStepIndex = i;
           this.markStepControlsAsTouched(this.steps[i].id);
-          alert(this.translationService.currentLanguage() === 'en'
+          alert((this.translationService.currentLanguage() === 'en'
             ? `Please correct validation errors in the "${this.steps[i].titleEn}" section.`
-            : `Sila betulkan ralat pengesahan dalam bahagian "${this.steps[i].titleMs}".`);
+            : `Sila betulkan ralat pengesahan dalam bahagian "${this.steps[i].titleMs}".`) + fieldsList);
+          foundInvalidStep = true;
           break;
         }
+      }
+
+      if (!foundInvalidStep) {
+        // Fallback: If form is invalid but no specific steps are matched, go to the last step and show a message
+        this.currentStepIndex = this.steps.length - 1;
+        this.markStepControlsAsTouched('declarations');
+        alert((this.translationService.currentLanguage() === 'en'
+          ? 'Form is invalid. Please fill in all required fields, including the signature.'
+          : 'Borang tidak sah. Sila isi semua medan yang diperlukan, termasuk tandatangan.') + fieldsList);
       }
     }
   }

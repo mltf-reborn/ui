@@ -31,6 +31,24 @@ describe('MortgageV2', () => {
       getApplicationDetails: vi.fn().mockReturnValue(of({})),
       saveApplicationDraft: vi.fn().mockReturnValue(of(undefined)),
       saveApplicationDetails: vi.fn().mockReturnValue(of(undefined)),
+      uploadDocument: vi.fn().mockReturnValue(of({
+        documentFilename: 'payslip.pdf',
+        documentId: 'DOC-100',
+        documentStatus: 'SUCCESS',
+        documentMessage: 'Validated',
+      })),
+      getApplicationInquiry: vi.fn().mockReturnValue(of({
+        applicationID: 'APP-100',
+        status: 'IN_PROGRESS',
+        documents: [
+          {
+            id: 'DOC-100',
+            filename: 'payslip.pdf',
+            status: 'SUCCESS',
+            message: 'Validated'
+          }
+        ],
+      })),
     };
 
     mockActivatedRoute = {

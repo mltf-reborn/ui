@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, switchMap, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AppAuthService } from './auth.service';
 
@@ -87,10 +87,17 @@ export class LoanApplicationService {
         formData.append('document', file, file.name);
 
         const params = new HttpParams().set('applicationID', applicationId);
-        return this.http.post<ApplicationDocumentResponse>(
-          `${this.endpoint}/document`,
+        return this.http.post<any>(
+          `${(environment as any).apiUrl || ''}/api/v2/application/document`,
           formData,
           { headers, params }
+        ).pipe(
+          map(res => ({
+            documentFilename: file.name,
+            documentId: res.documentId,
+            documentStatus: res.status === 'success' ? 'SUCCESS' : 'FAILED',
+            documentMessage: 'Document uploaded successfully',
+          }))
         );
       })
     );

@@ -161,4 +161,47 @@ describe('DashboardComponent', () => {
     expect(formatted).toContain('350,000');
     expect(formatted).toContain('RM');
   });
+
+  it('should hide edit and delete buttons when application status is SUBMITTED', () => {
+    mockLoanApplicationService.applications.set([
+      {
+        applicationReferenceNumber: 'APP-SUBMITTED-123',
+        dateApplied: '2026-08-30',
+        facilityPurpose: 'Financing',
+        propertyProject: 'Sky Condo',
+        propertyPrice: 'RM 500,000',
+        applicationType: 'Single',
+        applicationStatus: 'SUBMITTED'
+      },
+      {
+        applicationReferenceNumber: 'APP-DRAFT-123',
+        dateApplied: '2026-08-30',
+        facilityPurpose: 'Financing',
+        propertyProject: 'Sky Condo',
+        propertyPrice: 'RM 500,000',
+        applicationType: 'Single',
+        applicationStatus: 'DRAFT'
+      }
+    ]);
+
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const rows = compiled.querySelectorAll('tbody tr');
+    expect(rows.length).toBe(2);
+
+    // Row 1 (SUBMITTED) buttons should not be present, instead a placeholder text is shown
+    const row1EditBtn = rows[0].querySelector('button[aria-label="Edit application"]');
+    const row1DeleteBtn = rows[0].querySelector('button[aria-label="Delete application"]');
+    expect(row1EditBtn).toBeNull();
+    expect(row1DeleteBtn).toBeNull();
+    expect(rows[0].textContent).toContain('No actions available');
+
+    // Row 2 (DRAFT) buttons should be present
+    const row2EditBtn = rows[1].querySelector('button[aria-label="Edit application"]');
+    const row2DeleteBtn = rows[1].querySelector('button[aria-label="Delete application"]');
+    expect(row2EditBtn).not.toBeNull();
+    expect(row2DeleteBtn).not.toBeNull();
+  });
 });

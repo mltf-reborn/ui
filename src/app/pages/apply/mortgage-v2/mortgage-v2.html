@@ -1641,6 +1641,8 @@
             </h4>
             <app-document-uploader 
               [requiredTypes]="requiredDocsList" 
+              [applicationId]="applicationId()"
+              [uploadedFiles]="uploadedFiles"
               (filesChanged)="onFilesChanged($event)">
             </app-document-uploader>
           </div>
@@ -1926,7 +1928,7 @@
 
         <button *ngIf="currentStepIndex === steps.length - 1" 
                 type="submit"
-                [disabled]="!loanForm.valid || isSubmitting"
+                [disabled]="isSubmitting"
                 class="w-full sm:w-auto inline-flex justify-center items-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-10 text-sm font-bold shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
           <span *ngIf="isSubmitting" class="animate-spin inline-block size-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
           ✓ {{ translationService.currentLanguage() === 'en' ? 'Submit Loan Application' : 'Hantar Permohonan' }}

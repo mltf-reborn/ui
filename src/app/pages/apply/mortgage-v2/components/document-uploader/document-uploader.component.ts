@@ -1,6 +1,7 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LoanApplicationService } from '../../../../../shared/services/loan-application.service';
 
 export interface UploadedFile {
   id: string;
@@ -21,9 +22,12 @@ export interface UploadedFile {
 })
 export class DocumentUploaderComponent {
   @Input() requiredTypes: { id: string; nameEn: string; nameMs: string }[] = [];
+  @Input() applicationId: string | null = null;
   @Output() filesChanged = new EventEmitter<UploadedFile[]>();
 
-  uploadedFiles: UploadedFile[] = [];
+  private readonly loanApplicationService = inject(LoanApplicationService);
+
+  @Input() uploadedFiles: UploadedFile[] = [];
   isDragging = false;
   selectedDocTypeId = '';
   errorMessage = '';
@@ -55,6 +59,11 @@ export class DocumentUploaderComponent {
 
   private handleFileSelection(files: FileList) {
     this.errorMessage = '';
+
+    if (!this.applicationId) {
+      this.errorMessage = 'No active application ID found. Please create or load an application first.';
+      return;
+    }
     
     if (!this.selectedDocTypeId) {
       this.errorMessage = 'Please select a document type before uploading / Sila pilih jenis dokumen sebelum memuat naik.';
@@ -81,24 +90,56 @@ export class DocumentUploaderComponent {
       };
 
       this.uploadedFiles.push(newFile);
-      this.simulateUpload(newFile);
+      this.uploadFile(newFile);
     }
   }
 
-  private simulateUpload(file: UploadedFile) {
-    const interval = setInterval(() => {
-      if (file.progress < 100) {
-        file.progress += 20;
+  private uploadFile(uploadedFile: UploadedFile) {
+    if (!this.applicationId) return;
+
+    // Simulate progress up to 90%
+    const progressInterval = setInterval(() => {
+      if (uploadedFile.progress < 90) {
+        uploadedFile.progress += 10;
       } else {
-        clearInterval(interval);
+        clearInterval(progressInterval);
+      }
+    }, 150);
+
+    this.loanApplicationService.uploadDocument(this.applicationId, uploadedFile.file).subscribe({
+      next: (res: any) => {
+        clearInterval(progressInterval);
+        uploadedFile.progress = 100;
+        if (res.documentId) {
+          uploadedFile.id = res.documentId;
+        }
+        this.filesChanged.emit(this.uploadedFiles);
+      },
+      error: (err: any) => {
+        clearInterval(progressInterval);
+        uploadedFile.progress = 0;
+        this.errorMessage = err.error?.message || err.message || `Failed to upload "${uploadedFile.name}"`;
+        this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== uploadedFile.id);
         this.filesChanged.emit(this.uploadedFiles);
       }
-    }, 100);
+    });
   }
 
   removeFile(id: string) {
+    const fileToRemove = this.uploadedFiles.find(f => f.id === id);
     this.uploadedFiles = this.uploadedFiles.filter(f => f.id !== id);
     this.filesChanged.emit(this.uploadedFiles);
+
+    if (this.applicationId && fileToRemove && fileToRemove.progress === 100) {
+      this.loanApplicationService.deleteDocument(this.applicationId, id).subscribe({
+        next: () => {
+          console.log(`Document ${id} successfully deleted from backend`);
+        },
+        error: (err: any) => {
+          console.error(`Failed to delete document ${id} from backend`, err);
+        }
+      });
+    }
   }
 
   isDocUploaded(docTypeId: string): boolean {
