@@ -3,14 +3,16 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { BreadcrumbComponent } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { TranslationService } from '../../../shared/services/translation.service';
+import { DocumentUploaderComponent, UploadedFile } from './components/document-uploader/document-uploader.component';
 
 @Component({
   selector: 'app-mortgage-v2',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BreadcrumbComponent],
+  imports: [CommonModule, ReactiveFormsModule, BreadcrumbComponent, DocumentUploaderComponent],
   templateUrl: './mortgage-v2.html',
   styleUrls: ['./mortgage-v2.css']
 })
+
 export class MortgageV2 implements OnInit {
   loanForm!: FormGroup;
   currentStepIndex = 0;
@@ -20,6 +22,20 @@ export class MortgageV2 implements OnInit {
   isDrawing = false;
   lastX = 0;
   lastY = 0;
+
+  // Document Upload States
+  uploadedFiles: UploadedFile[] = [];
+  
+  readonly requiredDocsList = [
+    { id: 'nric', nameEn: 'Copy of NRIC (Front & Back) / Passport', nameMs: 'Salinan Kad Pengenalan / Pasport' },
+    { id: 'pds', nameEn: 'Product Disclosure Sheet (PDS)', nameMs: 'Lembaran Pendedahan Produk' },
+    { id: 'income', nameEn: 'Income Documents / Pay Slips', nameMs: 'Dokumen Pendapatan / Penyata Gaji' },
+    { id: 'other', nameEn: 'Other Enclosed Documents', nameMs: 'Dokumen Sokongan Lain' }
+  ];
+
+  onFilesChanged(files: UploadedFile[]) {
+    this.uploadedFiles = files;
+  }
 
   // Dropdown options lists
   readonly salutations = ['Tan Sri', 'Dato\'', 'Dr', 'Mr', 'Encik', 'Puan Sri', 'Datin', 'Madam', 'Puan', 'Ms', 'Cik'];
