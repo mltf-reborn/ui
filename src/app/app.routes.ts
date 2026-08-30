@@ -62,6 +62,11 @@ export const routes: Routes = [
         component: ApplyMortgageComponent,
         title: 'MLTF - Permohonan Pinjaman Gadai Janji',
       },
+      {
+        path: 'apply/mortgage-v2',
+        loadComponent: () => import('./pages/apply/mortgage-v2/mortgage-v2').then(m => m.MortgageV2),
+        title: 'MLTF - Permohonan Pinjaman Gadai Janji V2',
+      },
     ],
   },
   {

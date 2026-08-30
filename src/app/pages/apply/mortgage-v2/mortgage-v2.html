@@ -1,0 +1,1853 @@
+<div class="space-y-6 max-w-7xl mx-auto pb-12 px-4 sm:px-6">
+  <!-- Breadcrumb -->
+  <app-breadcrumb [pageTitle]="translationService.currentLanguage() === 'en' ? 'Mortgage Loan Application' : 'Permohonan Pinjaman Gadai Janji'"></app-breadcrumb>
+
+  <!-- Header Banner -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-brand-600 via-brand-700 to-brand-800 text-white shadow-xl relative overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.1),transparent_40%)]"></div>
+    <div class="space-y-1.5 relative z-1">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 text-xs font-semibold backdrop-blur-md">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+        {{ translationService.currentLanguage() === 'en' ? 'Secure Mortgage Application' : 'Permohonan Gadai Janji Selamat' }}
+      </div>
+      <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+        {{ translationService.currentLanguage() === 'en' ? 'Mortgage Loan Application' : 'Permohonan Pinjaman Gadai Janji' }}
+      </h2>
+      <p class="text-xs sm:text-sm text-brand-100 max-w-2xl font-medium">
+        {{ translationService.currentLanguage() === 'en' ? 'Please complete the application steps below. You can save your progress and navigate back to edit details at any time.' : 'Sila lengkapkan langkah-langkah permohonan di bawah. Anda boleh menyimpan kemajuan anda dan menavigasi kembali untuk mengedit butiran.' }}
+      </p>
+    </div>
+  </div>
+
+  <!-- Wizard Steps Tracker -->
+  <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto no-scrollbar">
+    <div class="flex items-center justify-between min-w-max md:min-w-0 px-2 space-x-4">
+      <ng-container *ngFor="let step of steps; let i = index">
+        <button type="button" 
+                (click)="goToStep(i)"
+                class="flex items-center gap-3 text-left focus:outline-none transition-all duration-200 group">
+          <div [class]="'flex items-center justify-center size-10 rounded-full border-2 font-bold text-sm transition-all duration-300 ' + 
+                       (i === currentStepIndex ? 'border-brand-600 bg-brand-600 text-white shadow-md shadow-brand-500/20 scale-105' : 
+                        isStepValid(step.id) ? 'border-success-500 bg-success-500 text-white' : 
+                        'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 group-hover:border-slate-400')">
+            <span *ngIf="isStepValid(step.id); else stepNum">✓</span>
+            <ng-template #stepNum>{{ i + 1 }}</ng-template>
+          </div>
+          <div>
+            <p [class]="'text-xs font-semibold uppercase tracking-wider ' + (i === currentStepIndex ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400 dark:text-slate-500')">
+              {{ translationService.currentLanguage() === 'en' ? 'Step' : 'Langkah' }} {{ i + 1 }}
+            </p>
+            <p [class]="'text-sm font-bold transition-colors duration-200 ' + (i === currentStepIndex ? 'text-slate-900 dark:text-white font-extrabold' : 'text-slate-500 dark:text-slate-400')">
+              {{ translationService.currentLanguage() === 'en' ? step.titleEn : step.titleMs }}
+            </p>
+          </div>
+          <div *ngIf="i < steps.length - 1" class="h-8 w-[1px] bg-slate-200 dark:bg-slate-700 ml-4 hidden md:block"></div>
+        </button>
+      </ng-container>
+    </div>
+  </div>
+
+  <!-- Form Body -->
+  <div class="max-w-5xl mx-auto w-full">
+    <form [formGroup]="loanForm" (ngSubmit)="onSubmit()" class="space-y-6">
+      
+      <!-- STEP 1: APPLICATION DETAILS -->
+      <section *ngIf="steps[currentStepIndex].id === 'app-details'" formGroupName="applicationDetails" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+        <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+            {{ translationService.currentLanguage() === 'en' ? 'Application & Facility Selection' : 'Pilihan Permohonan & Kemudahan' }}
+          </h3>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+            {{ translationService.currentLanguage() === 'en' ? 'Choose your banking entity, application category, and facilities required.' : 'Pilih entiti perbankan, kategori permohonan, dan kemudahan yang diperlukan.' }}
+          </p>
+        </div>
+
+        <!-- Bank Selection (Custom Cards) -->
+        <div class="space-y-3">
+          <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+            {{ translationService.currentLanguage() === 'en' ? 'Bank Selection' : 'Pilihan Bank' }} <span class="text-red-500">*</span>
+          </label>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <label [class]="'flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 ' + 
+                           (loanForm.get('applicationDetails.bankSelection')?.value === 'BANK XYZ' ? 'border-brand-600 bg-brand-50/30 dark:bg-brand-950/10' : 'border-slate-200 dark:border-slate-700')">
+              <div class="flex items-center gap-3">
+                <input type="radio" formControlName="bankSelection" value="BANK XYZ" class="size-4 text-brand-600 focus:ring-brand-500">
+                <div>
+                  <span class="block text-sm font-extrabold text-slate-900 dark:text-white">BANK XYZ</span>
+                  <span class="block text-xs text-slate-500 dark:text-slate-400">{{ translationService.currentLanguage() === 'en' ? 'Conventional & Commercial' : 'Konvensional & Komersial' }}</span>
+                </div>
+              </div>
+              <span class="text-lg">🏦</span>
+            </label>
+            <label [class]="'flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 hover:bg-slate-50 dark:hover:bg-slate-700/50 ' + 
+                           (loanForm.get('applicationDetails.bankSelection')?.value === 'BANK XYZ ISLAMIC' ? 'border-brand-600 bg-brand-50/30 dark:bg-brand-950/10' : 'border-slate-200 dark:border-slate-700')">
+              <div class="flex items-center gap-3">
+                <input type="radio" formControlName="bankSelection" value="BANK XYZ ISLAMIC" class="size-4 text-brand-600 focus:ring-brand-500">
+                <div>
+                  <span class="block text-sm font-extrabold text-slate-900 dark:text-white">BANK XYZ ISLAMIC</span>
+                  <span class="block text-xs text-slate-500 dark:text-slate-400">{{ translationService.currentLanguage() === 'en' ? 'Islamic & Shariah Compliant' : 'Islam & Patuh Syariah' }}</span>
+                </div>
+              </div>
+              <span class="text-lg">🌙</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Application Category -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Type of Application' : 'Jenis Permohonan' }} <span class="text-red-500">*</span>
+            </label>
+            <select formControlName="applicationCategory" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option value="single">{{ translationService.currentLanguage() === 'en' ? 'Single Application' : 'Permohonan Tunggal' }}</option>
+              <option value="joint">{{ translationService.currentLanguage() === 'en' ? 'Joint Application' : 'Permohonan Bersama' }}</option>
+            </select>
+          </div>
+
+          <!-- Relationship (If Joint) -->
+          <div *ngIf="loanForm.get('applicationDetails.applicationCategory')?.value === 'joint'">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300 animate-fade-in">
+              {{ translationService.currentLanguage() === 'en' ? 'Relationship with Primary Applicant' : 'Hubungan dengan Pemohon Utama' }} <span class="text-red-500">*</span>
+            </label>
+            <select formControlName="jointRelationship" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option value="">{{ translationService.currentLanguage() === 'en' ? 'Select Relationship' : 'Pilih Hubungan' }}</option>
+              <option *ngFor="let rel of relationshipOptions" [value]="rel.value">
+                {{ translationService.currentLanguage() === 'en' ? rel.labelEn : rel.labelMs }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Type of Facility -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Type of Facility' : 'Jenis Kemudahan' }} <span class="text-red-500">*</span>
+            </label>
+            <select formControlName="facilityType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option value="conventional">{{ translationService.currentLanguage() === 'en' ? 'Conventional Facility' : 'Kemudahan Konvensional' }}</option>
+              <option value="shariah">{{ translationService.currentLanguage() === 'en' ? 'Shariah Compliant Facility' : 'Kemudahan Patuh Syariah' }}</option>
+            </select>
+          </div>
+
+          <!-- Purpose of Facility -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Purpose of Facility' : 'Tujuan Kemudahan' }} <span class="text-red-500">*</span>
+            </label>
+            <select formControlName="purposeOfFacility" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option value="Financing of Property">{{ translationService.currentLanguage() === 'en' ? 'Financing of Property / Pembiayaan Hartanah' : 'Pembiayaan Hartanah' }}</option>
+              <option value="Construction of Property">{{ translationService.currentLanguage() === 'en' ? 'Construction of Property / Pembinaan Hartanah' : 'Pembinaan Hartanah' }}</option>
+              <option value="Refinancing/Top Up of Property">{{ translationService.currentLanguage() === 'en' ? 'Refinancing/Top Up of Property / Pembiayaan Semula/Tambah Nilai Hartanah' : 'Pembiayaan Semula/Tambah Nilai Hartanah' }}</option>
+            </select>
+          </div>
+
+          <!-- Refinancing Bank (If Refinancing) -->
+          <div *ngIf="loanForm.get('applicationDetails.purposeOfFacility')?.value === 'Refinancing/Top Up of Property'" class="md:col-span-2 animate-fade-in">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Current Financier Bank Name' : 'Nama Bank Pembiaya Sedia Ada' }} <span class="text-red-500">*</span>
+            </label>
+            <input type="text" formControlName="refinancingBank" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border" placeholder="e.g. Maybank, Public Bank">
+          </div>
+        </div>
+
+        <!-- Facility(ies) Required (Grid Checklist) -->
+        <div class="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Facility(ies) Required' : 'Kemudahan yang Diperlukan' }}
+            </label>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {{ translationService.currentLanguage() === 'en' ? 'Tick one or more facilities that apply to your application.' : 'Tandakan satu atau lebih kemudahan yang berkenaan dengan permohonan anda.' }}
+            </p>
+          </div>
+          
+          <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="termLoan" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Term Loan / Financing</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="housingLoan" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Housing Loan / Financing</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="businessPremiseLoan" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Business Premise Loan / Financing</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="personalLoan" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Personal Loan / Financing</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="houseConstructionLoan" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">House Construction Loan</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="houseRenovationLoan" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">House Renovation Loan</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="cashOut" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Cash Out from Property</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="topUp" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Top Up from Existing Facility</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="overdraft" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Overdraft / Cash Line-i</span>
+            </label>
+            <label class="flex items-center gap-3 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+              <input type="checkbox" formControlName="land" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+              <span class="text-xs font-bold text-slate-700 dark:text-slate-300">Land / Tanah</span>
+            </label>
+          </div>
+
+          <!-- Land Specify (If checked) -->
+          <div *ngIf="loanForm.get('applicationDetails.land')?.value" class="mt-3 animate-fade-in">
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">
+              {{ translationService.currentLanguage() === 'en' ? 'Specify Land Details' : 'Nyatakan Butiran Tanah' }} <span class="text-red-500">*</span>
+            </label>
+            <input type="text" formControlName="landSpecify" class="mt-1 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border" placeholder="e.g. Freehold Agriculture Lot 1234">
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 2: PRIMARY APPLICANT INFO -->
+      <section *ngIf="steps[currentStepIndex].id === 'primary-info'" class="space-y-6">
+        <!-- Personal details group -->
+        <div formGroupName="primaryPersonal" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Primary Applicant Personal Details' : 'Maklumat Peribadi Pemohon Utama' }}
+            </h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Salutation -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Salutation <span class="text-red-500">*</span></label>
+              <select formControlName="salutation" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let sal of salutations" [value]="sal">{{ sal }}</option>
+              </select>
+            </div>
+
+            <!-- Full Name -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                {{ translationService.currentLanguage() === 'en' ? 'Full Name (as per NRIC / Passport)' : 'Nama Penuh (seperti dalam K/P / Pasport)' }} <span class="text-red-500">*</span>
+              </label>
+              <input type="text" formControlName="fullName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- ID Type selector -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">{{ translationService.currentLanguage() === 'en' ? 'Identity Document Type' : 'Jenis Dokumen Identiti' }} <span class="text-red-500">*</span></label>
+              <select formControlName="idType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="new_nric">New NRIC / No KP Baru</option>
+                <option value="old_nric">Old NRIC / No KP Lama</option>
+                <option value="passport">Passport / No Pasport</option>
+                <option value="other_id">Other ID Type / No. ID Lain</option>
+              </select>
+            </div>
+
+            <!-- Dynamic ID Field -->
+            <div class="md:col-span-2 animate-fade-in">
+              <!-- New NRIC -->
+              <div *ngIf="loanForm.get('primaryPersonal.idType')?.value === 'new_nric'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">New NRIC Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="newNric" placeholder="e.g. 830824-14-1234" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <p class="text-xs text-slate-400 mt-1">Format: YYMMDD-PB-### or 12 digits</p>
+              </div>
+
+              <!-- Old NRIC -->
+              <div *ngIf="loanForm.get('primaryPersonal.idType')?.value === 'old_nric'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Old NRIC Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="oldNric" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Passport -->
+              <div *ngIf="loanForm.get('primaryPersonal.idType')?.value === 'passport'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Passport Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="passportNo" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Other ID -->
+              <div *ngIf="loanForm.get('primaryPersonal.idType')?.value === 'other_id'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">ID Type (e.g. Military) <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="otherIdType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">ID Number <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="otherIdNo" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+            </div>
+
+            <!-- Nationality -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nationality <span class="text-red-500">*</span></label>
+              <select formControlName="nationality" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="malaysian">Malaysian / Warganegara</option>
+                <option value="non_malaysian">Non-Malaysian / Bukan Warganegara</option>
+              </select>
+            </div>
+
+            <!-- Race -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Race / Bangsa <span class="text-red-500">*</span></label>
+              <select formControlName="race" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let race of races" [value]="race">{{ race }}</option>
+              </select>
+            </div>
+
+            <!-- Country of Origin -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Country of Origin <span class="text-red-500">*</span></label>
+              <select formControlName="countryOfOrigin" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border font-outfit">
+                <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+              </select>
+            </div>
+
+            <!-- Bumiputera Status (Switch styling) -->
+            <div class="flex flex-col">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Bumiputera Status <span class="text-red-500">*</span></label>
+              <div class="mt-3 flex gap-4">
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="bumiputeraStatus" value="yes" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Bumiputera (Yes/Ya)</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="bumiputeraStatus" value="no" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Non-Bumi (No/Tidak)</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Gender -->
+            <div class="flex flex-col">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Gender / Jantina <span class="text-red-500">*</span></label>
+              <div class="mt-3 flex gap-4">
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="gender" value="male" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Male / Lelaki</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="gender" value="female" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Female / Perempuan</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Marital Status -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Marital Status <span class="text-red-500">*</span></label>
+              <select formControlName="maritalStatus" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="single">Single / Bujang</option>
+                <option value="married">Married / Berkahwin</option>
+                <option value="divorced">Divorced / Bercerai</option>
+                <option value="widow_widower">Widow/Widower / Balu/Duda</option>
+              </select>
+            </div>
+
+            <!-- Date of Birth -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Date of Birth <span class="text-red-500">*</span></label>
+              <input type="date" formControlName="dob" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Age (Auto-Calculated) -->
+            <div>
+              <label class="block text-sm font-bold text-slate-400 dark:text-slate-500">Age / Umur (Auto-calculated)</label>
+              <input type="text" formControlName="age" class="mt-2 block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-slate-400 text-sm p-3 border font-extrabold text-brand-600 dark:text-brand-400 cursor-not-allowed">
+            </div>
+
+            <!-- Education Level -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Education Level <span class="text-red-500">*</span></label>
+              <select formControlName="educationLevel" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let edu of educationLevels" [value]="edu.value">
+                  {{ translationService.currentLanguage() === 'en' ? edu.labelEn : edu.labelMs }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Resident Type -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Resident Type <span class="text-red-500">*</span></label>
+              <select formControlName="residentType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let rt of residentTypes" [value]="rt.value">
+                  {{ rt.labelEn }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Dependents Count -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Number of Dependents <span class="text-red-500">*</span></label>
+              <select formControlName="dependentsCount" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let num of [0,1,2,3,4,5,6,7,8,9,10]" [value]="num">{{ num }}</option>
+              </select>
+            </div>
+
+            <!-- Schooling Children Count -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Number of Children Schooling <span class="text-red-500">*</span></label>
+              <select formControlName="schoolingChildrenCount" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let num of [0,1,2,3,4,5,6,7,8,9,10]" [value]="num">{{ num }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact details group -->
+        <div formGroupName="primaryContact" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Primary Applicant Contact & Residence' : 'Maklumat Perhubungan & Kediaman Pemohon Utama' }}
+            </h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Mobile Phone -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Mobile Phone <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="phoneMobile" placeholder="e.g. 0123456789" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Home Phone -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Home Phone</label>
+              <input type="text" formControlName="phoneHome" placeholder="e.g. 0388888888" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Email Address -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">E-mail Address <span class="text-red-500">*</span></label>
+              <input type="email" formControlName="email" placeholder="e.g. name@domain.com" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Residence Type -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Residence Type <span class="text-red-500">*</span></label>
+              <select formControlName="residenceType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let rt of residenceTypes" [value]="rt.value">
+                  {{ translationService.currentLanguage() === 'en' ? rt.labelEn : rt.labelMs }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Length of Stay (Years / Months) -->
+            <div class="grid grid-cols-2 gap-4 md:col-span-2">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Length of Stay (Years) <span class="text-red-500">*</span></label>
+                <select formControlName="lengthOfStayYears" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option *ngFor="let y of [0,1,2,3,4,5,6,7,8,9,10,12,15,20,25,30,35,40,45,50]" [value]="y">{{ y }} {{ y === 1 ? 'Year' : 'Years' }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Months <span class="text-red-500">*</span></label>
+                <select formControlName="lengthOfStayMonths" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option *ngFor="let m of [0,1,2,3,4,5,6,7,8,9,10,11]" [value]="m">{{ m }} {{ m === 1 ? 'Month' : 'Months' }}</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Permanent Address -->
+            <div class="md:col-span-3">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Permanent Address / Alamat Tetap <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="addressLine1" placeholder="Address Line 1" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <input type="text" formControlName="addressLine2" placeholder="Address Line 2" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Postcode, City, State, Country -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Postcode / Poskod <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="postcode" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">City / Bandar <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="city" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">State / Negeri <span class="text-red-500">*</span></label>
+              <select formControlName="state" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let st of states" [value]="st">{{ st }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Country / Negara <span class="text-red-500">*</span></label>
+              <select formControlName="country" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let cy of countries" [value]="cy">{{ cy }}</option>
+              </select>
+            </div>
+
+            <!-- Mailing Address same toggle -->
+            <div class="md:col-span-3 pt-3">
+              <label class="inline-flex items-center cursor-pointer">
+                <input type="checkbox" formControlName="mailingAddressSame" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="ml-2.5 text-sm font-bold text-slate-700 dark:text-slate-300">{{ translationService.currentLanguage() === 'en' ? 'Mailing Address is identical to Permanent Address' : 'Alamat Surat-menyurat sama dengan Alamat Tetap' }}</span>
+              </label>
+            </div>
+
+            <!-- Mailing Address (Conditional on same value check) -->
+            <ng-container *ngIf="!loanForm.get('primaryContact.mailingAddressSame')?.value">
+              <div class="md:col-span-3 border-t border-slate-100 dark:border-slate-700 pt-4 animate-fade-in">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Mailing Address / Alamat Surat-menyurat <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="mailingAddressLine1" placeholder="Address Line 1" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <input type="text" formControlName="mailingAddressLine2" placeholder="Address Line 2" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:col-span-3 animate-fade-in">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Postcode / Poskod <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="mailingPostcode" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">City / Bandar <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="mailingCity" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">State / Negeri <span class="text-red-500">*</span></label>
+                  <select formControlName="mailingState" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                    <option *ngFor="let st of states" [value]="st">{{ st }}</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Country / Negara <span class="text-red-500">*</span></label>
+                  <select formControlName="mailingCountry" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                    <option *ngFor="let cy of countries" [value]="cy">{{ cy }}</option>
+                  </select>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 3: JOINT APPLICANT INFO (CONDITIONAL) -->
+      <section *ngIf="steps[currentStepIndex].id === 'joint-info'" class="space-y-6">
+        <!-- Joint Personal details -->
+        <div formGroupName="jointPersonal" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Joint Applicant Personal Details' : 'Maklumat Peribadi Pemohon Bersama' }}
+            </h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Salutation -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Salutation <span class="text-red-500">*</span></label>
+              <select formControlName="salutation" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="">{{ translationService.currentLanguage() === 'en' ? 'Select' : 'Pilih' }}</option>
+                <option *ngFor="let sal of salutations" [value]="sal">{{ sal }}</option>
+              </select>
+            </div>
+
+            <!-- Full Name -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                {{ translationService.currentLanguage() === 'en' ? 'Full Name (as per NRIC / Passport)' : 'Nama Penuh (seperti dalam K/P / Pasport)' }} <span class="text-red-500">*</span>
+              </label>
+              <input type="text" formControlName="fullName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- ID Type selector -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">{{ translationService.currentLanguage() === 'en' ? 'Identity Document Type' : 'Jenis Dokumen Identiti' }} <span class="text-red-500">*</span></label>
+              <select formControlName="idType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="new_nric">New NRIC / No KP Baru</option>
+                <option value="old_nric">Old NRIC / No KP Lama</option>
+                <option value="passport">Passport / No Pasport</option>
+                <option value="other_id">Other ID Type / No. ID Lain</option>
+              </select>
+            </div>
+
+            <!-- Dynamic ID Field -->
+            <div class="md:col-span-2">
+              <!-- New NRIC -->
+              <div *ngIf="loanForm.get('jointPersonal.idType')?.value === 'new_nric'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">New NRIC Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="newNric" placeholder="e.g. 830824-14-1234" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Old NRIC -->
+              <div *ngIf="loanForm.get('jointPersonal.idType')?.value === 'old_nric'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Old NRIC Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="oldNric" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Passport -->
+              <div *ngIf="loanForm.get('jointPersonal.idType')?.value === 'passport'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Passport Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="passportNo" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Other ID -->
+              <div *ngIf="loanForm.get('jointPersonal.idType')?.value === 'other_id'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">ID Type (e.g. Military) <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="otherIdType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">ID Number <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="otherIdNo" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+            </div>
+
+            <!-- Nationality, Race, Country of Origin -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nationality <span class="text-red-500">*</span></label>
+              <select formControlName="nationality" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="malaysian">Malaysian</option>
+                <option value="non_malaysian">Non-Malaysian</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Race / Bangsa <span class="text-red-500">*</span></label>
+              <select formControlName="race" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="">Select Race</option>
+                <option *ngFor="let race of races" [value]="race">{{ race }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Country of Origin <span class="text-red-500">*</span></label>
+              <select formControlName="countryOfOrigin" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+              </select>
+            </div>
+
+            <!-- DOB, Age, Gender -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Date of Birth <span class="text-red-500">*</span></label>
+              <input type="date" formControlName="dob" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-400 dark:text-slate-500">Age / Umur (Auto-calculated)</label>
+              <input type="text" formControlName="age" class="mt-2 block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-slate-400 text-sm p-3 border font-extrabold text-brand-600 cursor-not-allowed">
+            </div>
+            <div class="flex flex-col">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Gender / Jantina <span class="text-red-500">*</span></label>
+              <div class="mt-3 flex gap-4">
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="gender" value="male" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Male / Lelaki</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="gender" value="female" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Female / Perempuan</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Joint Contact details -->
+        <div formGroupName="jointContact" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Joint Applicant Contact & Residence' : 'Maklumat Perhubungan & Kediaman Pemohon Bersama' }}
+            </h3>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Mobile Phone, Home Phone, Email -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Mobile Phone <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="phoneMobile" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Home Phone</label>
+              <input type="text" formControlName="phoneHome" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">E-mail Address <span class="text-red-500">*</span></label>
+              <input type="email" formControlName="email" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Residence Address -->
+            <div class="md:col-span-3">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Permanent Address / Alamat Tetap <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="addressLine1" placeholder="Address Line 1" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <input type="text" formControlName="addressLine2" placeholder="Address Line 2" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Postcode, City, State, Country -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Postcode <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="postcode" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">City <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="city" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">State <span class="text-red-500">*</span></label>
+              <select formControlName="state" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let st of states" [value]="st">{{ st }}</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 4: SPOUSE DETAILS (CONDITIONAL) -->
+      <section *ngIf="steps[currentStepIndex].id === 'spouse-info'" class="space-y-6">
+        <div formGroupName="spousePersonal" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Spouse Personal Details' : 'Maklumat Pasangan' }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {{ translationService.currentLanguage() === 'en' ? 'Provide details since your spouse is not a joint applicant.' : 'Isi butiran ini memandangkan pasangan anda bukan pemohon bersama.' }}
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Salutation -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Salutation <span class="text-red-500">*</span></label>
+              <select formControlName="salutation" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let sal of salutations" [value]="sal">{{ sal }}</option>
+              </select>
+            </div>
+
+            <!-- Full Name -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Full Name <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="fullName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- ID Type selector -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">ID Document Type <span class="text-red-500">*</span></label>
+              <select formControlName="idType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="new_nric">New NRIC / No KP Baru</option>
+                <option value="old_nric">Old NRIC / No KP Lama</option>
+                <option value="passport">Passport / No Pasport</option>
+                <option value="other_id">Other ID Type / No. ID Lain</option>
+              </select>
+            </div>
+
+            <!-- Dynamic ID Field -->
+            <div class="md:col-span-2">
+              <!-- New NRIC -->
+              <div *ngIf="loanForm.get('spousePersonal.idType')?.value === 'new_nric'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">New NRIC Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="newNric" placeholder="e.g. 830824-14-1234" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Old NRIC -->
+              <div *ngIf="loanForm.get('spousePersonal.idType')?.value === 'old_nric'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Old NRIC Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="oldNric" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Passport -->
+              <div *ngIf="loanForm.get('spousePersonal.idType')?.value === 'passport'">
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Passport Number <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="passportNo" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+
+              <!-- Other ID -->
+              <div *ngIf="loanForm.get('spousePersonal.idType')?.value === 'other_id'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">ID Type (e.g. Military) <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="otherIdType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+                <div>
+                  <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">ID Number <span class="text-red-500">*</span></label>
+                  <input type="text" formControlName="otherIdNo" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+            </div>
+
+            <!-- Nationality, Race, Country of Origin -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nationality <span class="text-red-500">*</span></label>
+              <select formControlName="nationality" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option value="Malaysia">Malaysia</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Race / Bangsa <span class="text-red-500">*</span></label>
+              <select formControlName="race" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let race of races" [value]="race">{{ race }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Country of Origin <span class="text-red-500">*</span></label>
+              <select formControlName="countryOfOrigin" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let country of countries" [value]="country">{{ country }}</option>
+              </select>
+            </div>
+
+            <!-- DOB, Age, Gender -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Date of Birth <span class="text-red-500">*</span></label>
+              <input type="date" formControlName="dob" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-400 dark:text-slate-500">Age / Umur (Auto-calculated)</label>
+              <input type="text" formControlName="age" class="mt-2 block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 dark:text-slate-400 text-sm p-3 border font-extrabold text-brand-600 cursor-not-allowed">
+            </div>
+            <div class="flex flex-col">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Gender / Jantina <span class="text-red-500">*</span></label>
+              <div class="mt-3 flex gap-4">
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="gender" value="male" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Male / Lelaki</span>
+                </label>
+                <label class="inline-flex items-center cursor-pointer">
+                  <input type="radio" formControlName="gender" value="female" class="size-4 text-brand-600 focus:ring-brand-500">
+                  <span class="ml-2 text-sm text-slate-700 dark:text-slate-300">Female / Perempuan</span>
+                </label>
+              </div>
+            </div>
+
+            <!-- Mobile Phone & E-mail -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Handphone / Telefon Bimbit <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="phoneMobile" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">E-mail Address <span class="text-red-500">*</span></label>
+              <input type="email" formControlName="email" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 5: EMPLOYMENT & INCOME DETAILS -->
+      <section *ngIf="steps[currentStepIndex].id === 'employment'" class="space-y-6">
+        <!-- Primary Applicant Employment -->
+        <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Primary Applicant Employment Details' : 'Maklumat Pekerjaan Pemohon Utama' }}
+            </h3>
+          </div>
+
+          <div formGroupName="primaryEmployment" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Employment Status -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Current Employment Status <span class="text-red-500">*</span></label>
+              <select formControlName="employmentStatus" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border font-outfit">
+                <option *ngFor="let status of employmentStatuses" [value]="status.value">{{ status.labelEn }}</option>
+              </select>
+            </div>
+
+            <!-- Employer Name -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Employer Name / Nama Majikan <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="employerName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Employer Address -->
+            <div class="md:col-span-3">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Employer Address / Alamat Majikan <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="employerAddressLine1" placeholder="Address Line 1" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <input type="text" formControlName="employerAddressLine2" placeholder="Address Line 2" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Postcode, City, State, Country -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Postcode / Poskod <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="employerPostcode" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">City / Bandar <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="employerCity" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">State / Negeri <span class="text-red-500">*</span></label>
+              <select formControlName="employerState" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let st of states" [value]="st">{{ st }}</option>
+              </select>
+            </div>
+
+            <!-- Contact Office -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Office Phone / Telefon Pejabat</label>
+              <input type="text" formControlName="officePhone" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Office E-mail / E-mel Pejabat</label>
+              <input type="email" formControlName="emailWork" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Nature of Business -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nature of Business <span class="text-red-500">*</span></label>
+              <select formControlName="natureOfBusiness" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let biz of businessNatures" [value]="biz">{{ biz }}</option>
+              </select>
+            </div>
+            <div *ngIf="loanForm.get('primaryEmployment.natureOfBusiness')?.value === 'Other'" class="md:col-span-3 animate-fade-in">
+              <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Specify Business Nature <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="natureOfBusinessSpecify" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Occupation & Position -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Occupation / Pekerjaan <span class="text-red-500">*</span></label>
+              <select formControlName="occupation" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let occ of occupations" [value]="occ">{{ occ }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Position / Jawatan <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="position" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Date Joined -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Date Joined / Tarikh Masuk <span class="text-red-500">*</span></label>
+              <input type="date" formControlName="dateJoined" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Length of Service (Auto-Calculated) -->
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500">Service Years</label>
+                <input type="number" formControlName="serviceYears" class="mt-2 block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-400 text-sm p-3 border font-extrabold cursor-not-allowed">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-400 dark:text-slate-500">Months</label>
+                <input type="number" formControlName="serviceMonths" class="mt-2 block w-full rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-400 text-sm p-3 border font-extrabold cursor-not-allowed">
+              </div>
+            </div>
+          </div>
+
+          <!-- Primary Income details -->
+          <div formGroupName="primaryIncome" class="border-t border-slate-100 dark:border-slate-700 pt-6 mt-6">
+            <h4 class="text-md font-bold text-slate-900 dark:text-white mb-4">
+              {{ translationService.currentLanguage() === 'en' ? 'Primary Applicant Income Details' : 'Maklumat Pendapatan Pemohon Utama' }}
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Monthly Gross Income (RM) <span class="text-red-500">*</span></label>
+                <div class="mt-2 relative rounded-xl shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <span class="text-slate-400 text-sm font-bold">RM</span>
+                  </div>
+                  <input type="number" formControlName="monthlyGrossIncome" class="block w-full pl-11 rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Other Monthly Income (RM)</label>
+                <div class="mt-2 relative rounded-xl shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <span class="text-slate-400 text-sm font-bold">RM</span>
+                  </div>
+                  <input type="number" formControlName="otherMonthlyIncome" class="block w-full pl-11 rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-400 dark:text-slate-500">Annual Gross Income (RM)</label>
+                <div class="mt-2 relative rounded-xl shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <span class="text-slate-400 text-sm font-bold">RM</span>
+                  </div>
+                  <input type="number" formControlName="annualGrossIncome" class="block w-full pl-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-400 text-sm p-3 border font-extrabold cursor-not-allowed">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-400 dark:text-slate-500">Other Annual Income (RM)</label>
+                <div class="mt-2 relative rounded-xl shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <span class="text-slate-400 text-sm font-bold">RM</span>
+                  </div>
+                  <input type="number" formControlName="otherAnnualIncome" class="block w-full pl-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-400 text-sm p-3 border font-extrabold cursor-not-allowed">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Previous Employment details (CONDITIONAL on serviceYears < 2) -->
+          <div *ngIf="loanForm.get('primaryEmployment.serviceYears')?.value < 2" formGroupName="primaryEmployment" class="border-t border-slate-100 dark:border-slate-700 pt-6 mt-6 animate-fade-in">
+            <div class="mb-4">
+              <h4 class="text-md font-bold text-slate-900 dark:text-white">
+                {{ translationService.currentLanguage() === 'en' ? 'Previous Employment Details' : 'Maklumat Pekerjaan Terdahulu' }}
+              </h4>
+              <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                ⚠️ {{ translationService.currentLanguage() === 'en' ? 'Required since current employment is less than 2 years.' : 'Diperlukan memandangkan tempoh pekerjaan semasa kurang dari 2 tahun.' }}
+              </p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Previous Employer Name <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="prevEmployerName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nature of Business <span class="text-red-500">*</span></label>
+                <select formControlName="prevNatureOfBusiness" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option *ngFor="let biz of businessNatures" [value]="biz">{{ biz }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Occupation <span class="text-red-500">*</span></label>
+                <select formControlName="prevOccupation" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option *ngFor="let occ of occupations" [value]="occ">{{ occ }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Position <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="prevPosition" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">General Phone Line</label>
+                <input type="text" formControlName="prevPhone" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Years <span class="text-red-500">*</span></label>
+                  <input type="number" formControlName="prevServiceYears" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Months <span class="text-red-500">*</span></label>
+                  <input type="number" formControlName="prevServiceMonths" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Joint Applicant Employment (If category is 'joint') -->
+        <div *ngIf="loanForm.get('applicationDetails.applicationCategory')?.value === 'joint'" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Joint Applicant Employment Details' : 'Maklumat Pekerjaan Pemohon Bersama' }}
+            </h3>
+          </div>
+
+          <div formGroupName="jointEmployment" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Employment Status -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Current Employment Status <span class="text-red-500">*</span></label>
+              <select formControlName="employmentStatus" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let status of employmentStatuses" [value]="status.value">{{ status.labelEn }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Employer Name <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="employerName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Nature of Business, Occupation, Position -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nature of Business <span class="text-red-500">*</span></label>
+              <select formControlName="natureOfBusiness" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let biz of businessNatures" [value]="biz">{{ biz }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Occupation <span class="text-red-500">*</span></label>
+              <select formControlName="occupation" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let occ of occupations" [value]="occ">{{ occ }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Position <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="position" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Date Joined -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Date Joined <span class="text-red-500">*</span></label>
+              <input type="date" formControlName="dateJoined" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+          </div>
+
+          <!-- Joint Income details -->
+          <div formGroupName="jointIncome" class="border-t border-slate-100 dark:border-slate-700 pt-6 mt-6">
+            <h4 class="text-md font-bold text-slate-900 dark:text-white mb-4">
+              {{ translationService.currentLanguage() === 'en' ? 'Joint Applicant Income Details' : 'Maklumat Pendapatan Pemohon Bersama' }}
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Monthly Gross Income (RM) <span class="text-red-500">*</span></label>
+                <div class="mt-2 relative rounded-xl shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <span class="text-slate-400 text-sm font-bold">RM</span>
+                  </div>
+                  <input type="number" formControlName="monthlyGrossIncome" class="block w-full pl-11 rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Other Monthly Income (RM)</label>
+                <div class="mt-2 relative rounded-xl shadow-sm">
+                  <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                    <span class="text-slate-400 text-sm font-bold">RM</span>
+                  </div>
+                  <input type="number" formControlName="otherMonthlyIncome" class="block w-full pl-11 rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Spouse Employment & Income (If married and single application) -->
+        <div *ngIf="loanForm.get('primaryPersonal.maritalStatus')?.value === 'married' && loanForm.get('applicationDetails.applicationCategory')?.value !== 'joint'" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Spouse Employment & Income Details' : 'Maklumat Pekerjaan & Pendapatan Pasangan' }}
+            </h3>
+          </div>
+
+          <div formGroupName="spouseEmployment" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Employer Name -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Spouse Employer Name <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="employerName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Nature of Business, Occupation, Position -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Nature of Business <span class="text-red-500">*</span></label>
+              <select formControlName="natureOfBusiness" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let biz of businessNatures" [value]="biz">{{ biz }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Occupation <span class="text-red-500">*</span></label>
+              <select formControlName="occupation" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                <option *ngFor="let occ of occupations" [value]="occ">{{ occ }}</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Position <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="position" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Length of Service -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Length of Service (Years) <span class="text-red-500">*</span></label>
+              <input type="number" formControlName="serviceYears" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Monthly Gross Income -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Monthly Gross Income (RM) <span class="text-red-500">*</span></label>
+              <div class="mt-2 relative rounded-xl shadow-sm">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <span class="text-slate-400 text-sm font-bold">RM</span>
+                </div>
+                <input type="number" formControlName="monthlyGrossIncome" class="block w-full pl-11 rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+            </div>
+
+            <!-- Annual Gross Income -->
+            <div>
+              <label class="block text-sm font-bold text-slate-400 dark:text-slate-500">Annual Gross Income (RM)</label>
+              <div class="mt-2 relative rounded-xl shadow-sm">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                  <span class="text-slate-400 text-sm font-bold">RM</span>
+                </div>
+                <input type="number" formControlName="annualGrossIncome" class="block w-full pl-11 rounded-xl border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-400 text-sm p-3 border font-extrabold cursor-not-allowed">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 6: PROPERTY & GERAN DETAILS -->
+      <section *ngIf="steps[currentStepIndex].id === 'property'" formGroupName="propertyDetails" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+        <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+          <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+            {{ translationService.currentLanguage() === 'en' ? 'Property & Geran (Title) Details' : 'Butiran Hartanah & Geran (Hakmilik)' }}
+          </h3>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Property Type -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Property Type <span class="text-red-500">*</span></label>
+            <select formControlName="propertyType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option value="residential">Residential / Kediaman</option>
+              <option value="non-residential">Non-Residential / Bukan Kediaman</option>
+            </select>
+          </div>
+
+          <!-- Property Sub Type -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Property Sub-Type <span class="text-red-500">*</span></label>
+            <select formControlName="propertySubType" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option *ngFor="let sub of propertySubTypes" [value]="sub.value">
+                {{ translationService.currentLanguage() === 'en' ? sub.labelEn : sub.labelMs }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Construction Status -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Property Construction Status <span class="text-red-500">*</span></label>
+            <select formControlName="propertyStatus" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option value="completed">Completed / Siap Dibina</option>
+              <option value="under_construction">Under Construction / Sedang Dibina</option>
+            </select>
+          </div>
+
+          <!-- Construction Stage (If under construction) -->
+          <div *ngIf="loanForm.get('propertyDetails.propertyStatus')?.value === 'under_construction'" class="md:col-span-3 animate-fade-in">
+            <label class="block text-xs font-bold text-slate-600 dark:text-slate-400">Current Construction Stage / Fasa Pembinaan <span class="text-red-500">*</span></label>
+            <input type="text" formControlName="constructionStage" placeholder="e.g. Piling, Bricklaying, 60% completed" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+
+          <!-- Developer Info -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Developer/Vendor Name <span class="text-red-500">*</span></label>
+            <input type="text" formControlName="developerName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Project Name <span class="text-red-500">*</span></label>
+            <input type="text" formControlName="projectName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Relationship to Developer/Vendor <span class="text-red-500">*</span></label>
+            <select formControlName="relationshipToDeveloper" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border font-outfit">
+              <option value="none">None / Tiada Hubungan</option>
+              <option value="client">Client / Pelanggan</option>
+              <option value="employee">Employee / Pekerja</option>
+              <option value="relative">Relative / Saudara</option>
+              <option value="other">Other / Lain-lain</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Phase Code</label>
+            <input type="text" formControlName="phaseCode" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+          <div class="md:col-span-2">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Contractor Name</label>
+            <input type="text" formControlName="contractorName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+
+          <!-- Property Address -->
+          <div class="md:col-span-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Property Address / Alamat Hartanah <span class="text-red-500">*</span></label>
+            <input type="text" formControlName="addressLine1" placeholder="Address Line 1" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            <input type="text" formControlName="addressLine2" placeholder="Address Line 2" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+
+          <!-- Postcode, City, State, Country -->
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Postcode / Poskod <span class="text-red-500">*</span></label>
+            <input type="text" formControlName="postcode" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">City / Bandar <span class="text-red-500">*</span></label>
+            <input type="text" formControlName="city" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+          </div>
+          <div>
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">State / Negeri <span class="text-red-500">*</span></label>
+            <select formControlName="state" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              <option *ngFor="let st of states" [value]="st">{{ st }}</option>
+            </select>
+          </div>
+
+          <!-- TITLE DETAILS (GERAN) -->
+          <div class="md:col-span-3 pt-6 border-t border-slate-100 dark:border-slate-700">
+            <h4 class="text-md font-bold text-slate-900 dark:text-white mb-4">
+              {{ translationService.currentLanguage() === 'en' ? 'Geran (Title) Details' : 'Butiran Geran' }}
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Title Number (No. Geran) <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="titleNumber" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Lot Number (No. Lot) <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="lotNumber" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Mukim <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="mukim" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">District / Daerah <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="district" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">State / Negeri <span class="text-red-500">*</span></label>
+                <select formControlName="stateGeran" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option *ngFor="let st of states" [value]="st">{{ st }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Title Type / Jenis Geran <span class="text-red-500">*</span></label>
+                <select formControlName="titleType" class="mt-1.5 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option *ngFor="let tt of titleTypes" [value]="tt.value">{{ tt.labelEn }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Declarations and Pricing Details -->
+          <div class="md:col-span-3 pt-6 border-t border-slate-100 dark:border-slate-700">
+            <h4 class="text-md font-bold text-slate-900 dark:text-white mb-4">
+              {{ translationService.currentLanguage() === 'en' ? 'Property Status & Net Purchase Price Declarations' : 'Deklarasi Status Hartanah & Harga Belian Bersih' }}
+            </h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Is this property owner-occupied? <span class="text-red-500">*</span></label>
+                <select formControlName="isOwnerOccupied" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option value="yes">{{ translationService.currentLanguage() === 'en' ? 'Yes / Ya' : 'Ya' }}</option>
+                  <option value="no">{{ translationService.currentLanguage() === 'en' ? 'No / Tidak' : 'Tidak' }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Is this your first time purchasing a residential property? <span class="text-red-500">*</span></label>
+                <select formControlName="isFirstTimePurchaser" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+                  <option value="yes">{{ translationService.currentLanguage() === 'en' ? 'Yes / Ya' : 'Ya' }}</option>
+                  <option value="no">{{ translationService.currentLanguage() === 'en' ? 'No / Tidak' : 'Tidak' }}</option>
+                </select>
+              </div>
+
+              <!-- Prices & Deductions -->
+              <div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-3 md:grid-cols-6 gap-4 mt-2">
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Gross Purchase Price (SPA Price) <span class="text-red-500">*</span></label>
+                  <div class="mt-2 relative rounded-xl shadow-sm">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span class="text-slate-400 text-xs font-bold">RM</span>
+                    </div>
+                    <input type="number" formControlName="grossPurchasePrice" class="block w-full pl-9 rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 text-sm p-3 border">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Discount</label>
+                  <div class="mt-2 relative rounded-xl shadow-sm">
+                    <input type="number" formControlName="discount" class="block w-full rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 text-sm p-3 border">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Rebate</label>
+                  <div class="mt-2 relative rounded-xl shadow-sm">
+                    <input type="number" formControlName="rebate" class="block w-full rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 text-sm p-3 border">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Adjustment</label>
+                  <div class="mt-2 relative rounded-xl shadow-sm">
+                    <input type="number" formControlName="adjustment" class="block w-full rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 text-sm p-3 border">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Developer Benefits</label>
+                  <div class="mt-2 relative rounded-xl shadow-sm">
+                    <input type="number" formControlName="developerBenefits" class="block w-full rounded-xl border-slate-300 focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 text-sm p-3 border">
+                  </div>
+                </div>
+                
+                <!-- Net Purchase Price (Disabled Auto-calculated) -->
+                <div class="sm:col-span-6 bg-slate-50 dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-700 mt-2 flex flex-col sm:flex-row justify-between items-center gap-2">
+                  <div>
+                    <span class="block text-sm font-bold text-slate-900 dark:text-white">{{ translationService.currentLanguage() === 'en' ? 'Actual Net Purchase Price' : 'Harga Belian Bersih Sebenar' }}</span>
+                    <span class="block text-xs text-slate-500 dark:text-slate-400">{{ translationService.currentLanguage() === 'en' ? 'Calculated automatically: Gross - (Discount + Rebate + Adjustment + Benefits)' : 'Dikira secara automatik: Kasar - (Diskaun + Rebat + Pelarasan + Manfaat)' }}</span>
+                  </div>
+                  <div class="text-xl font-extrabold text-brand-600 dark:text-brand-400">
+                    RM {{ loanForm.get('propertyDetails.netPurchasePrice')?.value | number:'1.2-2' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 7: OTHER COMMITMENTS & RETIREMENT PLAN -->
+      <section *ngIf="steps[currentStepIndex].id === 'financials'" class="space-y-6">
+        <!-- Commitments FormArray -->
+        <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="flex justify-between items-center border-b border-slate-100 dark:border-slate-700 pb-4">
+            <div>
+              <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+                {{ translationService.currentLanguage() === 'en' ? 'Other Monthly Financial Commitments' : 'Lain-lain Komitmen Kewangan Bulanan' }}
+              </h3>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                {{ translationService.currentLanguage() === 'en' ? 'Enter monthly commitments outside Bank XYZ (e.g. car loan, credit card, cooperations).' : 'Isi komitmen luar Bank XYZ (cth. pinjaman kereta, kad kredit, koperasi).' }}
+              </p>
+            </div>
+            <button type="button" 
+                    (click)="addCommitment()" 
+                    class="inline-flex items-center gap-1.5 rounded-xl bg-brand-50 hover:bg-brand-100 dark:bg-brand-500/10 dark:hover:bg-brand-500/20 text-brand-600 dark:text-brand-400 py-2 px-4 text-xs font-bold transition-all duration-200">
+              ➕ {{ translationService.currentLanguage() === 'en' ? 'Add Row' : 'Tambah Baris' }}
+            </button>
+          </div>
+
+          <!-- Commitments Data Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  <th class="pb-3 pr-4">{{ translationService.currentLanguage() === 'en' ? 'Financial Institution' : 'Institusi Kewangan' }}</th>
+                  <th class="pb-3 pr-4">{{ translationService.currentLanguage() === 'en' ? 'Facility Type' : 'Jenis Kemudahan' }}</th>
+                  <th class="pb-3 pr-4">{{ translationService.currentLanguage() === 'en' ? 'Limit / Amount (RM)' : 'Had / Amaun' }}</th>
+                  <th class="pb-3 pr-4">Tenure (Months)</th>
+                  <th class="pb-3 pr-4">Monthly (RM)</th>
+                  <th class="pb-3 pr-4">Outstanding (RM)</th>
+                  <th class="pb-3 text-center"></th>
+                </tr>
+              </thead>
+              <tbody formArrayName="otherCommitments">
+                <tr *ngFor="let comm of otherCommitments.controls; let idx = index" [formGroupName]="idx" class="border-b border-slate-100 dark:border-slate-800 align-middle">
+                  <td class="py-3 pr-4">
+                    <input type="text" formControlName="financialInstitution" placeholder="e.g. CIMB" class="w-full rounded-xl border-slate-300 dark:bg-slate-900 text-xs p-2.5 border">
+                  </td>
+                  <td class="py-3 pr-4">
+                    <input type="text" formControlName="facilityType" placeholder="e.g. Car Loan" class="w-full rounded-xl border-slate-300 dark:bg-slate-900 text-xs p-2.5 border">
+                  </td>
+                  <td class="py-3 pr-4">
+                    <input type="number" formControlName="facilityAmount" class="w-full rounded-xl border-slate-300 dark:bg-slate-900 text-xs p-2.5 border">
+                  </td>
+                  <td class="py-3 pr-4">
+                    <input type="number" formControlName="tenureMonths" class="w-full rounded-xl border-slate-300 dark:bg-slate-900 text-xs p-2.5 border">
+                  </td>
+                  <td class="py-3 pr-4">
+                    <input type="number" formControlName="monthlyInstalment" class="w-full rounded-xl border-slate-300 dark:bg-slate-900 text-xs p-2.5 border">
+                  </td>
+                  <td class="py-3 pr-4">
+                    <input type="number" formControlName="currentOutstanding" class="w-full rounded-xl border-slate-300 dark:bg-slate-900 text-xs p-2.5 border">
+                  </td>
+                  <td class="py-3 text-center">
+                    <button type="button" 
+                            (click)="removeCommitment(idx)" 
+                            class="text-red-500 hover:text-red-700 p-2 transition-colors">
+                      🗑️
+                    </button>
+                  </td>
+                </tr>
+                <tr *ngIf="otherCommitments.length === 0">
+                  <td colspan="7" class="py-6 text-center text-xs text-slate-400 font-medium">
+                    {{ translationService.currentLanguage() === 'en' ? 'No commitments listed. Click "Add Row" to add your financial commitments.' : 'Tiada komitmen disenaraikan. Klik "Tambah Baris" untuk menambah komitmen.' }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payment Plan Beyond Retirement -->
+        <div class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Payment Planning Beyond Retirement' : 'Rancangan Pembayaran Selepas Persaraan' }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {{ translationService.currentLanguage() === 'en' ? 'If the facility tenure extends beyond your retirement age, state how you plan to settle the loan.' : 'Sekiranya tempoh kemudahan melebihi umur persaraan anda, nyatakan bagaimana anda merancang untuk menjelaskan baki.' }}
+            </p>
+          </div>
+
+          <div class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <div>
+                  <span class="block text-xs font-bold text-slate-950 dark:text-white">Withdrawal from EPF / KWSP</span>
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">Pengeluaran daripada Akaun KWSP</span>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <div>
+                  <span class="block text-xs font-bold text-slate-950 dark:text-white">Pension Provision / Annuity Payments</span>
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">Pengeluaran pencen / bayaran anuiti</span>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <div>
+                  <span class="block text-xs font-bold text-slate-950 dark:text-white">Insurance/Takaful Policy Cash Value</span>
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">Hasil daripada nilai tunai polisi insurans</span>
+                </div>
+              </label>
+              <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <div>
+                  <span class="block text-xs font-bold text-slate-950 dark:text-white">Investment Proceeds (Unit Trust/Shares)</span>
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">Hasil daripada unit amanah / saham</span>
+                </div>
+              </label>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-700 dark:text-slate-300">Other manners / Cara-cara lain (Specify/Sila nyatakan)</label>
+              <textarea class="mt-2 block w-full rounded-xl border-slate-300 dark:bg-slate-900 text-sm p-3 border" rows="2" placeholder="e.g. Sale of other assets, family contribution"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div formGroupName="emergencyContact" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Emergency Contact' : 'Hubungan Kecemasan' }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {{ translationService.currentLanguage() === 'en' ? 'Contact details of a person to reach if you are not contactable.' : 'Butiran orang yang boleh dihubungi sekiranya anda gagal dihubungi.' }}
+            </p>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Full Name -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Full Name / Nama Penuh <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="fullName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Relationship -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Relationship / Hubungan <span class="text-red-500">*</span></label>
+              <select formControlName="relationship" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border font-outfit">
+                <option value="">Select Relationship</option>
+                <option *ngFor="let opt of relationshipOptions" [value]="opt.value">
+                  {{ translationService.currentLanguage() === 'en' ? opt.labelEn : opt.labelMs }}
+                </option>
+              </select>
+            </div>
+
+            <!-- Handphone -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Handphone Number <span class="text-red-500">*</span></label>
+              <input type="text" formControlName="phoneMobile" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+
+            <!-- Home phone & Email -->
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Residential Phone</label>
+              <input type="text" formControlName="phoneHome" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">E-mail Address</label>
+              <input type="email" formControlName="email" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- STEP 8: DECLARATIONS & SIGNATURE -->
+      <section *ngIf="steps[currentStepIndex].id === 'declarations'" class="space-y-6">
+        <!-- Declarations checklists -->
+        <div formGroupName="declarations" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Declarations & Consent' : 'Persetujuan & Deklarasi' }}
+            </h3>
+          </div>
+
+          <!-- Documents Checklist -->
+          <div formGroupName="docsEnclosed" class="space-y-3">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Documents Enclosed with this Application' : 'Dokumen yang Disertakan Bersama Permohonan' }}
+            </label>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="copyOfNric" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-medium">Copy of NRIC (Front & Back) / Valid Passport</span>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="productDisclosureSheet" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-medium">Product Disclosure Sheet (PDS)</span>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="creditCardAppForm" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-medium">Credit Card / Credit Card-i Application Form</span>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="firstTimeHomeBuyerDecl" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-medium">First Time Home Buyer & AKPK Certificate</span>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="customerDeclLondon" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-medium">Customer Declaration Letter (Bank XYZ London)</span>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="incomeDocs" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-medium">Income Documents / Dokumen Pendapatan</span>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer sm:col-span-2">
+                <input type="checkbox" formControlName="otherDocs" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <div class="w-full">
+                  <span class="text-xs text-slate-700 dark:text-slate-300 font-medium">Any other documents</span>
+                  <input type="text" formControlName="otherDocsSpecify" *ngIf="loanForm.get('declarations.docsEnclosed.otherDocs')?.value" placeholder="Please specify other documents" class="mt-2 block w-full rounded-xl border-slate-300 text-xs p-2 border animate-fade-in">
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- FTFC vulnerable categories -->
+          <div formGroupName="ftfcCategory" class="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Declaration on Fair Treatment of Financial Consumer (FTFC-VC)' : 'Layanan Adil Pengguna Kewangan - Pelanggan Rentan' }}
+            </label>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              {{ translationService.currentLanguage() === 'en' ? 'Please select category(s) that describe your situation (you may select more than one):' : 'Sila pilih kategori yang menerangkan situasi anda (anda boleh memilih lebih dari satu):' }}
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="notApplicable" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Not Applicable / Tidak Berkenaan</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="pwd" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Persons with Disabilities (PWDs) / OKU</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="seniorCitizen" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Senior Citizen (aged 60 and above)</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="financialHardship" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Experiencing Financial Hardship</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="lackOfFinancialLiteracy" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Lack of Financial Literacy</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="languageBarrier" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Language Barrier</span>
+              </label>
+              <label class="flex items-center gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="limitedEducation" class="rounded text-brand-600 focus:ring-brand-500 size-4">
+                <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Limited Education / Not Digitally Savvy</span>
+              </label>
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="otherFtfc" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <div class="w-full">
+                  <span class="text-xs font-semibold text-slate-700 dark:text-slate-300">Others</span>
+                  <input type="text" formControlName="otherFtfcSpecify" *ngIf="loanForm.get('declarations.ftfcCategory.otherFtfc')?.value" placeholder="Please specify condition" class="mt-2 block w-full rounded-xl border-slate-300 text-xs p-2 border animate-fade-in">
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Close Relations staff declaration -->
+          <div class="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <div>
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                {{ translationService.currentLanguage() === 'en' ? 'Close Relations / Hubungan Rapat' : 'Pendedahan Hubungan Rapat' }}
+              </label>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                {{ translationService.currentLanguage() === 'en' ? 'Declare if you or your relatives are employed under BANK XYZ Group.' : 'Isytihar sekiranya anda atau saudara anda bekerja di bawah Kumpulan BANK XYZ.' }}
+              </p>
+            </div>
+            
+            <div class="space-y-3">
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="closeRelationsStaff" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-semibold">I/We am/are a staff of BANK XYZ Group / Saya/Kami adalah kakitangan Kumpulan BANK XYZ.</span>
+              </label>
+              
+              <label class="flex items-start gap-3 p-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="checkbox" formControlName="closeRelationsRelative" class="rounded text-brand-600 focus:ring-brand-500 size-4 mt-0.5">
+                <span class="text-xs text-slate-700 dark:text-slate-300 font-semibold">To the best of my/our knowledge, I/we have close relative(s) employed under BANK XYZ Group.</span>
+              </label>
+            </div>
+
+            <!-- Close Relations Table (FormArray) -->
+            <div *ngIf="loanForm.get('declarations.closeRelationsRelative')?.value" class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-4 animate-fade-in">
+              <div class="flex justify-between items-center">
+                <span class="text-xs font-bold text-slate-700 dark:text-slate-300">{{ translationService.currentLanguage() === 'en' ? 'Close Relatives Details' : 'Butiran Saudara Rapat' }}</span>
+                <button type="button" 
+                        (click)="addCloseRelative()" 
+                        class="inline-flex items-center gap-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-white py-1.5 px-3 rounded-lg text-[10px] font-bold transition-all">
+                  ➕ {{ translationService.currentLanguage() === 'en' ? 'Add Relative' : 'Tambah Saudara' }}
+                </button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left">
+                  <thead>
+                    <tr class="text-[10px] uppercase font-bold text-slate-400 border-b pb-2">
+                      <th class="pb-2">{{ translationService.currentLanguage() === 'en' ? 'Name' : 'Nama' }}</th>
+                      <th class="pb-2">New NRIC No</th>
+                      <th class="pb-2">Relationship</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody formArrayName="closeRelatives">
+                    <tr *ngFor="let rel of closeRelatives.controls; let i = index" [formGroupName]="i" class="border-b dark:border-slate-800">
+                      <td class="py-2 pr-3">
+                        <input type="text" formControlName="name" class="w-full rounded-lg border-slate-300 dark:bg-slate-900 text-xs p-2 border">
+                      </td>
+                      <td class="py-2 pr-3">
+                        <input type="text" formControlName="newNric" class="w-full rounded-lg border-slate-300 dark:bg-slate-900 text-xs p-2 border">
+                      </td>
+                      <td class="py-2 pr-3">
+                        <input type="text" formControlName="relationship" class="w-full rounded-lg border-slate-300 dark:bg-slate-900 text-xs p-2 border">
+                      </td>
+                      <td class="py-2 text-center">
+                        <button type="button" (click)="removeCloseRelative(i)" class="text-red-500 hover:text-red-700 text-sm">🗑️</button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="closeRelatives.length === 0">
+                      <td colspan="4" class="py-4 text-center text-xs text-slate-400">No relatives added yet. Click "Add Relative".</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Marketing Consent -->
+          <div class="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+              {{ translationService.currentLanguage() === 'en' ? 'Consent for Direct Marketing & Promotions' : 'Persetujuan bagi Tujuan Promosi & Pemasaran Langsung' }}
+            </label>
+            <div class="space-y-3">
+              <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="radio" formControlName="consentMarketing" value="opt_in" class="size-4 text-brand-600 focus:ring-brand-500 mt-0.5">
+                <div>
+                  <span class="block text-xs font-bold text-slate-700 dark:text-white">Opt-In / Bersetuju</span>
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">Yes, I consent to the disclosure of my personal information to entities within BANK XYZ Group for direct marketing.</span>
+                </div>
+              </label>
+              
+              <label class="flex items-start gap-3 p-4 rounded-xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50 cursor-pointer">
+                <input type="radio" formControlName="consentMarketing" value="opt_out" class="size-4 text-brand-600 focus:ring-brand-500 mt-0.5">
+                <div>
+                  <span class="block text-xs font-bold text-slate-700 dark:text-white">Opt-Out / Tidak Bersetuju</span>
+                  <span class="block text-[11px] text-slate-500 dark:text-slate-400">No, I do not consent to the disclosure of my personal details for direct marketing and promotions.</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- DIGITAL SIGNATURES CARD -->
+        <div formGroupName="signatures" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
+          <div class="border-b border-slate-100 dark:border-slate-700 pb-4">
+            <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+              {{ translationService.currentLanguage() === 'en' ? 'Digital Signature Acknowledgement' : 'Akuan & Tandatangan Digital' }}
+            </h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              {{ translationService.currentLanguage() === 'en' ? 'Please draw your signature in the canvas box below and verify your name.' : 'Sila lukis tandatangan anda dalam kotak kanvas di bawah dan sahkan nama anda.' }}
+            </p>
+          </div>
+
+          <!-- Primary Signature Canvas -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                {{ translationService.currentLanguage() === 'en' ? 'Primary Applicant Signature Pad' : 'Pad Tandatangan Pemohon Utama' }}
+              </label>
+              
+              <!-- Draw Box -->
+              <div class="border border-slate-300 dark:border-slate-700 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900 relative">
+                <canvas #primaryCanvas 
+                        width="460" 
+                        height="180" 
+                        class="w-full block bg-transparent cursor-crosshair h-[180px]"
+                        (mousedown)="startDrawing($event, primaryCanvas)" 
+                        (mousemove)="draw($event, primaryCanvas, 'signatures.primarySignatureImage')" 
+                        (mouseup)="stopDrawing()" 
+                        (mouseleave)="stopDrawing()"
+                        (touchstart)="startDrawingTouch($event, primaryCanvas)" 
+                        (touchmove)="drawTouch($event, primaryCanvas, 'signatures.primarySignatureImage')" 
+                        (touchend)="stopDrawing()"></canvas>
+                
+                <!-- Clear Button -->
+                <button type="button" 
+                        (click)="clearSignature(primaryCanvas, 'signatures.primarySignatureImage')"
+                        class="absolute bottom-3 right-3 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold text-[10px] py-1.5 px-3 transition-colors backdrop-blur-sm shadow-sm">
+                  Clear / Padam
+                </button>
+              </div>
+              <input type="hidden" formControlName="primarySignatureImage">
+            </div>
+
+            <div class="space-y-4">
+              <!-- Signee Name -->
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Typed Name / Nama Bertulis <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="primarySignatureName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <!-- Signee Date -->
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Date / Tarikh <span class="text-red-500">*</span></label>
+                <input type="date" formControlName="primarySignatureDate" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+            </div>
+          </div>
+
+          <!-- Joint Signature Canvas (If category is 'joint') -->
+          <div *ngIf="loanForm.get('applicationDetails.applicationCategory')?.value === 'joint'" class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start pt-6 border-t border-slate-100 dark:border-slate-700 animate-fade-in">
+            <div class="space-y-2">
+              <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">
+                {{ translationService.currentLanguage() === 'en' ? 'Joint Applicant Signature Pad' : 'Pad Tandatangan Pemohon Bersama' }}
+              </label>
+              
+              <!-- Draw Box -->
+              <div class="border border-slate-300 dark:border-slate-700 rounded-2xl overflow-hidden bg-slate-50 dark:bg-slate-900 relative">
+                <canvas #jointCanvas 
+                        width="460" 
+                        height="180" 
+                        class="w-full block bg-transparent cursor-crosshair h-[180px]"
+                        (mousedown)="startDrawing($event, jointCanvas)" 
+                        (mousemove)="draw($event, jointCanvas, 'signatures.jointSignatureImage')" 
+                        (mouseup)="stopDrawing()" 
+                        (mouseleave)="stopDrawing()"
+                        (touchstart)="startDrawingTouch($event, jointCanvas)" 
+                        (touchmove)="drawTouch($event, jointCanvas, 'signatures.jointSignatureImage')" 
+                        (touchend)="stopDrawing()"></canvas>
+                
+                <!-- Clear Button -->
+                <button type="button" 
+                        (click)="clearSignature(jointCanvas, 'signatures.jointSignatureImage')"
+                        class="absolute bottom-3 right-3 rounded-lg bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-700 text-slate-700 dark:text-white font-bold text-[10px] py-1.5 px-3 transition-colors backdrop-blur-sm shadow-sm">
+                  Clear / Padam
+                </button>
+              </div>
+              <input type="hidden" formControlName="jointSignatureImage">
+            </div>
+
+            <div class="space-y-4">
+              <!-- Signee Name -->
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Joint Applicant Typed Name <span class="text-red-500">*</span></label>
+                <input type="text" formControlName="jointSignatureName" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+              <!-- Signee Date -->
+              <div>
+                <label class="block text-sm font-bold text-slate-700 dark:text-slate-300">Date / Tarikh <span class="text-red-500">*</span></label>
+                <input type="date" formControlName="jointSignatureDate" class="mt-2 block w-full rounded-xl border-slate-300 shadow-sm focus:border-brand-500 focus:ring-brand-500 dark:bg-slate-900 dark:border-slate-600 dark:text-white text-sm p-3 border">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Navigation Control Buttons -->
+      <div class="flex justify-between items-center pt-6 pb-12 border-t border-slate-200 dark:border-slate-700">
+        <!-- Previous Button -->
+        <button type="button" 
+                (click)="prevStep()" 
+                [disabled]="currentStepIndex === 0"
+                class="inline-flex justify-center items-center rounded-xl bg-white border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-white py-3 px-6 text-sm font-bold shadow-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+          ← {{ translationService.currentLanguage() === 'en' ? 'Back' : 'Kembali' }}
+        </button>
+
+        <!-- Next / Submit Button -->
+        <button *ngIf="currentStepIndex < steps.length - 1" 
+                type="button" 
+                (click)="nextStep()"
+                [class]="'inline-flex justify-center items-center rounded-xl bg-brand-600 hover:bg-brand-700 text-white py-3 px-8 text-sm font-bold shadow-lg shadow-brand-500/10 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 ' + 
+                         (!isStepValid(steps[currentStepIndex].id) ? 'opacity-50 cursor-not-allowed' : '')">
+          {{ translationService.currentLanguage() === 'en' ? 'Continue' : 'Teruskan' }} →
+        </button>
+
+        <button *ngIf="currentStepIndex === steps.length - 1" 
+                type="submit"
+                [disabled]="!loanForm.valid"
+                class="inline-flex justify-center items-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-10 text-sm font-bold shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+          ✓ {{ translationService.currentLanguage() === 'en' ? 'Submit Loan Application' : 'Hantar Permohonan' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
