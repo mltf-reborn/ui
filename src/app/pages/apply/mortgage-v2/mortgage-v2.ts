@@ -1,14 +1,18 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 import { BreadcrumbComponent } from '../../../shared/components/breadcrumb/breadcrumb.component';
 import { TranslationService } from '../../../shared/services/translation.service';
+import { LoanApplicationService } from '../../../shared/services/loan-application.service';
 import { DocumentUploaderComponent, UploadedFile } from './components/document-uploader/document-uploader.component';
+
 
 @Component({
   selector: 'app-mortgage-v2',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, BreadcrumbComponent, DocumentUploaderComponent],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, BreadcrumbComponent, DocumentUploaderComponent],
   templateUrl: './mortgage-v2.html',
   styleUrls: ['./mortgage-v2.css']
 })
@@ -17,6 +21,16 @@ export class MortgageV2 implements OnInit {
   loanForm!: FormGroup;
   currentStepIndex = 0;
   readonly translationService = inject(TranslationService);
+  private readonly activatedRoute = inject(ActivatedRoute);
+  private readonly loanApplicationService = inject(LoanApplicationService);
+  private readonly router = inject(Router);
+
+  readonly applicationId = signal<string | null>(null);
+  readonly isSavingDraft = signal<boolean>(false);
+  readonly draftSaveMessage = signal<string>('');
+  readonly isCreatingApplication = signal<boolean>(false);
+  readonly applicationError = signal<string>('');
+
   
   // Signature Drawing States
   isDrawing = false;
@@ -136,16 +150,691 @@ export class MortgageV2 implements OnInit {
 
   ngOnInit() {
     this.setupFormSubscriptions();
-    // Pre-populate some commitments for demonstration
-    this.addCommitment({
-      financialInstitution: 'Maybank',
-      facilityType: 'Car Loan',
-      facilityAmount: 75000,
-      tenureMonths: 108,
-      monthlyInstalment: 780,
-      currentOutstanding: 45000
+    
+    const existingApplicationId = this.activatedRoute.snapshot.queryParamMap.get('application');
+    if (existingApplicationId) {
+      this.applicationId.set(existingApplicationId);
+      this.loadExistingApplication(existingApplicationId);
+    } else {
+      this.createApplication();
+    }
+  }
+
+  private createApplication() {
+    this.isCreatingApplication.set(true);
+    this.applicationError.set('');
+
+    this.loanApplicationService.createApplication().subscribe({
+      next: response => {
+        this.isCreatingApplication.set(false);
+        const app = response.data ?? response.result ?? response;
+        this.applicationId.set(app?.transactionId ?? app?.applicationId ?? app?.id ?? null);
+        
+        // Add default Maybank commitment for demo mapping
+        this.addCommitment({
+          financialInstitution: 'Maybank',
+          facilityType: 'Car Loan',
+          facilityAmount: 75000,
+          tenureMonths: 108,
+          monthlyInstalment: 780,
+          currentOutstanding: 45000
+        });
+      },
+      error: (err: HttpErrorResponse) => {
+        this.isCreatingApplication.set(false);
+        if (err.status === 409) {
+          this.applicationError.set('conflict');
+        } else {
+          this.applicationError.set('generic');
+        }
+        console.error(err);
+      }
     });
   }
+
+  private loadExistingApplication(applicationId: string) {
+    this.isCreatingApplication.set(true);
+    this.applicationError.set('');
+    
+    this.loanApplicationService.getApplicationDetails(applicationId).subscribe({
+      next: response => {
+        this.isCreatingApplication.set(false);
+        if (!response) return;
+
+        const applicant = response.applicant || {};
+        const jointApplicant = response.joint_applicant || {};
+        const application = response.application || {};
+        const property = response.property || {};
+
+        let facilitiesReq: any = {};
+        if (application.facilities_required) {
+          try {
+            facilitiesReq = JSON.parse(application.facilities_required);
+          } catch (e) {
+            console.error('Failed to parse facilities_required JSON', e);
+          }
+        }
+
+        let docsEnclosed: any = {};
+        if (application.docs_enclosed) {
+          try {
+            docsEnclosed = JSON.parse(application.docs_enclosed);
+          } catch (e) {
+            console.error('Failed to parse docs_enclosed JSON', e);
+          }
+        }
+
+        let ftfcCategory: any = {};
+        if (application.ftfc_category) {
+          try {
+            ftfcCategory = JSON.parse(application.ftfc_category);
+          } catch (e) {
+            console.error('Failed to parse ftfc_category JSON', e);
+          }
+        }
+
+        let signatures: any = {};
+        if (application.signatures) {
+          try {
+            signatures = JSON.parse(application.signatures);
+          } catch (e) {
+            console.error('Failed to parse signatures JSON', e);
+          }
+        }
+
+        this.loanForm.patchValue({
+          applicationDetails: {
+            bankSelection: application.bank_selection || 'BANK XYZ',
+            applicationCategory: application.application_type || 'single',
+            jointRelationship: application.joint_relationship || '',
+            facilityType: application.facility_type || 'conventional',
+            purposeOfFacility: application.facility_purpose || 'Financing of Property',
+            refinancingBank: application.refinancing_bank || '',
+            termLoan: facilitiesReq.termLoan ?? false,
+            housingLoan: facilitiesReq.housingLoan ?? true,
+            businessPremiseLoan: facilitiesReq.businessPremiseLoan ?? false,
+            personalLoan: facilitiesReq.personalLoan ?? false,
+            houseConstructionLoan: facilitiesReq.houseConstructionLoan ?? false,
+            houseRenovationLoan: facilitiesReq.houseRenovationLoan ?? false,
+            land: facilitiesReq.land ?? false,
+            landSpecify: facilitiesReq.landSpecify || '',
+            cashOut: facilitiesReq.cashOut ?? false,
+            topUp: facilitiesReq.topUp ?? false,
+            overdraft: facilitiesReq.overdraft ?? false
+          },
+          primaryPersonal: {
+            salutation: applicant.salutation || 'Mr',
+            fullName: applicant.full_name || '',
+            idType: applicant.id_type || 'new_nric',
+            newNric: applicant.id_type === 'new_nric' ? (applicant.id_no || '') : '',
+            oldNric: applicant.id_type === 'old_nric' ? (applicant.id_no || '') : '',
+            passportNo: applicant.id_type === 'passport' ? (applicant.id_no || '') : '',
+            otherIdNo: (applicant.id_type !== 'new_nric' && applicant.id_type !== 'old_nric' && applicant.id_type !== 'passport') ? (applicant.id_no || '') : '',
+            otherIdType: applicant.other_id_type || '',
+            nationality: applicant.nationality || 'malaysian',
+            race: applicant.race || 'Melayu',
+            countryOfOrigin: applicant.country_of_origin || 'Malaysia',
+            bumiputeraStatus: applicant.bumiputera_status ? 'yes' : 'no',
+            gender: applicant.gender || 'male',
+            maritalStatus: applicant.marital_status || 'single',
+            dob: applicant.date_of_birth || '',
+            age: applicant.age || (applicant.date_of_birth ? this.calculateAge(applicant.date_of_birth) : null),
+            dependentsCount: applicant.dependents_count ?? 0,
+            schoolingChildrenCount: applicant.schooling_children_count ?? 0,
+            educationLevel: applicant.education_level || 'bachelor',
+            residentType: applicant.resident_type || 'malaysian'
+          },
+          primaryContact: {
+            phoneHome: applicant.residential_phone || '',
+            phoneMobile: applicant.mobile_phone || '',
+            email: applicant.email || '',
+            residenceType: applicant.residence_type || 'own',
+            addressLine1: applicant.perm_address || '',
+            addressLine2: applicant.perm_address_line2 || '',
+            postcode: applicant.perm_postcode || '',
+            city: applicant.perm_city || '',
+            state: applicant.perm_state || '',
+            country: applicant.perm_country || 'Malaysia',
+            lengthOfStayYears: applicant.length_of_stay_years ?? 0,
+            lengthOfStayMonths: applicant.length_of_stay_months ?? 0,
+            mailingAddressSame: applicant.perm_address === applicant.mail_address,
+            mailingAddressLine1: applicant.mail_address || '',
+            mailingAddressLine2: applicant.mail_address_line2 || '',
+            mailingPostcode: applicant.mail_postcode || '',
+            mailingCity: applicant.mail_city || '',
+            mailingState: applicant.mail_state || '',
+            mailingCountry: applicant.mail_country || 'Malaysia'
+          },
+          primaryEmployment: {
+            employmentStatus: applicant.employment_status || 'employer',
+            employerName: applicant.employer_name || '',
+            employerAddressLine1: applicant.employer_address || '',
+            employerAddressLine2: applicant.employer_address_line2 || '',
+            employerPostcode: applicant.employer_postcode || '',
+            employerCity: applicant.employer_city || '',
+            employerState: applicant.employer_state || '',
+            employerCountry: applicant.employer_country || 'Malaysia',
+            officePhone: applicant.office_phone || '',
+            directLine: applicant.direct_line || '',
+            emailWork: applicant.email_work || '',
+            natureOfBusiness: applicant.nature_of_business || 'Services',
+            natureOfBusinessSpecify: applicant.nature_of_business_specify || '',
+            occupation: applicant.occupation || 'Other',
+            position: applicant.job_position || '',
+            dateJoined: applicant.date_joined || '',
+            serviceYears: applicant.length_of_service_years ?? 0,
+            serviceMonths: applicant.length_of_service_months ?? 0,
+            prevEmploymentStatus: applicant.prev_employment_status || '',
+            prevEmployerName: applicant.prev_employer_name || '',
+            prevNatureOfBusiness: applicant.prev_nature_of_business || '',
+            prevOccupation: applicant.prev_occupation || '',
+            prevPosition: applicant.prev_position || '',
+            prevPhone: applicant.prev_phone || '',
+            prevServiceYears: applicant.prev_service_years ?? 0,
+            prevServiceMonths: applicant.prev_service_months ?? 0
+          },
+          primaryIncome: {
+            monthlyGrossIncome: applicant.monthly_gross_rm ?? 0,
+            otherMonthlyIncome: applicant.other_monthly_income_rm ?? 0,
+            annualGrossIncome: applicant.annual_gross_rm ?? ((applicant.monthly_gross_rm || 0) * 12),
+            otherAnnualIncome: applicant.other_annual_income_rm ?? ((applicant.other_monthly_income_rm || 0) * 12)
+          },
+          spousePersonal: {
+            salutation: applicant.spouse_salutation || 'Puan',
+            fullName: applicant.spouse_full_name || '',
+            idType: applicant.spouse_id_type || 'new_nric',
+            newNric: applicant.spouse_id_no || '',
+            oldNric: '',
+            passportNo: '',
+            otherIdNo: '',
+            otherIdType: applicant.spouse_other_id_type || '',
+            nationality: applicant.spouse_nationality || 'Malaysia',
+            race: applicant.spouse_race || 'Melayu',
+            countryOfOrigin: applicant.spouse_country_of_origin || 'Malaysia',
+            bumiputeraStatus: applicant.spouse_bumiputera_status ? 'yes' : 'no',
+            gender: applicant.spouse_gender || 'female',
+            dob: applicant.spouse_date_of_birth || '',
+            age: applicant.spouse_age || (applicant.spouse_date_of_birth ? this.calculateAge(applicant.spouse_date_of_birth) : null),
+            phoneMobile: applicant.spouse_mobile || '',
+            phoneHome: applicant.spouse_residential_phone || '',
+            email: applicant.spouse_email || ''
+          },
+          spouseEmployment: {
+            employerName: applicant.spouse_employer || '',
+            natureOfBusiness: applicant.spouse_nature_of_business || '',
+            occupation: applicant.spouse_occupation || '',
+            position: applicant.spouse_position || '',
+            generalLine: applicant.spouse_general_line || '',
+            serviceYears: applicant.spouse_service_years ?? 0,
+            monthlyGrossIncome: applicant.spouse_monthly_gross_rm ?? 0,
+            annualGrossIncome: applicant.spouse_annual_gross_rm ?? ((applicant.spouse_monthly_gross_rm || 0) * 12)
+          },
+          jointPersonal: {
+            salutation: jointApplicant.salutation || '',
+            fullName: jointApplicant.full_name || '',
+            idType: jointApplicant.id_type || 'new_nric',
+            newNric: jointApplicant.id_type === 'new_nric' ? (jointApplicant.id_no || '') : '',
+            oldNric: jointApplicant.id_type === 'old_nric' ? (jointApplicant.id_no || '') : '',
+            passportNo: jointApplicant.id_type === 'passport' ? (jointApplicant.id_no || '') : '',
+            otherIdNo: (jointApplicant.id_type !== 'new_nric' && jointApplicant.id_type !== 'old_nric' && jointApplicant.id_type !== 'passport') ? (jointApplicant.id_no || '') : '',
+            otherIdType: jointApplicant.other_id_type || '',
+            nationality: jointApplicant.nationality || 'malaysian',
+            race: jointApplicant.race || '',
+            countryOfOrigin: jointApplicant.country_of_origin || 'Malaysia',
+            bumiputeraStatus: jointApplicant.bumiputera_status ? 'yes' : 'no',
+            gender: jointApplicant.gender || '',
+            dob: jointApplicant.date_of_birth || '',
+            age: jointApplicant.age || (jointApplicant.date_of_birth ? this.calculateAge(jointApplicant.date_of_birth) : null),
+            dependentsCount: jointApplicant.dependents_count ?? 0,
+            schoolingChildrenCount: jointApplicant.schooling_children_count ?? 0,
+            educationLevel: jointApplicant.education_level || '',
+            residentType: jointApplicant.resident_type || ''
+          },
+          jointContact: {
+            phoneHome: jointApplicant.residential_phone || '',
+            phoneMobile: jointApplicant.mobile_phone || '',
+            email: jointApplicant.email || '',
+            residenceType: jointApplicant.residence_type || '',
+            addressLine1: jointApplicant.perm_address || '',
+            addressLine2: jointApplicant.perm_address_line2 || '',
+            postcode: jointApplicant.perm_postcode || '',
+            city: jointApplicant.perm_city || '',
+            state: jointApplicant.perm_state || '',
+            country: jointApplicant.perm_country || 'Malaysia',
+            lengthOfStayYears: jointApplicant.length_of_stay_years ?? 0,
+            lengthOfStayMonths: jointApplicant.length_of_stay_months ?? 0,
+            mailingAddressSame: true,
+            mailingAddressLine1: '',
+            mailingAddressLine2: '',
+            mailingPostcode: '',
+            mailingCity: '',
+            mailingState: '',
+            mailingCountry: 'Malaysia'
+          },
+          jointEmployment: {
+            employmentStatus: jointApplicant.employment_status || '',
+            employerName: jointApplicant.employer_name || '',
+            employerAddressLine1: jointApplicant.employer_address || '',
+            employerAddressLine2: jointApplicant.employer_address_line2 || '',
+            employerPostcode: jointApplicant.employer_postcode || '',
+            employerCity: jointApplicant.employer_city || '',
+            employerState: jointApplicant.employer_state || '',
+            employerCountry: jointApplicant.employer_country || 'Malaysia',
+            officePhone: jointApplicant.office_phone || '',
+            directLine: jointApplicant.direct_line || '',
+            emailWork: jointApplicant.email_work || '',
+            natureOfBusiness: jointApplicant.nature_of_business || '',
+            natureOfBusinessSpecify: jointApplicant.nature_of_business_specify || '',
+            occupation: jointApplicant.occupation || '',
+            position: jointApplicant.job_position || '',
+            dateJoined: jointApplicant.date_joined || '',
+            serviceYears: jointApplicant.length_of_service_years ?? 0,
+            serviceMonths: jointApplicant.length_of_service_months ?? 0,
+            prevEmploymentStatus: jointApplicant.prev_employment_status || '',
+            prevEmployerName: jointApplicant.prev_employer_name || '',
+            prevNatureOfBusiness: jointApplicant.prev_nature_of_business || '',
+            prevOccupation: jointApplicant.prev_occupation || '',
+            prevPosition: jointApplicant.prev_position || '',
+            prevPhone: jointApplicant.prev_phone || '',
+            prevServiceYears: jointApplicant.prev_service_years ?? 0,
+            prevServiceMonths: jointApplicant.prev_service_months ?? 0
+          },
+          jointIncome: {
+            monthlyGrossIncome: jointApplicant.monthly_gross_rm ?? 0,
+            otherMonthlyIncome: jointApplicant.other_monthly_income_rm ?? 0,
+            annualGrossIncome: jointApplicant.annual_gross_rm ?? ((jointApplicant.monthly_gross_rm || 0) * 12),
+            otherAnnualIncome: jointApplicant.other_annual_income_rm ?? ((jointApplicant.other_monthly_income_rm || 0) * 12)
+          },
+          emergencyContact: {
+            fullName: applicant.emergency_name || '',
+            relationship: applicant.emergency_relationship || 'parent',
+            phoneMobile: applicant.emergency_phone || '',
+            phoneHome: applicant.emergency_phone_home || '',
+            email: applicant.emergency_email || ''
+          },
+          propertyDetails: {
+            propertyType: property.property_type || 'residential',
+            propertySubType: property.property_sub_type || 'terrace',
+            propertyStatus: property.property_status || 'completed',
+            constructionStage: property.construction_stage || '',
+            developerName: property.developer_name || '',
+            projectName: property.project_name || '',
+            relationshipToDeveloper: property.relationship_to_developer || 'none',
+            phaseCode: property.phase_code || '',
+            contractorName: property.contractor_name || '',
+            spaPrice: property.spa_price_rm ?? 0,
+            marketValue: property.open_market_rm ?? 0,
+            renovationValue: property.renovation_value_rm ?? 0,
+            addressLine1: property.property_address || '',
+            addressLine2: property.property_address_line2 || '',
+            postcode: property.property_postcode || '',
+            city: property.property_city || '',
+            state: property.property_state || '',
+            country: property.property_country || 'Malaysia',
+            titleNumber: property.title_number || '',
+            lotNumber: property.lot_number || '',
+            mukim: property.mukim || '',
+            district: property.district || '',
+            stateGeran: property.state_geran || '',
+            titleType: property.title_type || 'leasehold',
+            isOwnerOccupied: property.is_owner_occupied ? 'yes' : 'no',
+            isFirstTimePurchaser: property.is_first_time_buyer ? 'yes' : 'no',
+            grossPurchasePrice: property.gross_purchase_price_rm ?? property.spa_price_rm ?? 0,
+            discount: property.discount_rm ?? 0,
+            rebate: property.rebate_rm ?? 0,
+            adjustment: property.adjustment_rm ?? 0,
+            developerBenefits: property.developer_benefits_rm ?? 0,
+            netPurchasePrice: property.net_purchase_price_rm ?? property.spa_price_rm ?? 0
+          },
+          declarations: {
+            docsEnclosed: {
+              copyOfNric: docsEnclosed.copyOfNric ?? true,
+              productDisclosureSheet: docsEnclosed.productDisclosureSheet ?? true,
+              creditCardAppForm: docsEnclosed.creditCardAppForm ?? false,
+              firstTimeHomeBuyerDecl: docsEnclosed.firstTimeHomeBuyerDecl ?? false,
+              customerDeclLondon: docsEnclosed.customerDeclLondon ?? false,
+              incomeDocs: docsEnclosed.incomeDocs ?? true,
+              otherDocs: docsEnclosed.otherDocs ?? true,
+              otherDocsSpecify: docsEnclosed.otherDocsSpecify || 'Any other document as advised'
+            },
+            ftfcCategory: {
+              notApplicable: ftfcCategory.notApplicable ?? true,
+              pwd: ftfcCategory.pwd ?? false,
+              seniorCitizen: ftfcCategory.seniorCitizen ?? false,
+              financialHardship: ftfcCategory.financialHardship ?? false,
+              lackOfFinancialLiteracy: ftfcCategory.lackOfFinancialLiteracy ?? false,
+              languageBarrier: ftfcCategory.languageBarrier ?? false,
+              limitedEducation: ftfcCategory.limitedEducation ?? false,
+              otherFtfc: ftfcCategory.otherFtfc ?? false,
+              otherFtfcSpecify: ftfcCategory.otherFtfcSpecify || ''
+            },
+            closeRelationsStaff: applicant.close_relations_staff ?? false,
+            closeRelationsRelative: applicant.close_relations_relative ?? false,
+            consentMarketing: application.marketing_consent === 'YES' ? 'opt_in' : 'opt_out'
+          },
+          signatures: {
+            primarySignatureName: signatures.primarySignatureName || applicant.full_name || '',
+            primarySignatureDate: signatures.primarySignatureDate || new Date().toISOString().split('T')[0],
+            primarySignatureImage: signatures.primarySignatureImage || '',
+            jointSignatureName: signatures.jointSignatureName || jointApplicant.full_name || '',
+            jointSignatureDate: signatures.jointSignatureDate || '',
+            jointSignatureImage: signatures.jointSignatureImage || ''
+          }
+        });
+
+        if (applicant.other_commitments) {
+          try {
+            const commitments = JSON.parse(applicant.other_commitments);
+            const array = this.loanForm.get('otherCommitments') as FormArray;
+            array.clear();
+            commitments.forEach((c: any) => this.addCommitment(c));
+          } catch (e) {
+            console.error('Failed to parse commitments JSON', e);
+          }
+        }
+        if (applicant.close_relatives) {
+          try {
+            const relatives = JSON.parse(applicant.close_relatives);
+            const array = this.loanForm.get('closeRelatives') as FormArray;
+            array.clear();
+            relatives.forEach((r: any) => this.addCloseRelative(r));
+          } catch (e) {
+            console.error('Failed to parse close relatives JSON', e);
+          }
+        }
+      },
+      error: err => {
+        this.isCreatingApplication.set(false);
+        this.applicationError.set('generic');
+        console.error(err);
+      }
+    });
+  }
+
+  private buildPayload(): any {
+    const formVal = this.loanForm.getRawValue();
+    const commitmentsStr = JSON.stringify(formVal.otherCommitments || []);
+    const relativesStr = JSON.stringify(formVal.closeRelatives || []);
+    const appDetails = formVal.applicationDetails || {};
+    const primaryPers = formVal.primaryPersonal || {};
+    const primaryCont = formVal.primaryContact || {};
+    const primaryEmp = formVal.primaryEmployment || {};
+    const primaryInc = formVal.primaryIncome || {};
+    const spousePers = formVal.spousePersonal || {};
+    const spouseEmp = formVal.spouseEmployment || {};
+    const jointPers = formVal.jointPersonal || {};
+    const jointCont = formVal.jointContact || {};
+    const jointEmp = formVal.jointEmployment || {};
+    const jointInc = formVal.jointIncome || {};
+    const emergCont = formVal.emergencyContact || {};
+    const propDetails = formVal.propertyDetails || {};
+    const decl = formVal.declarations || {};
+    const sig = formVal.signatures || {};
+
+    const facilitiesRequired = {
+      termLoan: !!appDetails.termLoan,
+      housingLoan: !!appDetails.housingLoan,
+      businessPremiseLoan: !!appDetails.businessPremiseLoan,
+      personalLoan: !!appDetails.personalLoan,
+      houseConstructionLoan: !!appDetails.houseConstructionLoan,
+      houseRenovationLoan: !!appDetails.houseRenovationLoan,
+      land: !!appDetails.land,
+      landSpecify: appDetails.landSpecify || '',
+      cashOut: !!appDetails.cashOut,
+      topUp: !!appDetails.topUp,
+      overdraft: !!appDetails.overdraft
+    };
+
+    const payload: any = {
+      application: {
+        bank_selection: appDetails.bankSelection || '',
+        application_type: appDetails.applicationCategory || 'single',
+        facility_type: appDetails.facilityType || 'conventional',
+        facility_purpose: appDetails.purposeOfFacility || '',
+        facilities_required: JSON.stringify(facilitiesRequired),
+        refinancing_bank: appDetails.refinancingBank || '',
+        joint_relationship: appDetails.jointRelationship || '',
+        marketing_consent: (decl.consentMarketing === 'opt_in' || decl.marketingConsent === 'YES') ? 'YES' : 'NO',
+        docs_enclosed: JSON.stringify(decl.docsEnclosed || {}),
+        ftfc_category: JSON.stringify(decl.ftfcCategory || {}),
+        signatures: JSON.stringify(sig || {})
+      },
+      applicant: {
+        role: 'Primary',
+        salutation: primaryPers.salutation || '',
+        full_name: primaryPers.fullName || '',
+        id_type: primaryPers.idType || 'new_nric',
+        id_no: primaryPers.idType === 'new_nric' ? primaryPers.newNric :
+               primaryPers.idType === 'old_nric' ? primaryPers.oldNric :
+               primaryPers.idType === 'passport' ? primaryPers.passportNo :
+               primaryPers.otherIdNo || '',
+        other_id_type: primaryPers.otherIdType || '',
+        nationality: primaryPers.nationality || '',
+        race: primaryPers.race || '',
+        country_of_origin: primaryPers.countryOfOrigin || '',
+        bumiputera_status: primaryPers.bumiputeraStatus === 'yes' || primaryPers.bumiputeraStatus === true,
+        gender: primaryPers.gender || '',
+        marital_status: primaryPers.maritalStatus || '',
+        date_of_birth: primaryPers.dob || '',
+        age: primaryPers.age || null,
+        dependents_count: primaryPers.dependentsCount ?? 0,
+        schooling_children_count: primaryPers.schoolingChildrenCount ?? 0,
+        education_level: primaryPers.educationLevel || '',
+        resident_type: primaryPers.residentType || '',
+        
+        mobile_phone: primaryCont.phoneMobile || '',
+        residential_phone: primaryCont.phoneHome || '',
+        email: primaryCont.email || '',
+        residence_type: primaryCont.residenceType || '',
+        perm_address: primaryCont.addressLine1 || '',
+        perm_address_line2: primaryCont.addressLine2 || '',
+        perm_postcode: primaryCont.postcode || '',
+        perm_city: primaryCont.city || '',
+        perm_state: primaryCont.state || '',
+        perm_country: primaryCont.country || 'Malaysia',
+        length_of_stay_years: primaryCont.lengthOfStayYears ?? 0,
+        length_of_stay_months: primaryCont.lengthOfStayMonths ?? 0,
+        mail_address: primaryCont.mailingAddressSame ? (primaryCont.addressLine1 || '') : (primaryCont.mailingAddressLine1 || ''),
+        mail_address_line2: primaryCont.mailingAddressSame ? (primaryCont.addressLine2 || '') : (primaryCont.mailingAddressLine2 || ''),
+        mail_postcode: primaryCont.mailingAddressSame ? (primaryCont.postcode || '') : (primaryCont.mailingPostcode || ''),
+        mail_city: primaryCont.mailingAddressSame ? (primaryCont.city || '') : (primaryCont.mailingCity || ''),
+        mail_state: primaryCont.mailingAddressSame ? (primaryCont.state || '') : (primaryCont.mailingState || ''),
+        mail_country: primaryCont.mailingAddressSame ? (primaryCont.country || 'Malaysia') : (primaryCont.mailingCountry || 'Malaysia'),
+        
+        employment_status: primaryEmp.employmentStatus || '',
+        employer_name: primaryEmp.employerName || '',
+        employer_address: primaryEmp.employerAddressLine1 || '',
+        employer_address_line2: primaryEmp.employerAddressLine2 || '',
+        employer_postcode: primaryEmp.employerPostcode || '',
+        employer_city: primaryEmp.employerCity || '',
+        employer_state: primaryEmp.employerState || '',
+        employer_country: primaryEmp.employerCountry || 'Malaysia',
+        officePhone: primaryEmp.officePhone || '',
+        directLine: primaryEmp.directLine || '',
+        emailWork: primaryEmp.emailWork || '',
+        nature_of_business: primaryEmp.natureOfBusiness || '',
+        nature_of_business_specify: primaryEmp.natureOfBusinessSpecify || '',
+        occupation: primaryEmp.occupation || '',
+        job_position: primaryEmp.position || '',
+        date_joined: primaryEmp.dateJoined || '',
+        length_of_service_years: primaryEmp.serviceYears ?? 0,
+        length_of_service_months: primaryEmp.serviceMonths ?? 0,
+        prev_employment_status: primaryEmp.prevEmploymentStatus || '',
+        prev_employer_name: primaryEmp.prevEmployerName || '',
+        prev_nature_of_business: primaryEmp.prevNatureOfBusiness || '',
+        prev_occupation: primaryEmp.prevOccupation || '',
+        prev_position: primaryEmp.prevPosition || '',
+        prev_phone: primaryEmp.prevPhone || '',
+        prev_service_years: primaryEmp.prevServiceYears ?? 0,
+        prev_service_months: primaryEmp.prevServiceMonths ?? 0,
+        
+        monthly_gross_rm: primaryInc.monthlyGrossIncome ?? 0,
+        other_monthly_income_rm: primaryInc.otherMonthlyIncome ?? 0,
+        annual_gross_rm: primaryInc.annualGrossIncome ?? 0,
+        other_annual_income_rm: primaryInc.otherAnnualIncome ?? 0,
+        
+        emergency_name: emergCont.fullName || '',
+        emergency_relationship: emergCont.relationship || '',
+        emergency_phone: emergCont.phoneMobile || '',
+        emergency_phone_home: emergCont.phoneHome || '',
+        emergency_email: emergCont.email || '',
+        
+        spouse_salutation: spousePers.salutation || '',
+        spouse_full_name: spousePers.fullName || '',
+        spouse_id_type: spousePers.idType || '',
+        spouse_id_no: spousePers.idType === 'new_nric' ? spousePers.newNric :
+                      spousePers.idType === 'old_nric' ? spousePers.oldNric :
+                      spousePers.idType === 'passport' ? spousePers.passportNo :
+                      spousePers.otherIdNo || '',
+        spouse_other_id_type: spousePers.otherIdType || '',
+        spouse_nationality: spousePers.nationality || '',
+        spouse_race: spousePers.race || '',
+        spouse_country_of_origin: spousePers.countryOfOrigin || '',
+        spouse_bumiputera_status: spousePers.bumiputeraStatus === 'yes' || spousePers.bumiputeraStatus === true,
+        spouse_gender: spousePers.gender || '',
+        spouse_date_of_birth: spousePers.dob || '',
+        spouse_age: spousePers.age || null,
+        spouse_mobile: spousePers.phoneMobile || '',
+        spouse_residential_phone: spousePers.phoneHome || '',
+        spouse_email: spousePers.email || '',
+        spouse_employer: spouseEmp.employerName || '',
+        spouse_nature_of_business: spouseEmp.natureOfBusiness || '',
+        spouse_occupation: spouseEmp.occupation || '',
+        spouse_position: spouseEmp.position || '',
+        spouse_general_line: spouseEmp.generalLine || '',
+        spouse_service_years: spouseEmp.serviceYears ?? 0,
+        spouse_monthly_gross_rm: spouseEmp.monthlyGrossIncome ?? 0,
+        spouse_annual_gross_rm: spouseEmp.annualGrossIncome ?? 0,
+        
+        other_commitments: commitmentsStr,
+        close_relatives: relativesStr,
+        close_relations_staff: !!decl.closeRelationsStaff,
+        close_relations_relative: !!decl.closeRelationsRelative
+      },
+      property: {
+        property_type: propDetails.propertyType || '',
+        property_sub_type: propDetails.propertySubType || '',
+        property_status: propDetails.propertyStatus || '',
+        construction_stage: propDetails.constructionStage || '',
+        developer_name: propDetails.developerName || '',
+        project_name: propDetails.projectName || '',
+        relationship_to_developer: propDetails.relationshipToDeveloper || '',
+        phase_code: propDetails.phaseCode || '',
+        contractor_name: propDetails.contractorName || '',
+        spa_price_rm: propDetails.spaPrice ?? 0,
+        open_market_rm: propDetails.marketValue ?? 0,
+        renovation_value_rm: propDetails.renovationValue ?? 0,
+        property_address: propDetails.addressLine1 || '',
+        property_address_line2: propDetails.addressLine2 || '',
+        property_postcode: propDetails.postcode || '',
+        property_city: propDetails.city || '',
+        property_state: propDetails.state || '',
+        property_country: propDetails.country || 'Malaysia',
+        title_number: propDetails.titleNumber || '',
+        title_type: propDetails.titleType || '',
+        lot_number: propDetails.lotNumber || '',
+        mukim: propDetails.mukim || '',
+        district: propDetails.district || '',
+        state_geran: propDetails.stateGeran || '',
+        is_owner_occupied: propDetails.isOwnerOccupied === 'yes' || propDetails.isOwnerOccupied === true,
+        is_first_time_buyer: propDetails.isFirstTimePurchaser === 'yes' || propDetails.isFirstTimePurchaser === true,
+        gross_purchase_price_rm: propDetails.grossPurchasePrice ?? 0,
+        discount_rm: propDetails.discount ?? 0,
+        rebate_rm: propDetails.rebate ?? 0,
+        adjustment_rm: propDetails.adjustment ?? 0,
+        developer_benefits_rm: propDetails.developerBenefits ?? 0,
+        net_purchase_price_rm: propDetails.netPurchasePrice ?? 0
+      }
+    };
+
+    if (appDetails.applicationCategory === 'joint' && jointPers.fullName) {
+      payload.joint_applicant = {
+        role: 'Joint',
+        salutation: jointPers.salutation || '',
+        full_name: jointPers.fullName || '',
+        id_type: jointPers.idType || 'new_nric',
+        id_no: jointPers.idType === 'new_nric' ? jointPers.newNric :
+               jointPers.idType === 'old_nric' ? jointPers.oldNric :
+               jointPers.idType === 'passport' ? jointPers.passportNo :
+               jointPers.otherIdNo || '',
+        other_id_type: jointPers.otherIdType || '',
+        nationality: jointPers.nationality || '',
+        race: jointPers.race || '',
+        country_of_origin: jointPers.countryOfOrigin || '',
+        bumiputera_status: jointPers.bumiputeraStatus === 'yes' || jointPers.bumiputeraStatus === true,
+        gender: jointPers.gender || '',
+        date_of_birth: jointPers.dob || '',
+        age: jointPers.age || null,
+        dependents_count: jointPers.dependentsCount ?? 0,
+        schooling_children_count: jointPers.schoolingChildrenCount ?? 0,
+        education_level: jointPers.educationLevel || '',
+        resident_type: jointPers.residentType || '',
+        mobile_phone: jointCont.phoneMobile || '',
+        residential_phone: jointCont.phoneHome || '',
+        email: jointCont.email || '',
+        residence_type: jointCont.residenceType || '',
+        perm_address: jointCont.addressLine1 || '',
+        perm_address_line2: jointCont.addressLine2 || '',
+        perm_postcode: jointCont.postcode || '',
+        perm_city: jointCont.city || '',
+        perm_state: jointCont.state || '',
+        perm_country: jointCont.country || 'Malaysia',
+        length_of_stay_years: jointCont.lengthOfStayYears ?? 0,
+        length_of_stay_months: jointCont.lengthOfStayMonths ?? 0,
+        employment_status: jointEmp.employmentStatus || '',
+        employer_name: jointEmp.employerName || '',
+        employer_address: jointEmp.employerAddressLine1 || '',
+        employer_address_line2: jointEmp.employerAddressLine2 || '',
+        employer_postcode: jointEmp.employerPostcode || '',
+        employer_city: jointEmp.employerCity || '',
+        employer_state: jointEmp.employerState || '',
+        employer_country: jointEmp.employerCountry || 'Malaysia',
+        office_phone: jointEmp.officePhone || '',
+        direct_line: jointEmp.directLine || '',
+        email_work: jointEmp.emailWork || '',
+        nature_of_business: jointEmp.natureOfBusiness || '',
+        nature_of_business_specify: jointEmp.natureOfBusinessSpecify || '',
+        occupation: jointEmp.occupation || '',
+        job_position: jointEmp.position || '',
+        date_joined: jointEmp.dateJoined || '',
+        length_of_service_years: jointEmp.serviceYears ?? 0,
+        length_of_service_months: jointEmp.serviceMonths ?? 0,
+        monthly_gross_rm: jointInc.monthlyGrossIncome ?? 0,
+        other_monthly_income_rm: jointInc.otherMonthlyIncome ?? 0,
+        annual_gross_rm: jointInc.annualGrossIncome ?? 0,
+        other_annual_income_rm: jointInc.otherAnnualIncome ?? 0
+      };
+    }
+
+    return payload;
+  }
+
+  saveAsDraft() {
+    const appId = this.applicationId();
+    if (!appId) {
+      this.draftSaveMessage.set('error');
+      return;
+    }
+
+    this.isSavingDraft.set(true);
+    this.draftSaveMessage.set('');
+
+    const payload = this.buildPayload();
+
+    this.loanApplicationService.saveApplicationDraft(appId, payload).subscribe({
+      next: () => {
+        this.isSavingDraft.set(false);
+        this.draftSaveMessage.set('success');
+        this.router.navigate(['/dashboard']);
+      },
+      error: err => {
+        this.isSavingDraft.set(false);
+        this.draftSaveMessage.set('error');
+        console.error(err);
+      }
+    });
+  }
+
 
   private initForm() {
     this.loanForm = this.fb.group({
@@ -894,13 +1583,39 @@ export class MortgageV2 implements OnInit {
     this.loanForm.get(controlName)?.setValue('');
   }
 
+  isSubmitting = false;
+
   // Handle Form Submission
   onSubmit() {
     if (this.loanForm.valid) {
-      console.log('Mortgage Application Submitted Successfully!', this.loanForm.getRawValue());
-      alert(this.translationService.currentLanguage() === 'en' 
-        ? 'Application Submitted Successfully! Thank you.' 
-        : 'Permohonan Berjaya Dihantar! Terima kasih.');
+      const appId = this.applicationId();
+      if (!appId) {
+        alert(this.translationService.currentLanguage() === 'en' 
+          ? 'Error: No active transaction ID / Tiada ID transaksi aktif.'
+          : 'Ralat: Tiada ID transaksi aktif.');
+        return;
+      }
+
+      this.isSubmitting = true;
+
+      const payload = this.buildPayload();
+
+      this.loanApplicationService.saveApplicationDetails(appId, payload).subscribe({
+        next: () => {
+          this.isSubmitting = false;
+          alert(this.translationService.currentLanguage() === 'en' 
+            ? 'Application Submitted Successfully! Thank you.' 
+            : 'Permohonan Berjaya Dihantar! Terima kasih.');
+          this.router.navigate(['/dashboard']);
+        },
+        error: err => {
+          this.isSubmitting = false;
+          alert(this.translationService.currentLanguage() === 'en'
+            ? 'Failed to submit application. Please try again.'
+            : 'Gagal menghantar permohonan. Sila cuba lagi.');
+          console.error(err);
+        }
+      });
     } else {
       // Find invalid step and go to it
       for (let i = 0; i < this.steps.length; i++) {

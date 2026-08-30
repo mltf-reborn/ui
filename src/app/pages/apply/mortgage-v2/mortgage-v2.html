@@ -20,36 +20,91 @@
   </div>
 
   <!-- Wizard Steps Tracker -->
-  <div class="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-x-auto no-scrollbar">
-    <div class="flex items-center justify-between min-w-max md:min-w-0 px-2 space-x-4">
-      <ng-container *ngFor="let step of steps; let i = index">
-        <button type="button" 
-                (click)="goToStep(i)"
-                class="flex items-center gap-3 text-left focus:outline-none transition-all duration-200 group">
-          <div [class]="'flex items-center justify-center size-10 rounded-full border-2 font-bold text-sm transition-all duration-300 ' + 
-                       (i === currentStepIndex ? 'border-brand-600 bg-brand-600 text-white shadow-md shadow-brand-500/20 scale-105' : 
-                        isStepValid(step.id) ? 'border-success-500 bg-success-500 text-white' : 
-                        'border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 group-hover:border-slate-400')">
-            <span *ngIf="isStepValid(step.id); else stepNum">✓</span>
-            <ng-template #stepNum>{{ i + 1 }}</ng-template>
-          </div>
-          <div>
-            <p [class]="'text-xs font-semibold uppercase tracking-wider ' + (i === currentStepIndex ? 'text-brand-600 dark:text-brand-400' : 'text-slate-400 dark:text-slate-500')">
-              {{ translationService.currentLanguage() === 'en' ? 'Step' : 'Langkah' }} {{ i + 1 }}
-            </p>
-            <p [class]="'text-sm font-bold transition-colors duration-200 ' + (i === currentStepIndex ? 'text-slate-900 dark:text-white font-extrabold' : 'text-slate-500 dark:text-slate-400')">
-              {{ translationService.currentLanguage() === 'en' ? step.titleEn : step.titleMs }}
-            </p>
-          </div>
-          <div *ngIf="i < steps.length - 1" class="h-8 w-[1px] bg-slate-200 dark:bg-slate-700 ml-4 hidden md:block"></div>
-        </button>
-      </ng-container>
+  <div class="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700">
+    <div class="max-w-2xl mx-auto w-full">
+      <!-- High-level progress text -->
+      <div class="flex justify-between items-center mb-4">
+        <span class="text-xs font-extrabold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+          {{ translationService.currentLanguage() === 'en' ? 'Step' : 'Langkah' }} {{ currentStepIndex + 1 }} {{ translationService.currentLanguage() === 'en' ? 'of' : 'daripada' }} {{ steps.length }}
+        </span>
+        <h4 class="text-sm font-bold text-slate-800 dark:text-slate-200">
+          {{ translationService.currentLanguage() === 'en' ? steps[currentStepIndex].titleEn : steps[currentStepIndex].titleMs }}
+        </h4>
+      </div>
+
+      <!-- Segmented Horizontal Progress Bar -->
+      <div class="flex items-center gap-2">
+        <ng-container *ngFor="let step of steps; let i = index">
+          <button type="button" 
+                  (click)="goToStep(i)"
+                  [title]="translationService.currentLanguage() === 'en' ? step.titleEn : step.titleMs"
+                  [class]="'flex-1 h-2 sm:h-2.5 rounded-full transition-all duration-300 focus:outline-none ' + 
+                           (i === currentStepIndex ? 'bg-brand-600 dark:bg-brand-500 shadow-sm ring-2 ring-brand-500/20 scale-y-110' : 
+                            isStepValid(step.id) ? 'bg-emerald-500 dark:bg-emerald-600' : 
+                            'bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600')">
+          </button>
+        </ng-container>
+      </div>
     </div>
   </div>
 
   <!-- Form Body -->
   <div class="max-w-5xl mx-auto w-full">
-    <form [formGroup]="loanForm" (ngSubmit)="onSubmit()" class="space-y-6">
+    
+    <!-- Loading State Spinner -->
+    <div *ngIf="isCreatingApplication()" class="bg-white dark:bg-slate-800 p-8 sm:p-12 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 text-center space-y-6 max-w-xl mx-auto my-12 animate-fade-in">
+      <div class="flex items-center justify-center">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent"></div>
+      </div>
+      <p class="text-sm font-semibold text-slate-500 dark:text-slate-400">
+        {{ translationService.currentLanguage() === 'en' ? 'Initializing application / loading details...' : 'Memulakan permohonan / memuatkan butiran...' }}
+      </p>
+    </div>
+
+    <!-- Conflict Error State -->
+    <div *ngIf="!isCreatingApplication() && applicationError() === 'conflict'" class="bg-white dark:bg-slate-800 p-8 sm:p-12 rounded-3xl shadow-sm border border-red-200 dark:border-red-950/30 text-center space-y-6 max-w-xl mx-auto my-12 animate-fade-in">
+      <div class="inline-flex items-center justify-center size-20 rounded-full bg-red-50 dark:bg-red-500/10 text-red-500 text-4xl shadow-sm">
+        ⚠️
+      </div>
+      <div class="space-y-3">
+        <h3 class="text-xl font-bold text-slate-900 dark:text-white">
+          {{ translationService.currentLanguage() === 'en' ? 'Existing Loan Application Detected' : 'Permohonan Pinjaman Sedia Ada Dikesan' }}
+        </h3>
+        <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-md mx-auto">
+          {{ translationService.currentLanguage() === 'en' 
+             ? 'You have an existing mortgage loan application in progress. Please edit or delete the existing loan application before continuing.' 
+             : 'Anda mempunyai permohonan pinjaman gadai janji yang sedang berjalan. Sila edit atau padam permohonan sedia ada sebelum meneruskan.' }}
+        </p>
+      </div>
+      <div class="pt-4">
+        <a routerLink="/dashboard" class="inline-flex justify-center items-center rounded-xl bg-brand-600 hover:bg-brand-700 text-white py-3 px-8 text-sm font-bold shadow-md hover:shadow-lg transition-all duration-200 hover:-translate-y-0.5">
+          {{ translationService.currentLanguage() === 'en' ? 'Back to Dashboard' : 'Kembali ke Papan Pemuka' }}
+        </a>
+      </div>
+    </div>
+
+    <!-- Generic Error State -->
+    <div *ngIf="!isCreatingApplication() && applicationError() === 'generic'" class="bg-white dark:bg-slate-800 p-8 sm:p-10 rounded-3xl shadow-sm border border-slate-200 dark:border-slate-700 text-center space-y-6 max-w-lg mx-auto my-12 animate-fade-in">
+      <div class="inline-flex items-center justify-center size-16 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 text-3xl">
+        ❌
+      </div>
+      <div class="space-y-2">
+        <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+          {{ translationService.currentLanguage() === 'en' ? 'Initialization Error' : 'Ralat Permulaan' }}
+        </h3>
+        <p class="text-sm text-slate-500 dark:text-slate-400">
+          {{ translationService.currentLanguage() === 'en' ? 'Unable to load or initialize the application. Please try again later.' : 'Gagal memuatkan atau memulakan permohonan. Sila cuba lagi sebentar.' }}
+        </p>
+      </div>
+      <div class="pt-2">
+        <a routerLink="/dashboard" class="inline-flex justify-center items-center rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white py-2.5 px-6 text-sm font-bold transition-all shadow-sm">
+          {{ translationService.currentLanguage() === 'en' ? 'Back to Dashboard' : 'Kembali' }}
+        </a>
+      </div>
+    </div>
+
+    <!-- Main Form -->
+    <form *ngIf="!isCreatingApplication() && !applicationError()" [formGroup]="loanForm" (ngSubmit)="onSubmit()" class="space-y-6">
       
       <!-- STEP 1: APPLICATION DETAILS -->
       <section *ngIf="steps[currentStepIndex].id === 'app-details'" formGroupName="applicationDetails" class="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 space-y-6">
@@ -1834,28 +1889,46 @@
       </section>
 
       <!-- Navigation Control Buttons -->
-      <div class="flex justify-between items-center pt-6 pb-12 border-t border-slate-200 dark:border-slate-700">
+      <div class="flex flex-col sm:flex-row justify-between items-center gap-4 pt-6 pb-12 border-t border-slate-200 dark:border-slate-700">
         <!-- Previous Button -->
         <button type="button" 
                 (click)="prevStep()" 
                 [disabled]="currentStepIndex === 0"
-                class="inline-flex justify-center items-center rounded-xl bg-white border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-white py-3 px-6 text-sm font-bold shadow-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
+                class="w-full sm:w-auto inline-flex justify-center items-center rounded-xl bg-white border border-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700 dark:text-white py-3 px-6 text-sm font-bold shadow-sm transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed">
           ← {{ translationService.currentLanguage() === 'en' ? 'Back' : 'Kembali' }}
         </button>
+
+        <!-- Save as Draft Button and status messages -->
+        <div class="flex items-center gap-3">
+          <button type="button" 
+                  (click)="saveAsDraft()" 
+                  [disabled]="isSavingDraft() || isCreatingApplication()"
+                  class="inline-flex justify-center items-center gap-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-white py-3 px-6 text-sm font-bold shadow-sm transition-all duration-200 disabled:opacity-40">
+            <span *ngIf="isSavingDraft()" class="animate-spin inline-block size-4 border-2 border-slate-500 border-t-transparent rounded-full"></span>
+            💾 {{ translationService.currentLanguage() === 'en' ? 'Save as Draft' : 'Simpan Draf' }}
+          </button>
+          <span *ngIf="draftSaveMessage() === 'success'" class="text-xs font-bold text-emerald-500 animate-fade-in">
+            ✓ Saved!
+          </span>
+          <span *ngIf="draftSaveMessage() === 'error'" class="text-xs font-bold text-red-500 animate-fade-in">
+            ⚠️ Failed to save
+          </span>
+        </div>
 
         <!-- Next / Submit Button -->
         <button *ngIf="currentStepIndex < steps.length - 1" 
                 type="button" 
                 (click)="nextStep()"
-                [class]="'inline-flex justify-center items-center rounded-xl bg-brand-600 hover:bg-brand-700 text-white py-3 px-8 text-sm font-bold shadow-lg shadow-brand-500/10 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 ' + 
+                [class]="'w-full sm:w-auto inline-flex justify-center items-center rounded-xl bg-brand-600 hover:bg-brand-700 text-white py-3 px-8 text-sm font-bold shadow-lg shadow-brand-500/10 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 ' + 
                          (!isStepValid(steps[currentStepIndex].id) ? 'opacity-50 cursor-not-allowed' : '')">
           {{ translationService.currentLanguage() === 'en' ? 'Continue' : 'Teruskan' }} →
         </button>
 
         <button *ngIf="currentStepIndex === steps.length - 1" 
                 type="submit"
-                [disabled]="!loanForm.valid"
-                class="inline-flex justify-center items-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-10 text-sm font-bold shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                [disabled]="!loanForm.valid || isSubmitting"
+                class="w-full sm:w-auto inline-flex justify-center items-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white py-3 px-10 text-sm font-bold shadow-lg shadow-emerald-500/10 hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed">
+          <span *ngIf="isSubmitting" class="animate-spin inline-block size-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
           ✓ {{ translationService.currentLanguage() === 'en' ? 'Submit Loan Application' : 'Hantar Permohonan' }}
         </button>
       </div>
@@ -1863,3 +1936,4 @@
     </form>
   </div>
 </div>
+

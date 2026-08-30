@@ -59,6 +59,23 @@ export class LoanApplicationService {
     );
   }
 
+  createApplication(): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.post<any>(
+          this.endpoint,
+          null,
+          { headers, params: { action: 'create' } }
+        );
+      })
+    );
+  }
+
+
   uploadDocument(applicationId: string, file: File): Observable<ApplicationDocumentResponse> {
     return this.authService.getJwtToken().pipe(
       switchMap(token => {
@@ -129,6 +146,53 @@ export class LoanApplicationService {
             params: { applicationID: applicationId },
           }))
         );
+      })
+    );
+  }
+
+  saveApplicationDraft(applicationId: string, payload: any): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.post(
+          `${this.endpoint}/draft`,
+          payload,
+          { headers, params: { applicationID: applicationId }, responseType: 'text' }
+        );
+      })
+    );
+  }
+
+  saveApplicationDetails(applicationId: string, payload: any): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.post(
+          `${this.endpoint}/details`,
+          payload,
+          { headers, params: { applicationID: applicationId }, responseType: 'text' }
+        );
+      })
+    );
+  }
+
+  getApplicationDetails(applicationId: string): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.get<any>(`${this.endpoint}/details`, {
+          headers,
+          params: { applicationID: applicationId }
+        });
       })
     );
   }
