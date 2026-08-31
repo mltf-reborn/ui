@@ -27,7 +27,7 @@
         </span>
       </div>
       <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
-        e-KYC compliance &amp; document integrity review queue from <code class="font-mono text-xs text-brand-600 dark:text-brand-400">case-management-service (Spanner)</code>.
+        Mortgage Loan applications &amp; e-KYC compliance review queue from <code class="font-mono text-xs text-brand-600 dark:text-brand-400">case-management-service (Spanner)</code>.
       </p>
     </div>
 
@@ -64,7 +64,7 @@
         <span class="text-3xl font-extrabold text-slate-900 dark:text-white">{{ caseService.stats().total }}</span>
         <span class="text-xs text-slate-500 dark:text-slate-400">Spanner records</span>
       </div>
-      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">All KYC case records</div>
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Mortgage Loan &amp; KYC cases</div>
     </div>
 
     <!-- In Progress -->
@@ -98,7 +98,7 @@
         <span class="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400">{{ caseService.stats().accepted }}</span>
         <span class="text-xs text-emerald-600/80 dark:text-emerald-400/80 font-medium">ACCEPTED</span>
       </div>
-      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Compliance verified</div>
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Approved &amp; verified cases</div>
     </div>
 
     <!-- Rejected -->
@@ -115,14 +115,14 @@
         <span class="text-3xl font-extrabold text-rose-600 dark:text-rose-400">{{ caseService.stats().rejected }}</span>
         <span class="text-xs text-rose-600/80 dark:text-rose-400/80 font-medium">REJECTED</span>
       </div>
-      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Failed review / mismatch</div>
+      <div class="mt-2 text-xs text-slate-500 dark:text-slate-400">Rejected applications</div>
     </div>
 
   </div>
 
   <!-- Search & Filter Controls -->
   <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
-    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
 
       <!-- Search Input -->
       <div class="relative flex-1 max-w-md">
@@ -135,7 +135,7 @@
           type="text"
           [ngModel]="searchTerm()"
           (ngModelChange)="searchTerm.set($event)"
-          placeholder="Search Case ID, Applicant Name, ID Number, User ID..."
+          placeholder="Search Case ID, Applicant Name, Doc Name, User ID..."
           class="block w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-2xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all"
         />
         <button
@@ -146,6 +146,36 @@
           <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
+        </button>
+      </div>
+
+      <!-- Case Type Filter Pills -->
+      <div class="flex flex-wrap items-center gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 text-xs">
+        <button
+          type="button"
+          (click)="caseTypeFilter.set('ALL')"
+          [class]="caseTypeFilter() === 'ALL' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
+          class="px-3 py-1.5 rounded-xl transition-all"
+        >
+          All Types
+        </button>
+        <button
+          type="button"
+          (click)="caseTypeFilter.set('LOAN_APPLICATION')"
+          [class]="caseTypeFilter() === 'LOAN_APPLICATION' ? 'bg-blue-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
+          class="px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5"
+        >
+          <span>🏠</span>
+          <span>Loan Applications</span>
+        </button>
+        <button
+          type="button"
+          (click)="caseTypeFilter.set('KYC')"
+          [class]="caseTypeFilter() === 'KYC' ? 'bg-teal-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
+          class="px-3 py-1.5 rounded-xl transition-all flex items-center gap-1.5"
+        >
+          <span>🪪</span>
+          <span>KYC Cases</span>
         </button>
       </div>
 
@@ -214,10 +244,13 @@
     </div>
 
     <!-- Active Filter Chips -->
-    <div *ngIf="searchTerm() || statusFilter() !== 'ALL' || riskFilter() !== 'ALL'" class="flex items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+    <div *ngIf="searchTerm() || statusFilter() !== 'ALL' || caseTypeFilter() !== 'ALL' || riskFilter() !== 'ALL'" class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
       <span>Active Filters:</span>
       <span *ngIf="searchTerm()" class="px-2 py-0.5 rounded-lg bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border border-brand-200 dark:border-brand-800">
         Search: "{{ searchTerm() }}"
+      </span>
+      <span *ngIf="caseTypeFilter() !== 'ALL'" class="px-2 py-0.5 rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+        Type: {{ caseTypeFilter() }}
       </span>
       <span *ngIf="statusFilter() !== 'ALL'" class="px-2 py-0.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
         Status: {{ statusFilter() }}
@@ -226,7 +259,7 @@
         Risk: {{ riskFilter() }}
       </span>
       <button
-        (click)="searchTerm.set(''); statusFilter.set('ALL'); riskFilter.set('ALL')"
+        (click)="searchTerm.set(''); statusFilter.set('ALL'); caseTypeFilter.set('ALL'); riskFilter.set('ALL')"
         class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-semibold ml-2"
       >
         Reset All
@@ -275,20 +308,20 @@
       No records match your current search criteria or filters.
     </p>
     <button
-      (click)="searchTerm.set(''); statusFilter.set('ALL'); riskFilter.set('ALL')"
+      (click)="searchTerm.set(''); statusFilter.set('ALL'); caseTypeFilter.set('ALL'); riskFilter.set('ALL')"
       class="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-brand-600 text-white hover:bg-brand-500 transition-colors"
     >
       Clear Filters
     </button>
   </div>
 
-  <!-- Main Case Data Table -->
+  <!-- Main Case Data Table (Mortgage Loan Case List) -->
   <div *ngIf="!caseService.isLoading() && !caseService.error() && filteredCases().length > 0" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl shadow-sm overflow-hidden">
 
     <!-- Table Header Info Bar -->
     <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="font-bold text-sm text-slate-900 dark:text-white">KYC Case List</span>
+        <span class="font-bold text-sm text-slate-900 dark:text-white">Mortgage Loan Case List</span>
         <span class="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400">
           {{ filteredCases().length }} of {{ caseService.cases().length }} cases
         </span>
@@ -303,8 +336,8 @@
       <table class="w-full text-left border-collapse">
         <thead>
           <tr class="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            <th class="py-3.5 px-6">Case ID</th>
-            <th class="py-3.5 px-6">Applicant Info</th>
+            <th class="py-3.5 px-6">Case ID &amp; Type</th>
+            <th class="py-3.5 px-6">Applicant / Case Details</th>
             <th class="py-3.5 px-6">Review Status</th>
             <th class="py-3.5 px-6 text-right">Actions</th>
           </tr>
@@ -315,7 +348,7 @@
             class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
             (click)="openCaseReview(item)"
           >
-            <!-- Case ID -->
+            <!-- Case ID & Type -->
             <td class="py-4 px-6 font-mono text-xs font-semibold text-slate-900 dark:text-white">
               <div class="flex items-center gap-2">
                 <span class="text-brand-600 dark:text-brand-400 group-hover:underline">{{ item.caseId }}</span>
@@ -330,26 +363,41 @@
                   </svg>
                 </button>
               </div>
-              <div class="text-[10px] text-slate-400 font-sans mt-0.5">
-                Type: {{ item.caseType || 'KYC' }}
+              <div class="mt-1.5 flex items-center gap-1.5 font-sans">
+                <span
+                  class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                  [ngClass]="getCaseTypeBadgeClass(item.caseType)"
+                >
+                  <span *ngIf="isLoanApplication(item)">🏠 LOAN APPLICATION</span>
+                  <span *ngIf="!isLoanApplication(item)">🪪 KYC CASE</span>
+                </span>
               </div>
             </td>
 
-            <!-- Applicant Profile -->
+            <!-- Applicant Profile / Case Details -->
             <td class="py-4 px-6">
               <div class="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span>{{ getApplicantName(item) }}</span>
-                <span *ngIf="isExternalKycFailed(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30" title="External KYC lookup failed (ID Not Found in Registry)">
-                  ❌ KYC Failed
-                </span>
-                <span *ngIf="!isExternalKycFailed(item) && hasNameMismatch(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Name mismatch detected against official registry">
-                  ⚠️ Mismatch
-                </span>
+                <ng-container *ngIf="!isLoanApplication(item)">
+                  <span *ngIf="isExternalKycFailed(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30" title="External KYC lookup failed (ID Not Found in Registry)">
+                    ❌ KYC Failed
+                  </span>
+                  <span *ngIf="!isExternalKycFailed(item) && hasNameMismatch(item)" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Name mismatch detected against official registry">
+                    ⚠️ Mismatch
+                  </span>
+                </ng-container>
+                <ng-container *ngIf="isLoanApplication(item)">
+                  <span *ngIf="item.documentName" class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                    📄 {{ item.documentName }}
+                  </span>
+                </ng-container>
               </div>
               <div class="text-xs text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-                ID: {{ getApplicantIdNumber(item) }}
+                <span *ngIf="!isLoanApplication(item)">ID: {{ getApplicantIdNumber(item) }}</span>
+                <span *ngIf="isLoanApplication(item) && item.applicationReferenceNumber">Ref: {{ item.applicationReferenceNumber }}</span>
+                <span *ngIf="isLoanApplication(item) && !item.applicationReferenceNumber">User: {{ item.userId }}</span>
               </div>
-              <div class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5">
+              <div class="text-[10px] text-slate-400 truncate max-w-xs mt-0.5 font-mono">
                 UID: {{ item.userId }}
               </div>
             </td>
@@ -391,7 +439,8 @@
                   (click)="openCaseReview(item)"
                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-sm shadow-brand-500/20 transition-all"
                 >
-                  <span>Review Case</span>
+                  <span *ngIf="isLoanApplication(item)">Review Loan Case</span>
+                  <span *ngIf="!isLoanApplication(item)">Review KYC Case</span>
                   <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                   </svg>
@@ -460,15 +509,24 @@
   <!-- CASE REVIEW MODAL -->
   <div *ngIf="isReviewModalOpen() && caseService.selectedCase()" class="fixed inset-0 z-50 overflow-y-auto bg-slate-950/70 backdrop-blur-sm flex justify-center items-start sm:p-4 md:p-6 animate-in fade-in duration-200">
     <div
-      class="bg-white dark:bg-slate-900 w-full max-w-5xl rounded-none sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-200"
+      class="bg-white dark:bg-slate-900 w-full rounded-none sm:rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col animate-in zoom-in-95 duration-200"
+      [ngClass]="isLoanApplication(caseService.selectedCase()) ? 'max-w-2xl' : 'max-w-5xl'"
       (click)="$event.stopPropagation()"
     >
 
       <!-- Modal Header -->
       <div class="px-6 py-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 flex items-center justify-between sticky top-0 z-10">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center font-bold">
-            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div
+            class="w-10 h-10 rounded-xl text-white flex items-center justify-center font-bold shadow-md"
+            [ngClass]="isLoanApplication(caseService.selectedCase()) ? 'bg-gradient-to-tr from-blue-600 to-indigo-600 shadow-blue-500/20' : 'bg-gradient-to-tr from-brand-600 to-emerald-600 shadow-brand-500/20'"
+          >
+            <!-- Loan App Icon -->
+            <svg *ngIf="isLoanApplication(caseService.selectedCase())" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
+            <!-- KYC Icon -->
+            <svg *ngIf="!isLoanApplication(caseService.selectedCase())" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
           </div>
@@ -477,6 +535,12 @@
               <h2 class="text-lg font-bold text-slate-900 dark:text-white font-mono">
                 {{ caseService.selectedCase()?.caseId }}
               </h2>
+              <span
+                class="px-2 py-0.5 rounded-full text-[10px] font-bold border"
+                [ngClass]="getCaseTypeBadgeClass(caseService.selectedCase()?.caseType)"
+              >
+                {{ isLoanApplication(caseService.selectedCase()) ? 'LOAN_APPLICATION' : 'KYC CASE' }}
+              </span>
               <span
                 *ngIf="(caseService.selectedCase()?.caseStatus || '').toUpperCase() === 'IN_PROGRESS'"
                 class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/30"
@@ -513,8 +577,197 @@
         </button>
       </div>
 
-      <!-- Modal Body -->
-      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+      <!-- ========================================================================= -->
+      <!-- MODAL BODY 1: TYPE === 'LOAN_APPLICATION' (Streamlined Approval Modal)   -->
+      <!-- ========================================================================= -->
+      <div *ngIf="isLoanApplication(caseService.selectedCase())" class="flex-1 overflow-y-auto p-6 space-y-6">
+
+        <!-- 1. The Document Name (With Downloadable Document Link) -->
+        <div class="bg-slate-50 dark:bg-slate-800/50 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 space-y-3">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-2">
+              <svg class="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Application Documents</span>
+            </h3>
+            <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              {{ getCaseDocuments(caseService.selectedCase()).length }} File(s)
+            </span>
+          </div>
+
+          <!-- Documents List with Downloadable Links -->
+          <div class="space-y-2.5">
+            <div
+              *ngFor="let doc of getCaseDocuments(caseService.selectedCase()); let i = index"
+              class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl shadow-sm hover:border-blue-500/40 transition-colors"
+            >
+              <!-- Document Icon & Name -->
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20 font-bold">
+                  <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div class="min-w-0">
+                  <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate">
+                    {{ doc.name }}
+                  </div>
+                  <div class="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                    <span>{{ doc.type || 'Mortgage Document' }}</span>
+                    <span *ngIf="doc.size">• {{ doc.size }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Downloadable Document Links / Actions -->
+              <div class="flex items-center gap-2 shrink-0">
+                <!-- Direct Open in New Tab -->
+                <a
+                  [href]="getDocumentDownloadUrl(doc.url)"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-colors"
+                  title="View / Open Document in new tab"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  <span>Open</span>
+                </a>
+
+                <!-- Download Button Link -->
+                <a
+                  [href]="getDocumentDownloadUrl(doc.url)"
+                  [download]="doc.name"
+                  (click)="downloadDocument(doc); $event.stopPropagation()"
+                  class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-500 text-white shadow-sm shadow-blue-500/20 transition-all cursor-pointer"
+                  title="Download document file"
+                >
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Approve / Reject Button with Comment -->
+        <div class="bg-gradient-to-br from-blue-950/20 to-slate-900/40 border-2 border-blue-500/40 rounded-3xl p-6 space-y-5">
+          <div class="flex items-center justify-between">
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <svg class="w-5 h-5 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+              </svg>
+              <span>Officer Loan Application Decision</span>
+            </h3>
+            <span class="text-xs text-slate-400">
+              Officer: <strong class="text-blue-400">{{ opsAuthService.currentUser()?.fullName || 'Ops Officer' }}</strong>
+            </span>
+          </div>
+
+          <!-- Quick Approve / Reject Selection -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+              Approval Decision:
+            </label>
+            <div class="grid grid-cols-2 gap-3">
+              <!-- Approve Button -->
+              <button
+                type="button"
+                (click)="targetStatus.set('ACCEPTED')"
+                [class]="targetStatus() === 'ACCEPTED' ? 'bg-emerald-600 text-white ring-2 ring-emerald-400 font-bold shadow-lg shadow-emerald-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+                class="py-3 px-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                <svg class="w-4 h-4 text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Approve (ACCEPTED)</span>
+              </button>
+
+              <!-- Reject Button -->
+              <button
+                type="button"
+                (click)="targetStatus.set('REJECTED')"
+                [class]="targetStatus() === 'REJECTED' ? 'bg-rose-600 text-white ring-2 ring-rose-400 font-bold shadow-lg shadow-rose-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+                class="py-3 px-4 rounded-2xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all"
+              >
+                <svg class="w-4 h-4 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span>Reject (REJECTED)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Rejection Reason (only when REJECTED) -->
+          <div *ngIf="targetStatus() === 'REJECTED'" class="space-y-2 animate-in fade-in duration-150">
+            <label class="block text-xs font-bold uppercase tracking-wider text-rose-400">
+              Rejection Reason:
+            </label>
+            <select
+              (change)="rejectionReason.set($any($event.target).value)"
+              class="w-full py-2.5 px-3 bg-white dark:bg-slate-800 border border-rose-300 dark:border-rose-800 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+            >
+              <option value="">-- Select Rejection Reason --</option>
+              <option *ngFor="let r of predefinedRejectionReasons" [value]="r">{{ r }}</option>
+            </select>
+            <input
+              type="text"
+              [ngModel]="rejectionReason()"
+              (ngModelChange)="rejectionReason.set($event)"
+              placeholder="Or type a specific rejection reason..."
+              class="w-full py-2.5 px-3 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500"
+            />
+          </div>
+
+          <!-- Comment / Officer Remarks -->
+          <div>
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">
+              Officer Comment &amp; Approval Notes:
+            </label>
+            <textarea
+              [ngModel]="officerRemarks()"
+              (ngModelChange)="officerRemarks.set($event)"
+              rows="3"
+              placeholder="Enter approval comments or review remarks..."
+              class="w-full p-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-sans"
+            ></textarea>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center justify-end gap-3 pt-2">
+            <button
+              type="button"
+              (click)="closeCaseReview()"
+              class="px-5 py-2.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="saveModalDecision()"
+              [disabled]="caseService.isSaving()"
+              class="px-6 py-2.5 rounded-xl text-xs font-bold text-white shadow-lg transition-all flex items-center gap-2 disabled:opacity-50"
+              [ngClass]="targetStatus() === 'REJECTED' ? 'bg-gradient-to-r from-rose-600 to-rose-700 hover:from-rose-500 hover:to-rose-600 shadow-rose-500/25' : 'bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-500 hover:to-emerald-500 shadow-blue-500/25'"
+            >
+              <svg *ngIf="caseService.isSaving()" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>{{ targetStatus() === 'REJECTED' ? 'Reject Loan Application' : 'Approve Loan Application' }}</span>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- MODAL BODY 2: TYPE === 'KYC' (Comprehensive 4-Step KYC Forensics Modal)   -->
+      <!-- ========================================================================= -->
+      <div *ngIf="!isLoanApplication(caseService.selectedCase())" class="flex-1 overflow-y-auto p-6 space-y-6">
 
         <!-- External KYC Failed Alert Banner -->
         <div

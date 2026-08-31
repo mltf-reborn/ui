@@ -126,16 +126,39 @@ export interface KycCaseDetails {
   [key: string]: any;
 }
 
+export interface CaseDocumentItem {
+  id?: string;
+  name?: string;
+  filename?: string;
+  documentFilename?: string;
+  documentId?: string;
+  url?: string;
+  documentUrl?: string;
+  gcsUrl?: string;
+  type?: string;
+  documentType?: string;
+  status?: string;
+  message?: string;
+  size?: number | string;
+  uploadedAt?: string;
+  [key: string]: any;
+}
+
 export interface CaseItem {
   caseId: string;
   userId: string;
-  caseType: string;
+  caseType: 'KYC' | 'LOAN_APPLICATION' | string;
   caseStatus: 'IN_PROGRESS' | 'ACCEPTED' | 'REJECTED' | string;
   documentUrl?: string;
+  documentName?: string;
+  documents?: CaseDocumentItem[];
   selfieUrl?: string;
   documentVerificationDetails?: DocumentVerificationDetails;
   selfieDetails?: SelfieDetails;
   kycDetails?: KycCaseDetails;
+  applicationId?: string;
+  applicationReferenceNumber?: string;
+  loanDetails?: any;
   riskScore?: number;
   riskLevel?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | string;
   rejectionReason?: string;
@@ -143,6 +166,7 @@ export interface CaseItem {
   assignedTo?: string;
   createdAt?: string;
   updatedAt?: string;
+  [key: string]: any;
 }
 
 export interface UpdateCaseStatusRequest {

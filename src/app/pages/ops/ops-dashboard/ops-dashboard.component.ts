@@ -24,6 +24,7 @@ export class OpsDashboardComponent implements OnInit {
   // Filters & Sorting state
   readonly searchTerm = signal<string>('');
   readonly statusFilter = signal<string>('ALL');
+  readonly caseTypeFilter = signal<string>('ALL');
   readonly riskFilter = signal<string>('ALL');
   readonly sortBy = signal<string>('newest');
 
@@ -50,6 +51,8 @@ export class OpsDashboardComponent implements OnInit {
     'Suspected document tampering or fraudulent submission',
     'AML / Sanctions check flagged negative records',
     'MyKad number does not match registered official record',
+    'Incomplete or invalid loan application documents submitted',
+    'Income verification failed or insufficient debt service ratio (DSR)',
   ];
 
   constructor() {
@@ -58,6 +61,7 @@ export class OpsDashboardComponent implements OnInit {
       () => {
         this.searchTerm();
         this.statusFilter();
+        this.caseTypeFilter();
         this.riskFilter();
         this.sortBy();
         this.currentPage.set(1);
@@ -70,11 +74,19 @@ export class OpsDashboardComponent implements OnInit {
     this.caseService.loadAllCases().subscribe();
   }
 
+  /** Checks if the case is a Loan Application */
+  isLoanApplication(caseItem?: CaseItem | null): boolean {
+    if (!caseItem) return false;
+    const type = (caseItem.caseType || '').toUpperCase();
+    return type === 'LOAN_APPLICATION' || type === 'LOAN' || type === 'MORTGAGE_LOAN' || type === 'MORTGAGE';
+  }
+
   // Filtered and Sorted Cases
   readonly filteredCases = computed<CaseItem[]>(() => {
     const list = this.caseService.cases();
     const query = this.searchTerm().trim().toLowerCase();
     const status = this.statusFilter().toUpperCase();
+    const caseType = this.caseTypeFilter().toUpperCase();
     const risk = this.riskFilter().toUpperCase();
     const sort = this.sortBy();
 
@@ -87,6 +99,13 @@ export class OpsDashboardComponent implements OnInit {
         if (status === 'REJECTED' && itemStatus !== 'REJECTED') return false;
       }
 
+      // Case Type filter (KYC vs LOAN_APPLICATION)
+      if (caseType !== 'ALL') {
+        const isLoan = this.isLoanApplication(item);
+        if (caseType === 'LOAN_APPLICATION' && !isLoan) return false;
+        if (caseType === 'KYC' && isLoan) return false;
+      }
+
       // Risk filter
       if (risk !== 'ALL') {
         const itemRisk = (item.riskLevel || '').toUpperCase();
@@ -97,13 +116,27 @@ export class OpsDashboardComponent implements OnInit {
       if (query) {
         const idMatch = (item.caseId || '').toLowerCase().includes(query);
         const userMatch = (item.userId || '').toLowerCase().includes(query);
+        const typeMatch = (item.caseType || '').toLowerCase().includes(query);
+        const appRefMatch = (item.applicationReferenceNumber || item.applicationId || '').toLowerCase().includes(query);
+        const docNameMatch = (item.documentName || '').toLowerCase().includes(query);
         const kycName = (item.kycDetails?.fullName || '').toLowerCase().includes(query);
         const kycId = (item.kycDetails?.idCardNumber || '').toLowerCase().includes(query);
-        const docName = (item.documentVerificationDetails?.extractedFields?.fullName || '').toLowerCase().includes(query);
-        const docId = (item.documentVerificationDetails?.extractedFields?.idNumber || '').toLowerCase().includes(query);
+        const docExtractedName = (item.documentVerificationDetails?.extractedFields?.fullName || '').toLowerCase().includes(query);
+        const docExtractedId = (item.documentVerificationDetails?.extractedFields?.idNumber || '').toLowerCase().includes(query);
         const regName = (item.kycDetails?.externalKycSummary?.fullName || '').toLowerCase().includes(query);
 
-        if (!idMatch && !userMatch && !kycName && !kycId && !docName && !docId && !regName) {
+        if (
+          !idMatch &&
+          !userMatch &&
+          !typeMatch &&
+          !appRefMatch &&
+          !docNameMatch &&
+          !kycName &&
+          !kycId &&
+          !docExtractedName &&
+          !docExtractedId &&
+          !regName
+        ) {
           return false;
         }
       }
@@ -445,5 +478,103 @@ export class OpsDashboardComponent implements OnInit {
     const submitted = (caseItem.kycDetails?.fullName || '').trim().toLowerCase();
     const registry = (summary?.fullName || '').trim().toLowerCase();
     return submitted.length > 0 && registry.length > 0 && submitted !== registry;
+  }
+
+  /** Returns user-friendly case type label */
+  getCaseTypeLabel(caseType?: string): string {
+    const type = (caseType || 'KYC').toUpperCase();
+    if (type === 'LOAN_APPLICATION' || type === 'LOAN' || type === 'MORTGAGE_LOAN') {
+      return 'LOAN_APPLICATION';
+    }
+    return 'KYC';
+  }
+
+  /** Returns visual styling classes for case type badge */
+  getCaseTypeBadgeClass(caseType?: string): string {
+    const type = (caseType || 'KYC').toUpperCase();
+    if (type === 'LOAN_APPLICATION' || type === 'LOAN' || type === 'MORTGAGE_LOAN') {
+      return 'bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30';
+    }
+    return 'bg-teal-500/15 text-teal-700 dark:text-teal-300 border-teal-500/30';
+  }
+
+  /** Extracts all document items from a case with filename and downloadable URL */
+  getCaseDocuments(caseItem?: CaseItem | null): Array<{ id?: string; name: string; url: string; type?: string; size?: string }> {
+    if (!caseItem) return [];
+    const docs: Array<{ id?: string; name: string; url: string; type?: string; size?: string }> = [];
+
+    // 1. Check if documents array is provided on the case
+    if (Array.isArray(caseItem.documents) && caseItem.documents.length > 0) {
+      for (const d of caseItem.documents) {
+        const name = d.filename || d.documentFilename || d.name || d.documentType || 'Loan_Application_Document.pdf';
+        const url = d.url || d.documentUrl || d.gcsUrl || (d.id ? `/api/v2/application/document/${d.id}` : '');
+        docs.push({
+          id: d.id || d.documentId,
+          name,
+          url: url || caseItem.documentUrl || '',
+          type: d.type || d.documentType || 'Application Document',
+          size: d.size ? String(d.size) : undefined,
+        });
+      }
+    }
+
+    // 2. Check if single documentUrl or documentName is on case
+    if (docs.length === 0 && (caseItem.documentUrl || caseItem.documentName)) {
+      let name = caseItem.documentName;
+      if (!name && caseItem.documentUrl) {
+        try {
+          const clean = caseItem.documentUrl.split('?')[0];
+          const parts = clean.split('/');
+          name = decodeURIComponent(parts[parts.length - 1]);
+        } catch {
+          name = 'Loan_Application_Document.pdf';
+        }
+      }
+      docs.push({
+        name: name || 'Loan_Application_Document.pdf',
+        url: caseItem.documentUrl || '',
+        type: 'Loan Application Document',
+      });
+    }
+
+    // 3. Fallback placeholder for LOAN_APPLICATION type with no explicit document
+    if (docs.length === 0 && this.isLoanApplication(caseItem)) {
+      docs.push({
+        name: caseItem.documentName || `Mortgage_Loan_Document_${caseItem.caseId}.pdf`,
+        url: caseItem.documentUrl || '',
+        type: 'Mortgage Loan Package',
+      });
+    }
+
+    return docs;
+  }
+
+  /** Resolves a document URL into an accessible download/preview URL */
+  getDocumentDownloadUrl(url?: string): string {
+    if (!url) return '#';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    if (url.startsWith('gs://') || url.includes('/')) {
+      return `/api/v1/media/image?gcsUrl=${encodeURIComponent(url)}`;
+    }
+    return url;
+  }
+
+  /** Helper to trigger direct browser download or open in new tab */
+  downloadDocument(doc: { name: string; url: string }): void {
+    if (!doc.url || doc.url === '#') {
+      this.showToast(`Pautan dokumen tidak ditemui untuk ${doc.name}`, 'error');
+      return;
+    }
+    const resolvedUrl = this.getDocumentDownloadUrl(doc.url);
+    const link = document.createElement('a');
+    link.href = resolvedUrl;
+    link.target = '_blank';
+    link.download = doc.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    this.showToast(`Memuat turun: ${doc.name}`, 'success');
   }
 }
