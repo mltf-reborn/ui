@@ -94,12 +94,25 @@ export class OpsDashboardComponent implements OnInit {
   isLoanApplication(caseItem?: CaseItem | null): boolean {
     if (!caseItem) return false;
     const type = (caseItem.caseType || '').toUpperCase();
-    return type === 'LOAN_APPLICATION' || type === 'LOAN' || type === 'MORTGAGE_LOAN' || type === 'MORTGAGE';
+    if (type === 'LOAN_APPLICATION' || type === 'LOAN' || type === 'MORTGAGE_LOAN' || type === 'MORTGAGE') {
+      return true;
+    }
+    if (caseItem.applicationDetails || caseItem.applicationReferenceNumber || caseItem.facilityAmount) {
+      return true;
+    }
+    return false;
   }
 
   // Filtered and Sorted Cases
   readonly filteredCases = computed<CaseItem[]>(() => {
-    const list = this.caseService.cases();
+    const mode = this.viewMode();
+    const list =
+      mode === 'LOAN_APPLICATIONS'
+        ? this.caseService.loanApplications()
+        : mode === 'ALL_CASES'
+        ? [...this.caseService.loanApplications(), ...this.caseService.cases()]
+        : this.caseService.loanApplications();
+
     const query = this.searchTerm().trim().toLowerCase();
     const status = this.statusFilter().toUpperCase();
     const caseType = this.caseTypeFilter().toUpperCase();
@@ -108,7 +121,6 @@ export class OpsDashboardComponent implements OnInit {
     const dsrFilterVal = this.dsrFilter().toUpperCase();
     const risk = this.riskFilter().toUpperCase();
     const sort = this.sortBy();
-    const mode = this.viewMode();
 
     let result = list.filter((item) => {
       // If in LOAN_APPLICATIONS mode and case is not loan, filter out

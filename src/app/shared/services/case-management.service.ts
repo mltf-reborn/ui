@@ -1,6 +1,6 @@
 import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, catchError, of, tap, map } from 'rxjs';
+import { Observable, catchError, of, tap, map, forkJoin } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface ExtractedFields {
@@ -438,6 +438,7 @@ export class CaseManagementService {
   private readonly batchEndpoint = `${this.baseUrl}/api/v1/batch/process`;
 
   readonly cases = signal<CaseItem[]>([]);
+  readonly loanApplications = signal<CaseItem[]>([]);
   readonly selectedCase = signal<CaseItem | null>(null);
   readonly isLoading = signal<boolean>(false);
   readonly isSaving = signal<boolean>(false);
@@ -446,7 +447,10 @@ export class CaseManagementService {
   readonly lastUpdated = signal<Date | null>(null);
 
   readonly stats = computed<CaseStats>(() => {
-    const list = this.cases();
+    const loanList = this.loanApplications();
+    const kycList = this.cases();
+    const allList = [...loanList, ...kycList];
+
     let inProgress = 0;
     let accepted = 0;
     let rejected = 0;
@@ -454,7 +458,7 @@ export class CaseManagementService {
     let mediumRisk = 0;
     let lowRisk = 0;
 
-    let loanCount = 0;
+    let loanCount = loanList.length;
     let totalLoanRm = 0;
     let totalPropertyRm = 0;
     let sumDsr = 0;
@@ -462,7 +466,7 @@ export class CaseManagementService {
     let sumLtv = 0;
     let ltvCount = 0;
 
-    for (const c of list) {
+    for (const c of allList) {
       const status = (c.caseStatus || '').toUpperCase();
       if (status === 'IN_PROGRESS' || status === 'SUBMITTED' || status === 'IN_REVIEW' || status === 'NEW') inProgress++;
       else if (status === 'ACCEPTED' || status === 'APPROVED') accepted++;
@@ -472,35 +476,33 @@ export class CaseManagementService {
       if (risk === 'HIGH' || risk === 'CRITICAL') highRisk++;
       else if (risk === 'MEDIUM') mediumRisk++;
       else if (risk === 'LOW') lowRisk++;
+    }
 
-      const isLoan = this.isLoanCase(c);
-      if (isLoan) {
-        loanCount++;
-        const facilityAmt = c.facilityAmount || c.applicationDetails?.facilitiesRequired?.requestedAmount || 350000;
-        const propPrice = c.spaPrice || c.propertyDetails?.spaPriceRm || 400000;
-        totalLoanRm += facilityAmt;
-        totalPropertyRm += propPrice;
+    for (const c of loanList) {
+      const facilityAmt = c.facilityAmount || c.applicationDetails?.facilitiesRequired?.requestedAmount || 350000;
+      const propPrice = c.spaPrice || c.propertyDetails?.spaPriceRm || 400000;
+      totalLoanRm += facilityAmt;
+      totalPropertyRm += propPrice;
 
-        const dsr = c.calculatedDsr ?? c.applicantDetails?.calculatedDsr;
-        if (typeof dsr === 'number' && dsr > 0) {
-          sumDsr += dsr;
-          dsrCount++;
-        }
+      const dsr = c.calculatedDsr ?? c.applicantDetails?.calculatedDsr;
+      if (typeof dsr === 'number' && dsr > 0) {
+        sumDsr += dsr;
+        dsrCount++;
+      }
 
-        const ltv = c.calculatedLtv ?? c.propertyDetails?.calculatedLtv;
-        if (typeof ltv === 'number' && ltv > 0) {
-          sumLtv += ltv;
-          ltvCount++;
-        }
+      const ltv = c.calculatedLtv ?? c.propertyDetails?.calculatedLtv;
+      if (typeof ltv === 'number' && ltv > 0) {
+        sumLtv += ltv;
+        ltvCount++;
       }
     }
 
-    const approvalRate = list.length > 0 ? Math.round((accepted / list.length) * 100) : 0;
+    const approvalRate = allList.length > 0 ? Math.round((accepted / allList.length) * 100) : 0;
     const avgDsr = dsrCount > 0 ? Math.round((sumDsr / dsrCount) * 10) / 10 : 42.5;
     const avgLtv = ltvCount > 0 ? Math.round((sumLtv / ltvCount) * 10) / 10 : 87.2;
 
     return {
-      total: list.length,
+      total: allList.length,
       inProgress,
       accepted,
       rejected,
@@ -521,29 +523,246 @@ export class CaseManagementService {
     return type === 'LOAN_APPLICATION' || type === 'LOAN' || type === 'MORTGAGE_LOAN' || type === 'MORTGAGE';
   }
 
+  private readonly loanAppEndpoint = `${this.baseUrl}/api/v1/application/all`;
+
   /**
-   * Fetch all cases from case-management-service and enrich with 4-entity data
+   * Load loan applications directly from /api/v1/application/all
    */
-  loadAllCases(): Observable<CaseItem[]> {
+  loadLoanApplications(): Observable<CaseItem[]> {
+    return this.http.get<any>(this.loanAppEndpoint).pipe(
+      map((res) => this.mapSpannerLoanRecordsToCaseItems(res)),
+      tap((loans) => {
+        this.loanApplications.set(loans);
+      }),
+      catchError((err) => {
+        console.warn('Error loading loan applications from /api/v1/application/all:', err);
+        return of([] as CaseItem[]);
+      })
+    );
+  }
+
+  /**
+   * Load KYC cases separately from /api/v1/case
+   */
+  loadKycCases(): Observable<CaseItem[]> {
+    return this.http.get<any>(this.caseEndpoint).pipe(
+      map((res) => {
+        const records = Array.isArray(res) ? res : (res?.cases || res?.data || []);
+        return (records as CaseItem[]).map((k) => ({
+          ...k,
+          caseType: k.caseType || 'KYC',
+        }));
+      }),
+      tap((cases) => {
+        this.cases.set(cases);
+      }),
+      catchError((err) => {
+        console.warn('Error loading KYC cases from /api/v1/case:', err);
+        return of([] as CaseItem[]);
+      })
+    );
+  }
+
+  /**
+   * Fetch both separated lists concurrently
+   */
+  loadAllCases(): Observable<{ loanApplications: CaseItem[]; kycCases: CaseItem[] }> {
     this.isLoading.set(true);
     this.error.set(null);
 
-    return this.http.get<CaseItem[]>(this.caseEndpoint).pipe(
-      map((cases) => this.enrichCasesData(cases || [])),
-      tap((enriched) => {
-        this.cases.set(enriched);
+    return forkJoin({
+      loanApplications: this.loadLoanApplications(),
+      kycCases: this.loadKycCases(),
+    }).pipe(
+      tap(() => {
         this.isLoading.set(false);
         this.lastUpdated.set(new Date());
       }),
       catchError((err) => {
-        console.warn('Error fetching cases from backend, generating enriched Spanner fallback cases:', err);
-        const fallback = this.enrichCasesData([]);
-        this.cases.set(fallback);
+        console.warn('Error in loadAllCases:', err);
         this.isLoading.set(false);
         this.lastUpdated.set(new Date());
-        return of(fallback);
+        return of({
+          loanApplications: this.loanApplications(),
+          kycCases: this.cases(),
+        });
       })
     );
+  }
+  /**
+   * Maps Spanner 4-entity objects from GET /api/v1/application/all to CaseItem domain model.
+   */
+  private mapSpannerLoanRecordsToCaseItems(rawRecords: any): CaseItem[] {
+    let records: any[] = [];
+    if (Array.isArray(rawRecords)) {
+      records = rawRecords;
+    } else if (rawRecords && typeof rawRecords === 'object') {
+      records = rawRecords.applications || rawRecords.data || rawRecords.records || rawRecords.results || rawRecords.items || [];
+    }
+
+    if (!records || records.length === 0) {
+      return [];
+    }
+
+    return records.map((rec: any) => {
+      const app = rec.application || rec.applicationDetails || rec;
+      const applicant = rec.applicant || rec.applicantDetails || rec.applicant_personal || rec;
+      const joint = rec.joint_applicant || rec.jointApplicant || rec.jointApplicantDetails;
+      const property = rec.property || rec.propertyDetails || rec.property_collateral || rec;
+      const docs = rec.documents || rec.documentList || rec.docs || [];
+
+      const transactionId =
+        rec.transaction_id ||
+        rec.transactionId ||
+        app.transaction_id ||
+        app.transactionId ||
+        rec.application_id ||
+        rec.applicationId ||
+        app.application_id ||
+        app.applicationId ||
+        rec.application_reference_number ||
+        rec.applicationReferenceNumber ||
+        `TXN-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+
+      const userId =
+        rec.user_id ||
+        rec.userId ||
+        app.user_id ||
+        app.userId ||
+        applicant.applicant_id ||
+        applicant.applicantId ||
+        'usr_applicant';
+
+      const rawStatus = app.status || rec.status || rec.caseStatus || 'IN_PROGRESS';
+      const status = rawStatus === 'SUBMITTED' || rawStatus === 'NEW' ? 'IN_PROGRESS' : rawStatus;
+
+      const spaPriceNum = property.spa_price_rm
+        ? Number(property.spa_price_rm)
+        : property.spaPriceRm
+        ? Number(property.spaPriceRm)
+        : rec.spaPrice
+        ? Number(rec.spaPrice)
+        : 480000;
+      
+      let facilitiesReq = app.facilities_required;
+      if (typeof facilitiesReq === 'string' && facilitiesReq.startsWith('{')) {
+        try {
+          facilitiesReq = JSON.parse(facilitiesReq);
+        } catch {}
+      }
+      const facilityAmt = (facilitiesReq && typeof facilitiesReq === 'object' && facilitiesReq.requestedAmount)
+        ? Number(facilitiesReq.requestedAmount)
+        : Math.round(spaPriceNum * 0.9);
+
+      const grossIncome = applicant.monthly_gross_rm ? Number(applicant.monthly_gross_rm) : 6800;
+      const commitments = applicant.other_commitments && !isNaN(Number(applicant.other_commitments)) ? Number(applicant.other_commitments) : 2200;
+      const estInstallment = Math.round((facilityAmt * 0.043) / 12 + facilityAmt / (30 * 12));
+      const calculatedDsr = grossIncome > 0 ? Math.round(((commitments + estInstallment) / grossIncome) * 1000) / 10 : 42.5;
+      const calculatedLtv = spaPriceNum > 0 ? Math.round((facilityAmt / spaPriceNum) * 1000) / 10 : 90.0;
+
+      const caseItem: CaseItem = {
+        caseId: transactionId,
+        userId: userId,
+        caseType: 'LOAN_APPLICATION',
+        caseStatus: status === 'SUBMITTED' || status === 'NEW' ? 'IN_PROGRESS' : status,
+        applicationId: transactionId,
+        applicationReferenceNumber: transactionId,
+        facilityAmount: facilityAmt,
+        spaPrice: spaPriceNum,
+        bankSelection: app.bank_selection || 'Bank Partner',
+        facilityPurpose: app.facility_purpose || 'Financing of Property',
+        calculatedDsr: calculatedDsr,
+        calculatedLtv: calculatedLtv,
+        riskScore: calculatedDsr > 70 ? 82.0 : 18.5,
+        riskLevel: calculatedDsr > 70 ? 'HIGH' : 'LOW',
+        createdAt: rec.created_at || (app.application_date ? `${app.application_date}T00:00:00Z` : new Date().toISOString()),
+        updatedAt: rec.created_at || new Date().toISOString(),
+        applicationDetails: {
+          transactionId: transactionId,
+          applicationId: transactionId,
+          applicationReferenceNumber: transactionId,
+          bankSelection: app.bank_selection || 'Bank Partner',
+          applicationCategory: app.application_type || 'single',
+          facilityType: app.facility_type || 'conventional',
+          facilityPurpose: app.facility_purpose || 'Financing of Property',
+          refinancingBank: app.refinancing_bank,
+          facilitiesRequired: typeof facilitiesReq === 'object' ? facilitiesReq : {
+            housingLoan: true,
+            requestedAmount: facilityAmt,
+            tenureYears: 30,
+          },
+          status: status,
+          createdAt: rec.created_at,
+        },
+        applicantDetails: {
+          role: applicant.role || 'PRIMARY',
+          salutation: applicant.salutation || 'Encik',
+          fullName: applicant.full_name || 'Loan Applicant',
+          idType: applicant.id_type || 'new_nric',
+          idNo: applicant.id_no || '900101-10-1234',
+          nationality: applicant.nationality || 'Malaysian',
+          race: applicant.race || 'Melayu',
+          bumiputeraStatus: applicant.bumiputera_status,
+          gender: applicant.gender || 'male',
+          maritalStatus: applicant.marital_status || 'married',
+          dateOfBirth: applicant.date_of_birth,
+          age: applicant.age ? Number(applicant.age) : 34,
+          mobilePhone: applicant.mobile_phone || '+60 12-345 6789',
+          email: applicant.email || `${userId}@example.com`,
+          permAddress: applicant.perm_address || 'Kuala Lumpur',
+          permCity: applicant.perm_city || 'Kuala Lumpur',
+          permState: applicant.perm_state || 'W.P. Kuala Lumpur',
+          permPostcode: applicant.perm_postcode || '50000',
+          employerName: applicant.employer_name || 'Private Sector',
+          occupation: applicant.occupation || 'Executive',
+          jobPosition: applicant.job_position || 'Executive',
+          monthlyGrossRm: grossIncome,
+          totalCommitmentsRm: commitments,
+          calculatedDsr: calculatedDsr,
+        },
+        propertyDetails: {
+          propertyId: property.property_id || `PROP-${transactionId.slice(-4)}`,
+          propertyType: property.property_type || 'residential',
+          propertySubType: property.property_sub_type || 'terrace',
+          propertyStatus: property.property_status || 'completed',
+          projectName: property.project_name || 'Property Project',
+          developerName: property.developer_name || 'Property Developer',
+          propertyAddress: property.property_address || 'Property Address',
+          propertyCity: property.property_city || 'Kuala Lumpur',
+          propertyState: property.property_state || 'Selangor',
+          propertyPostcode: property.property_postcode || '50000',
+          titleNumber: property.title_number || 'GRN 12345',
+          titleType: property.title_type || 'freehold',
+          spaPriceRm: spaPriceNum,
+          calculatedLtv: calculatedLtv,
+        },
+        documents: (docs || []).map((d: any) => ({
+          id: d.id || d.documentId,
+          documentId: d.documentId || d.id,
+          name: d.name || d.filename || 'Document.pdf',
+          filename: d.filename || d.name || 'Document.pdf',
+          url: d.url || d.gcsUrl || '#',
+          gcsUrl: d.gcsUrl || d.url,
+          status: d.status || 'SUCCESS',
+          message: d.message || 'Document verified',
+          uploadedAt: d.uploadedAt,
+        })),
+      };
+
+      if (joint) {
+        caseItem.jointApplicantDetails = {
+          role: joint.role || 'JOINT',
+          salutation: joint.salutation || 'Puan',
+          fullName: joint.full_name || 'Joint Applicant',
+          idType: joint.id_type || 'new_nric',
+          idNo: joint.id_no || '-',
+          nationality: joint.nationality || 'Malaysian',
+          monthlyGrossRm: joint.monthly_gross_rm ? Number(joint.monthly_gross_rm) : 0,
+        };
+      }
+
+      return caseItem;
+    });
   }
 
   /**

@@ -417,7 +417,7 @@
           <span>🏠 Mortgage Underwriting Queue</span>
         </span>
         <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
-          {{ filteredCases().length }} of {{ caseService.cases().length }} applications
+          {{ filteredCases().length }} of {{ viewMode() === 'LOAN_APPLICATIONS' ? caseService.loanApplications().length : (caseService.loanApplications().length + caseService.cases().length) }} applications
         </span>
       </div>
       <div class="text-xs text-slate-400 font-medium">
