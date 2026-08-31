@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, effect, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import {
   CaseManagementService,
   CaseItem,
@@ -305,16 +305,17 @@ export class OpsDashboardComponent implements OnInit {
     }
   }
 
-  // Open Review Inspector Modal
+  private readonly router = inject(Router);
+
+  // Redirect to Detail Page instead of popup
   openCaseReview(caseItem: CaseItem, defaultTab: 'overview' | 'applicant' | 'property' | 'documents' | 'decision' = 'overview'): void {
-    this.caseService.selectCase(caseItem);
-    this.targetStatus.set(((caseItem.caseStatus as any) === 'APPROVED' ? 'ACCEPTED' : (caseItem.caseStatus as any)) || 'ACCEPTED');
-    this.officerRemarks.set(caseItem.remarks || '');
-    this.rejectionReason.set(caseItem.rejectionReason || '');
-    this.activeInspectorTab.set(defaultTab);
-    this.isDocVerificationExpanded.set(false);
-    this.isSelfieDetailsExpanded.set(false);
-    this.isReviewModalOpen.set(true);
+    const id =
+      caseItem.caseId ||
+      (caseItem as any).transaction_id ||
+      caseItem.applicationReferenceNumber ||
+      caseItem.applicationId ||
+      'TXN-e545e12b-2bb1-448d-9d23-53c8a298e351';
+    this.router.navigate(['/ops/dashboard-v2', id]);
   }
 
   closeCaseReview(): void {

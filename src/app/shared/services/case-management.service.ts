@@ -185,6 +185,8 @@ export interface LoanApplicationData {
   marketingConsent?: 'opt_in' | 'opt_out' | 'YES' | 'NO' | string;
   status?: string;
   applicationDate?: string;
+  ai_analysis?: any;
+  aiAnalysis?: any;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -692,8 +694,12 @@ export class CaseManagementService {
             tenureYears: 30,
           },
           status: status,
+          ai_analysis: app.ai_analysis || app.aiAnalysis || rec.ai_analysis || rec.aiAnalysis,
+          aiAnalysis: app.ai_analysis || app.aiAnalysis || rec.ai_analysis || rec.aiAnalysis,
           createdAt: rec.created_at,
         },
+        ai_analysis: app.ai_analysis || app.aiAnalysis || rec.ai_analysis || rec.aiAnalysis,
+        aiAnalysis: app.ai_analysis || app.aiAnalysis || rec.ai_analysis || rec.aiAnalysis,
         applicantDetails: {
           role: applicant.role || 'PRIMARY',
           salutation: applicant.salutation || 'Encik',

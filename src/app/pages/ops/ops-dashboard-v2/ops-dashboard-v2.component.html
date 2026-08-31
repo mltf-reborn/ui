@@ -1,0 +1,537 @@
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
+
+  <!-- Toast Notification -->
+  <div
+    *ngIf="toastMessage()"
+    class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-medium border transition-all duration-300 backdrop-blur-md"
+    [ngClass]="toastMessage()?.type === 'success' ? 'bg-emerald-950/95 text-emerald-200 border-emerald-500/40 shadow-emerald-950/40' : (toastMessage()?.type === 'error' ? 'bg-rose-950/95 text-rose-200 border-rose-500/40 shadow-rose-950/40' : 'bg-slate-900/95 text-slate-200 border-slate-700 shadow-slate-950/40')"
+  >
+    <svg *ngIf="toastMessage()?.type === 'success'" class="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <svg *ngIf="toastMessage()?.type === 'error'" class="w-5 h-5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+    <svg *ngIf="toastMessage()?.type === 'info'" class="w-5 h-5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{{ toastMessage()?.text }}</span>
+  </div>
+
+  <!-- Header & Actions Bar -->
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm py-6">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        
+        <!-- Left Title & Branding -->
+        <div>
+          <div class="flex items-center gap-3">
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+              Mortgage Operations &amp; Underwriting
+            </h1>
+            <span class="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-brand-600 to-indigo-600 text-white shadow-sm shadow-brand-500/20">
+              Ops Console V2
+            </span>
+          </div>
+          <p class="text-sm text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-2 flex-wrap">
+            <span>Direct data pipeline:</span>
+            <span class="inline-flex items-center gap-1 font-mono text-xs text-brand-600 dark:text-brand-400 font-semibold bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded border border-brand-200 dark:border-brand-800">
+              GET /api/v1/application/all
+            </span>
+          </p>
+        </div>
+
+        <!-- Right Action Bar -->
+        <div class="flex flex-wrap items-center gap-2.5">
+          <!-- Run AI Batch Verification Button -->
+          <button
+            type="button"
+            (click)="triggerBatchProcessing()"
+            [disabled]="caseService.isBatchRunning()"
+            title="Run AI document forensics verification on all pending applications"
+            class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-md shadow-indigo-500/20 transition-all disabled:opacity-50 active:scale-95"
+          >
+            <svg [class.animate-spin]="caseService.isBatchRunning()" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+            </svg>
+            <span>Run AI Batch Verification</span>
+          </button>
+
+          <!-- Export CSV -->
+          <button
+            type="button"
+            (click)="exportLoanDatasetToCsv()"
+            title="Export full underwriting dataset to CSV"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all active:scale-95"
+          >
+            <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Export CSV</span>
+          </button>
+
+          <!-- Refresh Button -->
+          <button
+            type="button"
+            (click)="refresh()"
+            [disabled]="caseService.isLoading()"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-all disabled:opacity-50"
+          >
+            <svg [class.animate-spin]="caseService.isLoading()" class="w-3.5 h-3.5 text-brand-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            <span>Refresh</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+    <!-- KPI Summary Cards -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- 1. Pipeline Volume -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
+          <span>Total Financing Pipeline</span>
+          <span class="w-7 h-7 rounded-lg bg-brand-500/10 text-brand-600 dark:text-brand-400 flex items-center justify-center font-bold">RM</span>
+        </div>
+        <div class="mt-2 text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          {{ formatCurrency(kpis().totalVolumeRm) }}
+        </div>
+        <div class="mt-1 text-xs text-slate-500">
+          <span class="font-bold text-slate-800 dark:text-slate-200">{{ kpis().totalCount }}</span> total applications
+        </div>
+      </div>
+
+      <!-- 2. Pending Queue -->
+      <div class="bg-white dark:bg-slate-900 border border-amber-200/80 dark:border-amber-900/40 rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-amber-600 dark:text-amber-400 font-bold">
+          <span>Underwriter Queue</span>
+          <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+        </div>
+        <div class="mt-2 text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400">
+          {{ kpis().inProgress }}
+        </div>
+        <div class="mt-1 text-xs text-amber-700/80 dark:text-amber-400/80 font-medium">
+          Awaiting Credit Review
+        </div>
+      </div>
+
+      <!-- 3. Approved Volume -->
+      <div class="bg-white dark:bg-slate-900 border border-emerald-200/80 dark:border-emerald-900/40 rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-emerald-600 dark:text-emerald-400 font-bold">
+          <span>Approved Applications</span>
+          <svg class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+        </div>
+        <div class="mt-2 text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+          {{ kpis().accepted }}
+        </div>
+        <div class="mt-1 text-xs text-emerald-700/80 dark:text-emerald-400/80 font-medium">
+          {{ kpis().totalCount > 0 ? (kpis().accepted / kpis().totalCount * 100 | number:'1.0-0') : 0 }}% Approval Rate
+        </div>
+      </div>
+
+      <!-- 4. Avg DSR & LTV Health -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm">
+        <div class="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 font-semibold">
+          <span>Avg Portfolio Health</span>
+          <span class="text-xs font-mono text-purple-600 dark:text-purple-400 font-bold">DSR / LTV</span>
+        </div>
+        <div class="mt-2 text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+          <span class="text-indigo-600 dark:text-indigo-400">{{ kpis().avgDsr }}%</span>
+          <span class="text-xs text-slate-400 font-normal mx-1">/</span>
+          <span class="text-purple-600 dark:text-purple-400">{{ kpis().avgLtv }}%</span>
+        </div>
+        <div class="mt-1 text-xs text-slate-500">
+          Threshold &lt; 70.0% Max DSR
+        </div>
+      </div>
+    </div>
+
+    <!-- Search & Multi-Entity Filters Toolbar -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+
+        <!-- Universal Search Bar -->
+        <div class="relative flex-1 max-w-md">
+          <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input
+            type="text"
+            [ngModel]="searchTerm()"
+            (ngModelChange)="searchTerm.set($event)"
+            placeholder="Search Reference, Applicant, IC, Project, Developer..."
+            class="block w-full pl-10 pr-9 py-2.5 bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+          />
+          <button
+            *ngIf="searchTerm()"
+            (click)="searchTerm.set('')"
+            class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          >
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <!-- Status Filter Buttons -->
+        <div class="flex flex-wrap items-center gap-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-xs">
+          <button
+            type="button"
+            (click)="statusFilter.set('ALL')"
+            [class]="statusFilter() === 'ALL' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
+            class="px-3 py-1.5 rounded-lg transition-all"
+          >
+            All ({{ caseService.loanApplications().length }})
+          </button>
+          <button
+            type="button"
+            (click)="statusFilter.set('IN_PROGRESS')"
+            [class]="statusFilter() === 'IN_PROGRESS' ? 'bg-amber-500 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
+            class="px-3 py-1.5 rounded-lg transition-all"
+          >
+            In Progress ({{ kpis().inProgress }})
+          </button>
+          <button
+            type="button"
+            (click)="statusFilter.set('ACCEPTED')"
+            [class]="statusFilter() === 'ACCEPTED' ? 'bg-emerald-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
+            class="px-3 py-1.5 rounded-lg transition-all"
+          >
+            Accepted ({{ kpis().accepted }})
+          </button>
+          <button
+            type="button"
+            (click)="statusFilter.set('REJECTED')"
+            [class]="statusFilter() === 'REJECTED' ? 'bg-rose-600 text-white shadow-sm font-bold' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 font-medium'"
+            class="px-3 py-1.5 rounded-lg transition-all"
+          >
+            Rejected ({{ kpis().rejected }})
+          </button>
+        </div>
+
+        <!-- Entity & Sort Dropdowns -->
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Bank Filter -->
+          <select
+            [ngModel]="bankFilter()"
+            (ngModelChange)="bankFilter.set($event)"
+            class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
+          >
+            <option value="ALL">All Banks</option>
+            <option value="Maybank">Maybank</option>
+            <option value="CIMB">CIMB Bank</option>
+            <option value="RHB">RHB Bank</option>
+            <option value="Public">Public Bank</option>
+          </select>
+
+          <!-- DSR Filter -->
+          <select
+            [ngModel]="dsrFilter()"
+            (ngModelChange)="dsrFilter.set($event)"
+            class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
+          >
+            <option value="ALL">All DSR Levels</option>
+            <option value="LOW">Healthy (&lt; 40% DSR)</option>
+            <option value="MEDIUM">Moderate (40 - 70% DSR)</option>
+            <option value="HIGH">High Alert (&gt; 70% DSR)</option>
+          </select>
+
+          <!-- Sorting -->
+          <select
+            [ngModel]="sortBy()"
+            (ngModelChange)="sortBy.set($event)"
+            class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500 font-semibold"
+          >
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="amountHigh">Highest Amount</option>
+            <option value="amountLow">Lowest Amount</option>
+            <option value="dsrHigh">Highest DSR %</option>
+          </select>
+        </div>
+
+      </div>
+
+      <!-- Active Filters Tag Strip -->
+      <div *ngIf="searchTerm() || statusFilter() !== 'ALL' || bankFilter() !== 'ALL' || dsrFilter() !== 'ALL'" class="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs text-slate-500">
+        <span class="font-bold">Active Filters:</span>
+        <span *ngIf="searchTerm()" class="px-2 py-0.5 rounded-md bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 font-medium">
+          Search: "{{ searchTerm() }}"
+        </span>
+        <span *ngIf="statusFilter() !== 'ALL'" class="px-2 py-0.5 rounded-md bg-slate-200 dark:bg-slate-700 font-medium">
+          Status: {{ statusFilter() }}
+        </span>
+        <button
+          (click)="searchTerm.set(''); statusFilter.set('ALL'); bankFilter.set('ALL'); dsrFilter.set('ALL')"
+          class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-bold ml-2"
+        >
+          Reset All
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="caseService.isLoading()" class="p-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 mb-4 animate-spin">
+        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+      <h3 class="text-base font-bold text-slate-900 dark:text-white">Fetching Loan Applications from /api/v1/application/all...</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Cross-referencing Spanner database records.</p>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!caseService.isLoading() && filteredApplications().length === 0" class="p-16 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+      <div class="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 text-slate-400 mx-auto flex items-center justify-center mb-4">
+        <svg class="w-7 h-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <h3 class="text-base font-bold text-slate-900 dark:text-white">No Loan Applications Found</h3>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto">
+        No records match your selected criteria or search query.
+      </p>
+      <button
+        (click)="searchTerm.set(''); statusFilter.set('ALL'); bankFilter.set('ALL'); dsrFilter.set('ALL')"
+        class="mt-4 px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-500 transition-colors shadow-sm"
+      >
+        Clear Filters
+      </button>
+    </div>
+
+    <!-- Master Loan Applications Table -->
+    <div *ngIf="!caseService.isLoading() && filteredApplications().length > 0" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm overflow-hidden">
+      
+      <!-- Table Header Bar -->
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/30">
+        <div class="flex items-center gap-3">
+          <span class="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+            <span>🏠 Spanner Loan Applications</span>
+          </span>
+          <span class="px-2.5 py-0.5 text-xs font-bold rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
+            {{ filteredApplications().length }} applications
+          </span>
+        </div>
+        <div class="text-xs text-slate-400">
+          Showing {{ paginatedApplications().length }} on page {{ currentPage() }} of {{ totalPages() }}
+        </div>
+      </div>
+
+      <!-- Responsive Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50 text-[11px] font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <th class="py-3.5 px-5">1. Application &amp; Facility</th>
+              <th class="py-3.5 px-5">2. Applicant &amp; Income</th>
+              <th class="py-3.5 px-5">3. Property &amp; Collateral</th>
+              <th class="py-3.5 px-5">4. Docs &amp; Forensics</th>
+              <th class="py-3.5 px-5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-slate-100 dark:divide-slate-800/60 text-xs sm:text-sm">
+            <tr
+              *ngFor="let item of paginatedApplications()"
+              class="hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors group cursor-pointer"
+              (click)="viewDetail(item)"
+            >
+              <!-- 1. APPLICATION & FACILITY -->
+              <td class="py-4 px-5 align-top">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 group-hover:underline">
+                    {{ item.applicationReferenceNumber || item.caseId }}
+                  </span>
+                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-md border" [ngClass]="getBankBadgeClass(item.bankSelection)">
+                    {{ item.bankSelection || 'Bank Partner' }}
+                  </span>
+                </div>
+                <div class="text-base font-black text-slate-900 dark:text-white mt-1">
+                  {{ formatCurrency(item.facilityAmount) }}
+                </div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                  <span>{{ item.facilityPurpose || 'Financing of Property' }}</span>
+                  <span>•</span>
+                  <span>{{ formatDate(item.createdAt) }}</span>
+                </div>
+              </td>
+
+              <!-- 2. APPLICANT & INCOME -->
+              <td class="py-4 px-5 align-top">
+                <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
+                  {{ item.applicantDetails?.fullName || item.kycDetails?.fullName || 'Applicant' }}
+                </div>
+                <div class="font-mono text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  IC: {{ item.applicantDetails?.idNo || item.kycDetails?.idCardNumber || '-' }}
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                  <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Gross: {{ formatCurrency(item.applicantDetails?.monthlyGrossRm) }}
+                  </div>
+                  <span
+                    class="px-2 py-0.5 text-[10px] font-extrabold rounded-md border"
+                    [ngClass]="getDsrBadgeClass(item.calculatedDsr)"
+                    title="Debt Service Ratio"
+                  >
+                    DSR {{ item.calculatedDsr || 0 }}%
+                  </span>
+                </div>
+              </td>
+
+              <!-- 3. PROPERTY & COLLATERAL -->
+              <td class="py-4 px-5 align-top">
+                <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate max-w-[200px]" [title]="item.propertyDetails?.projectName || 'Property'">
+                  {{ item.propertyDetails?.projectName || 'Property Collateral' }}
+                </div>
+                <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {{ item.propertyDetails?.propertySubType || item.propertyDetails?.propertyType || 'Residential' }}
+                </div>
+                <div class="flex items-center gap-2 mt-2">
+                  <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    SPA: {{ formatCurrency(item.spaPrice || item.propertyDetails?.spaPriceRm) }}
+                  </div>
+                  <span
+                    class="px-2 py-0.5 text-[10px] font-extrabold rounded-md border"
+                    [ngClass]="getLtvBadgeClass(item.calculatedLtv)"
+                    title="Loan to Value"
+                  >
+                    LTV {{ item.calculatedLtv || 90 }}%
+                  </span>
+                </div>
+              </td>
+
+              <!-- 4. DOCS & FORENSICS -->
+              <td class="py-4 px-5 align-top">
+                <div class="flex flex-wrap gap-1.5 max-w-[180px]">
+                  <span
+                    *ngFor="let doc of (item.documents || []).slice(0, 3)"
+                    class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <span class="truncate max-w-[100px]">{{ doc.name || doc.filename || 'Doc' }}</span>
+                  </span>
+                  <span *ngIf="(!item.documents || item.documents.length === 0)" class="text-xs text-slate-400">
+                    Standard docs attached
+                  </span>
+                </div>
+                <div class="mt-2">
+                  <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border" [ngClass]="getStatusBadgeClass(item.caseStatus)">
+                    {{ item.caseStatus || 'IN_PROGRESS' }}
+                  </span>
+                </div>
+              </td>
+
+              <!-- 5. ACTIONS -->
+              <td class="py-4 px-5 align-middle text-right" (click)="$event.stopPropagation()">
+                <div class="flex items-center justify-end gap-1.5">
+                  <button
+                    type="button"
+                    (click)="viewDetail(item)"
+                    class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-brand-600 hover:bg-brand-500 text-white shadow-sm transition-all inline-flex items-center gap-1.5"
+                  >
+                    <span>Review</span>
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    *ngIf="(item.caseStatus !== 'ACCEPTED' && item.caseStatus !== 'APPROVED')"
+                    (click)="quickUpdateStatus(item, 'ACCEPTED')"
+                    class="p-1.5 rounded-xl text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                    title="Quick Approve"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                    </svg>
+                  </button>
+
+                  <button
+                    type="button"
+                    *ngIf="(item.caseStatus !== 'REJECTED')"
+                    (click)="quickUpdateStatus(item, 'REJECTED')"
+                    class="p-1.5 rounded-xl text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-rose-200 dark:border-rose-800 transition-colors"
+                    title="Quick Reject"
+                  >
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Footer -->
+      <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-800/30 text-xs">
+        <div class="text-slate-500">
+          Showing <span class="font-bold text-slate-800 dark:text-slate-200">{{ paginatedApplications().length }}</span> applications
+        </div>
+
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            (click)="prevPage()"
+            [disabled]="currentPage() === 1"
+            class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold disabled:opacity-40"
+          >
+            Prev
+          </button>
+
+          <ng-container *ngFor="let p of pageNumbers()">
+            <button
+              *ngIf="p !== '...'"
+              type="button"
+              (click)="goToPage(p)"
+              [class]="p === currentPage() ? 'bg-brand-600 text-white font-bold' : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'"
+              class="w-8 h-8 rounded-lg text-xs font-semibold flex items-center justify-center transition-colors"
+            >
+              {{ p }}
+            </button>
+            <span *ngIf="p === '...'" class="px-1 text-slate-400">...</span>
+          </ng-container>
+
+          <button
+            type="button"
+            (click)="nextPage()"
+            [disabled]="currentPage() === totalPages()"
+            class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-semibold disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 dark:text-slate-400">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+        <span>Google Cloud Spanner: <code class="font-mono text-slate-700 dark:text-slate-300">mortgage_db</code></span>
+      </div>
+      <div>
+        MLTF Operations Dashboard V2 &copy; 2026
+      </div>
+    </div>
+  </footer>
+
+</div>

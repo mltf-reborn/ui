@@ -41,6 +41,38 @@ export const routes: Routes = [
         title: 'MLTF Ops - Papan Pemuka Pengurusan Kes Spanner',
       },
       {
+        path: 'dashboard-v2',
+        loadComponent: () =>
+          import('./pages/ops/ops-dashboard-v2/ops-dashboard-v2.component').then(
+            (m) => m.OpsDashboardV2Component
+          ),
+        title: 'MLTF Ops - Dashboard V2',
+      },
+      {
+        path: 'dashboard-v2/:id',
+        loadComponent: () =>
+          import('./pages/ops/ops-application-detail/ops-application-detail.component').then(
+            (m) => m.OpsApplicationDetailComponent
+          ),
+        title: 'MLTF Ops - Maklumat Terperinci Permohonan',
+      },
+      {
+        path: 'detail/:id',
+        loadComponent: () =>
+          import('./pages/ops/ops-application-detail/ops-application-detail.component').then(
+            (m) => m.OpsApplicationDetailComponent
+          ),
+        title: 'MLTF Ops - Maklumat Terperinci Permohonan',
+      },
+      {
+        path: 'dashboard/:id',
+        loadComponent: () =>
+          import('./pages/ops/ops-application-detail/ops-application-detail.component').then(
+            (m) => m.OpsApplicationDetailComponent
+          ),
+        title: 'MLTF Ops - Maklumat Terperinci Permohonan',
+      },
+      {
         path: 'cases',
         component: OpsDashboardComponent,
         title: 'MLTF Ops - Senarai Kes Pematuhan',
