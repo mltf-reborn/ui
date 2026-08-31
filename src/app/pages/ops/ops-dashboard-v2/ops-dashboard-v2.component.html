@@ -353,24 +353,24 @@
                   <span class="font-mono text-xs font-bold text-brand-600 dark:text-brand-400 group-hover:underline">
                     {{ item.applicationReferenceNumber || item.caseId }}
                   </span>
-                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-md border" [ngClass]="getBankBadgeClass(item.bankSelection)">
-                    {{ item.bankSelection || 'Bank Partner' }}
+                  <span *ngIf="item.bankSelection" class="px-2 py-0.5 text-[10px] font-bold rounded-md border" [ngClass]="getBankBadgeClass(item.bankSelection)">
+                    {{ item.bankSelection }}
                   </span>
                 </div>
                 <div class="text-base font-black text-slate-900 dark:text-white mt-1">
                   {{ formatCurrency(item.facilityAmount) }}
                 </div>
                 <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-1.5 flex-wrap">
-                  <span>{{ item.facilityPurpose || 'Financing of Property' }}</span>
-                  <span>•</span>
-                  <span>{{ formatDate(item.createdAt) }}</span>
+                  <span>{{ item.facilityPurpose || '-' }}</span>
+                  <span *ngIf="item.createdAt">•</span>
+                  <span *ngIf="item.createdAt">{{ formatDate(item.createdAt) }}</span>
                 </div>
               </td>
 
               <!-- 2. APPLICANT & INCOME -->
               <td class="py-4 px-5 align-top">
                 <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm">
-                  {{ item.applicantDetails?.fullName || item.kycDetails?.fullName || 'Applicant' }}
+                  {{ item.applicantDetails?.fullName || item.kycDetails?.fullName || '-' }}
                 </div>
                 <div class="font-mono text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   IC: {{ item.applicantDetails?.idNo || item.kycDetails?.idCardNumber || '-' }}
@@ -391,11 +391,11 @@
 
               <!-- 3. PROPERTY & COLLATERAL -->
               <td class="py-4 px-5 align-top">
-                <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate max-w-[200px]" [title]="item.propertyDetails?.projectName || 'Property'">
-                  {{ item.propertyDetails?.projectName || 'Property Collateral' }}
+                <div class="font-bold text-slate-900 dark:text-white text-xs sm:text-sm truncate max-w-[200px]" [title]="item.propertyDetails?.projectName || ''">
+                  {{ item.propertyDetails?.projectName || '-' }}
                 </div>
                 <div class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  {{ item.propertyDetails?.propertySubType || item.propertyDetails?.propertyType || 'Residential' }}
+                  {{ item.propertyDetails?.propertySubType || item.propertyDetails?.propertyType || '-' }}
                 </div>
                 <div class="flex items-center gap-2 mt-2">
                   <div class="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -406,7 +406,7 @@
                     [ngClass]="getLtvBadgeClass(item.calculatedLtv)"
                     title="Loan to Value"
                   >
-                    LTV {{ item.calculatedLtv || 90 }}%
+                    LTV {{ item.calculatedLtv || 0 }}%
                   </span>
                 </div>
               </td>
@@ -419,16 +419,29 @@
                     class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
                   >
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    <span class="truncate max-w-[100px]">{{ doc.name || doc.filename || 'Doc' }}</span>
+                    <span class="truncate max-w-[100px]">{{ doc.name || doc.filename || '-' }}</span>
                   </span>
                   <span *ngIf="(!item.documents || item.documents.length === 0)" class="text-xs text-slate-400">
-                    Standard docs attached
+                    -
                   </span>
                 </div>
-                <div class="mt-2">
+                <div class="mt-2 flex items-center gap-1.5 flex-wrap">
                   <span class="px-2.5 py-0.5 rounded-full text-xs font-bold border" [ngClass]="getStatusBadgeClass(item.caseStatus)">
                     {{ item.caseStatus || 'IN_PROGRESS' }}
                   </span>
+                  <span
+                    *ngIf="hasAiAnalysis(item); else aiPendingBadge"
+                    class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20 flex items-center gap-1"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-full bg-purple-500"></span>
+                    AI Verified
+                  </span>
+                  <ng-template #aiPendingBadge>
+                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                      AI in progress
+                    </span>
+                  </ng-template>
                 </div>
               </td>
 

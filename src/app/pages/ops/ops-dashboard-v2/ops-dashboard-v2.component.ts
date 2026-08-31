@@ -186,8 +186,8 @@ export class OpsDashboardV2Component implements OnInit {
       inProgress,
       accepted,
       rejected,
-      avgDsr: dsrCount > 0 ? Math.round((sumDsr / dsrCount) * 10) / 10 : 42.5,
-      avgLtv: ltvCount > 0 ? Math.round((sumLtv / ltvCount) * 10) / 10 : 88.0,
+      avgDsr: dsrCount > 0 ? Math.round((sumDsr / dsrCount) * 10) / 10 : 0,
+      avgLtv: ltvCount > 0 ? Math.round((sumLtv / ltvCount) * 10) / 10 : 0,
     };
   });
 
@@ -248,8 +248,10 @@ export class OpsDashboardV2Component implements OnInit {
       (item as any).transaction_id ||
       item.applicationReferenceNumber ||
       item.applicationId ||
-      'TXN-e545e12b-2bb1-448d-9d23-53c8a298e351';
-    this.router.navigate(['/ops/dashboard-v2', id]);
+      '';
+    if (id) {
+      this.router.navigate(['/ops/dashboard-v2', id]);
+    }
   }
 
   // Quick Action from Table
@@ -315,19 +317,19 @@ export class OpsDashboardV2Component implements OnInit {
     ];
 
     const rows = list.map((c) => [
-      c.applicationReferenceNumber || c.caseId,
-      c.bankSelection || 'Bank Partner',
+      c.applicationReferenceNumber || c.caseId || '',
+      c.bankSelection || '',
       c.facilityAmount || 0,
       c.spaPrice || 0,
-      c.caseStatus || 'IN_PROGRESS',
-      `"${(c.applicantDetails?.fullName || 'Applicant').replace(/"/g, '""')}"`,
-      c.applicantDetails?.idNo || '-',
+      c.caseStatus || '',
+      `"${(c.applicantDetails?.fullName || '').replace(/"/g, '""')}"`,
+      c.applicantDetails?.idNo || '',
       c.applicantDetails?.monthlyGrossRm || 0,
       c.calculatedDsr ?? c.applicantDetails?.calculatedDsr ?? 0,
       c.calculatedLtv ?? c.propertyDetails?.calculatedLtv ?? 0,
-      `"${(c.propertyDetails?.projectName || '-').replace(/"/g, '""')}"`,
-      c.propertyDetails?.propertySubType || c.propertyDetails?.propertyType || 'Residential',
-      c.createdAt || '-',
+      `"${(c.propertyDetails?.projectName || '').replace(/"/g, '""')}"`,
+      c.propertyDetails?.propertySubType || c.propertyDetails?.propertyType || '',
+      c.createdAt || '',
     ]);
 
     const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
@@ -399,5 +401,17 @@ export class OpsDashboardV2Component implements OnInit {
     if (b.includes('rhb')) return 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
     if (b.includes('public')) return 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20';
     return 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/20';
+  }
+
+  hasAiAnalysis(item: CaseItem): boolean {
+    if (!item) return false;
+    return !!(
+      item.ai_analysis ||
+      item.aiAnalysis ||
+      item['ai_analysis'] ||
+      item['aiAnalysis'] ||
+      item.applicationDetails?.ai_analysis ||
+      item.applicationDetails?.aiAnalysis
+    );
   }
 }
