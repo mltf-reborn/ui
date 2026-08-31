@@ -7,7 +7,6 @@ import { ApplyMortgageComponent } from './pages/apply/mortgage/apply-mortgage.co
 import { KycComponent } from './pages/kyc/kyc.component';
 import { OpsLoginComponent } from './pages/ops/ops-login/ops-login.component';
 import { OpsLayoutComponent } from './pages/ops/ops-layout/ops-layout.component';
-import { OpsDashboardComponent } from './pages/ops/ops-dashboard/ops-dashboard.component';
 import { opsAuthGuard } from './shared/guards/ops-auth.guard';
 
 export const routes: Routes = [
@@ -32,13 +31,13 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'dashboard',
+        redirectTo: 'dashboard-v2',
         pathMatch: 'full',
       },
       {
         path: 'dashboard',
-        component: OpsDashboardComponent,
-        title: 'MLTF Ops - Papan Pemuka Pengurusan Kes Spanner',
+        redirectTo: 'dashboard-v2',
+        pathMatch: 'full',
       },
       {
         path: 'dashboard-v2',
@@ -74,8 +73,8 @@ export const routes: Routes = [
       },
       {
         path: 'cases',
-        component: OpsDashboardComponent,
-        title: 'MLTF Ops - Senarai Kes Pematuhan',
+        redirectTo: 'dashboard-v2',
+        pathMatch: 'full',
       },
     ],
   },
