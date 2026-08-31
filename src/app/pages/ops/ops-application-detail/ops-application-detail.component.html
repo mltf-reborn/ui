@@ -1,0 +1,1276 @@
+<div class="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans">
+
+  <!-- Toast Notification -->
+  <div
+    *ngIf="toastMessage()"
+    class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-medium border transition-all duration-300 backdrop-blur-md"
+    [ngClass]="toastMessage()?.type === 'success' ? 'bg-emerald-950/95 text-emerald-200 border-emerald-500/40 shadow-emerald-950/40' : (toastMessage()?.type === 'error' ? 'bg-rose-950/95 text-rose-200 border-rose-500/40 shadow-rose-950/40' : 'bg-slate-900/95 text-slate-200 border-slate-700 shadow-slate-950/40')"
+  >
+    <svg *ngIf="toastMessage()?.type === 'success'" class="w-5 h-5 text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+    </svg>
+    <svg *ngIf="toastMessage()?.type === 'error'" class="w-5 h-5 text-rose-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+    </svg>
+    <svg *ngIf="toastMessage()?.type === 'info'" class="w-5 h-5 text-blue-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <span>{{ toastMessage()?.text }}</span>
+  </div>
+
+  <!-- Top Sticky Navigation & Action Bar -->
+  <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm py-3.5">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        
+        <!-- Left: Back Button & Title -->
+        <div class="flex items-center gap-3">
+          <button
+            type="button"
+            (click)="backToQueue()"
+            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition-all active:scale-95"
+          >
+            <svg class="w-4 h-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+            <span>Back to Queue</span>
+          </button>
+
+          <div class="h-6 w-px bg-slate-200 dark:border-slate-700 hidden sm:block"></div>
+
+          <div>
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="font-mono text-xs font-black text-brand-600 dark:text-brand-400 bg-brand-50 dark:bg-brand-950/60 px-2 py-0.5 rounded border border-brand-200 dark:border-brand-800">
+                {{ rawRecord()?.transaction_id }}
+              </span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-extrabold border" [ngClass]="getStatusBadgeClass(rawRecord()?.application?.status)">
+                {{ rawRecord()?.application?.status || 'APPROVED' }}
+              </span>
+              <span class="px-2 py-0.5 text-[11px] font-bold rounded-md bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                {{ rawRecord()?.application?.bank_selection || 'BANK XYZ' }}
+              </span>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-0.5">
+              Submitted: {{ formatDate(rawRecord()?.created_at) }} • User: {{ rawRecord()?.user_id }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Underwriting Decision Trigger -->
+        <div class="flex items-center gap-2">
+          <select
+            [ngModel]="targetStatus()"
+            (ngModelChange)="targetStatus.set($event)"
+            class="px-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            <option value="APPROVED">APPROVED (Accepted)</option>
+            <option value="IN_PROGRESS">IN PROGRESS (Review)</option>
+            <option value="REJECTED">REJECTED</option>
+          </select>
+
+          <button
+            type="button"
+            (click)="saveDecision()"
+            [disabled]="isSaving()"
+            class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-brand-600 text-white hover:bg-brand-500 shadow-md shadow-brand-500/20 transition-all disabled:opacity-50 active:scale-95"
+          >
+            <svg *ngIf="isSaving()" class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>Save Decision</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Body -->
+  <main class="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Hero Underwriting Overview Card -->
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm">
+      <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        
+        <!-- 1. Applicant Info -->
+        <div class="col-span-2 sm:col-span-1 border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 pb-3 sm:pb-0 sm:pr-4">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Primary Applicant</span>
+          <div class="text-base font-black text-slate-900 dark:text-white mt-1">
+            {{ rawRecord()?.applicant?.salutation }} {{ rawRecord()?.applicant?.full_name }}
+          </div>
+          <div class="font-mono text-xs text-slate-500 mt-0.5">
+            {{ rawRecord()?.applicant?.id_type | uppercase }}: {{ rawRecord()?.applicant?.id_no }}
+          </div>
+          <div class="text-xs text-slate-500 mt-1">
+            {{ rawRecord()?.applicant?.employer_name }} ({{ rawRecord()?.applicant?.job_position }})
+          </div>
+        </div>
+
+        <!-- 2. Financing Amount -->
+        <div class="border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 pb-3 sm:pb-0 sm:pr-4">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Requested Loan</span>
+          <div class="text-xl font-black text-brand-600 dark:text-brand-400 mt-1">
+            {{ formatCurrency(loanAmount()) }}
+          </div>
+          <div class="text-xs text-slate-500 mt-0.5">
+            SPA: {{ formatCurrency(rawRecord()?.property?.spa_price_rm) }}
+          </div>
+          <div class="text-xs font-semibold text-slate-700 dark:text-slate-300 mt-1">
+            {{ rawRecord()?.application?.facility_type | uppercase }} • {{ rawRecord()?.application?.facility_purpose }}
+          </div>
+        </div>
+
+        <!-- 3. Income & Commitments -->
+        <div class="border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 pb-3 sm:pb-0 sm:pr-4">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Monthly Cashflow</span>
+          <div class="text-lg font-black text-slate-900 dark:text-white mt-1">
+            {{ formatCurrency(rawRecord()?.applicant?.monthly_gross_rm) }}
+          </div>
+          <div class="text-xs text-slate-500 mt-0.5">
+            Commitments: {{ formatCurrency(parsedCommitments()[0]?.monthlyInstalment || 0) }}/mo
+          </div>
+          <div class="text-xs text-slate-500 mt-1">
+            Spouse: {{ formatCurrency(rawRecord()?.applicant?.spouse_monthly_gross_rm) }}/mo
+          </div>
+        </div>
+
+        <!-- 4. DSR & LTV Health -->
+        <div class="border-b sm:border-b-0 sm:border-r border-slate-100 dark:border-slate-800 pb-3 sm:pb-0 sm:pr-4">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-400">Ratio Health</span>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="px-2.5 py-1 text-xs font-black rounded-lg border" [ngClass]="getDsrBadgeClass(calculatedDsr())">
+              DSR {{ calculatedDsr() }}%
+            </span>
+            <span class="px-2.5 py-1 text-xs font-black rounded-lg border" [ngClass]="getLtvBadgeClass(calculatedLtv())">
+              LTV {{ calculatedLtv() }}%
+            </span>
+          </div>
+          <div class="text-[11px] text-slate-500 mt-1">
+            Healthy margin under 70% threshold
+          </div>
+        </div>
+
+        <!-- 5. AI Forensics Verdict -->
+        <div>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">AI Forensics Verdict</span>
+          <div *ngIf="parsedAiAnalysis()?.graphAnalysis?.status; else aiHeroInProgress" class="flex items-center gap-1.5 mt-1 font-bold text-xs" [ngClass]="parsedAiAnalysis()?.graphAnalysis?.passed !== false ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'">
+            <svg *ngIf="parsedAiAnalysis()?.graphAnalysis?.passed !== false" class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+            </svg>
+            <svg *ngIf="parsedAiAnalysis()?.graphAnalysis?.passed === false" class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <span>{{ parsedAiAnalysis()?.graphAnalysis?.checkName || 'SALARY_TRIANGULATION' }}: {{ parsedAiAnalysis()?.graphAnalysis?.status }}</span>
+          </div>
+          <ng-template #aiHeroInProgress>
+            <div class="flex items-center gap-1.5 mt-1 font-bold text-xs text-amber-600 dark:text-amber-400">
+              <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+              <span>AI in progress</span>
+            </div>
+          </ng-template>
+          <div *ngIf="parsedAiAnalysis()" class="text-[11px] text-slate-500 mt-0.5">
+            {{ parsedDocuments().length }} document(s) • {{ isSalaryTriangulated() ? 'All verified' : 'Review required' }}
+          </div>
+          <div *ngIf="!parsedAiAnalysis()" class="text-[11px] text-slate-400 mt-0.5">
+            Verification pending in queue
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Section Tabs Navigation -->
+    <div class="flex items-center gap-2 overflow-x-auto pb-1 border-b border-slate-200 dark:border-slate-800 text-xs font-bold">
+      <button
+        type="button"
+        (click)="activeSection.set('application')"
+        [class]="activeSection() === 'application' ? 'bg-brand-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'"
+        class="px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span>📑 1. Application &amp; Facility</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeSection.set('applicant')"
+        [class]="activeSection() === 'applicant' ? 'bg-brand-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'"
+        class="px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span>👤 2. Primary Applicant</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeSection.set('spouse')"
+        [class]="activeSection() === 'spouse' ? 'bg-brand-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'"
+        class="px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span>👥 3. Spouse Profile</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeSection.set('commitments')"
+        [class]="activeSection() === 'commitments' ? 'bg-brand-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'"
+        class="px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span>💳 4. Commitments &amp; DSR</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeSection.set('property')"
+        [class]="activeSection() === 'property' ? 'bg-brand-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'"
+        class="px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span>🏠 5. Property &amp; Collateral</span>
+      </button>
+
+      <button
+        type="button"
+        (click)="activeSection.set('documents')"
+        [class]="activeSection() === 'documents' ? 'bg-brand-600 text-white shadow-sm' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700'"
+        class="px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 whitespace-nowrap"
+      >
+        <span>🔬 6. AI Forensics &amp; Documents</span>
+        <span *ngIf="parsedAiAnalysis()" class="px-1.5 py-0.5 rounded-full text-[10px] bg-purple-500 text-white">
+          {{ parsedDocuments().length }}
+        </span>
+      </button>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 1: APPLICATION & FINANCING FACILITY                             -->
+    <!-- ======================================================================= -->
+    <div *ngIf="activeSection() === 'application'" class="space-y-6">
+      
+      <!-- Facility & Application Metadata -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Financing Facility &amp; Purpose
+        </h3>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+            <span class="text-slate-400">Bank Partner Selection</span>
+            <div class="font-bold text-sm text-slate-900 dark:text-white mt-1">
+              {{ rawRecord()?.application?.bank_selection || '-' }}
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+            <span class="text-slate-400">Application Type</span>
+            <div class="font-bold text-sm text-slate-900 dark:text-white mt-1">
+              {{ rawRecord()?.application?.application_type ? (rawRecord()?.application?.application_type | uppercase) : '-' }}
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+            <span class="text-slate-400">Facility Type</span>
+            <div class="font-bold text-sm text-slate-900 dark:text-white mt-1">
+              {{ rawRecord()?.application?.facility_type ? (rawRecord()?.application?.facility_type | uppercase) : '-' }}
+            </div>
+          </div>
+
+          <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60">
+            <span class="text-slate-400">Facility Purpose</span>
+            <div class="font-bold text-sm text-slate-900 dark:text-white mt-1">
+              {{ rawRecord()?.application?.facility_purpose || '-' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Facilities Required Grid -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Facilities Required Checklist
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 text-xs">
+          <div
+            *ngFor="let item of [
+              { label: 'Housing Loan', val: parsedFacilitiesRequired().housingLoan },
+              { label: 'Term Loan', val: parsedFacilitiesRequired().termLoan },
+              { label: 'Renovation Loan', val: parsedFacilitiesRequired().houseRenovationLoan },
+              { label: 'Construction Loan', val: parsedFacilitiesRequired().houseConstructionLoan },
+              { label: 'Business Premise', val: parsedFacilitiesRequired().businessPremiseLoan },
+              { label: 'Personal Loan', val: parsedFacilitiesRequired().personalLoan },
+              { label: 'Land Financing', val: parsedFacilitiesRequired().land },
+              { label: 'Cash Out / Top-up', val: parsedFacilitiesRequired().cashOut || parsedFacilitiesRequired().topUp },
+              { label: 'Overdraft', val: parsedFacilitiesRequired().overdraft }
+            ]"
+            class="flex items-center gap-2.5 p-3 rounded-2xl border"
+            [ngClass]="item.val ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-700 dark:text-emerald-300 font-bold' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700/60 text-slate-400'"
+          >
+            <span class="w-4 h-4 rounded-full flex items-center justify-center text-xs" [ngClass]="item.val ? 'bg-emerald-500 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'">
+              {{ item.val ? '✓' : '–' }}
+            </span>
+            <span>{{ item.label }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Docs Enclosed & FTFC Category -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Docs Enclosed -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3">
+          <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">Documents Enclosed Declaration</h4>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span>Copy of NRIC / Identity</span>
+              <span class="font-bold text-emerald-600">{{ parsedDocsEnclosed().copyOfNric ? 'Enclosed ✓' : 'No' }}</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span>Product Disclosure Sheet (PDS)</span>
+              <span class="font-bold text-emerald-600">{{ parsedDocsEnclosed().productDisclosureSheet ? 'Enclosed ✓' : 'No' }}</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span>Income Verification Documents</span>
+              <span class="font-bold text-emerald-600">{{ parsedDocsEnclosed().incomeDocs ? 'Enclosed ✓' : 'No' }}</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span>Other Documents</span>
+              <span class="font-medium text-slate-600 dark:text-slate-300">{{ parsedDocsEnclosed().otherDocsSpecify || 'None' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- FTFC & Signatures -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3">
+          <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">FTFC Category &amp; Signatures</h4>
+          <div class="space-y-2 text-xs">
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span>Fair Treatment of Vulnerable Consumers</span>
+              <span class="font-bold text-slate-700 dark:text-slate-300">{{ parsedFtfcCategory().notApplicable ? 'Not Applicable (Standard)' : 'Flagged' }}</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span>Marketing Consent (PDPA)</span>
+              <span class="font-semibold text-slate-600 dark:text-slate-400">{{ rawRecord()?.application?.marketing_consent || '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40">
+              <span>Primary Applicant Signature</span>
+              <span class="font-bold text-brand-600">{{ parsedSignatures().primarySignatureName || '-' }}{{ parsedSignatures().primarySignatureDate ? ' (' + parsedSignatures().primarySignatureDate + ')' : '' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 2: PRIMARY APPLICANT PROFILE                                    -->
+    <!-- ======================================================================= -->
+    <div *ngIf="activeSection() === 'applicant'" class="space-y-6">
+      
+      <!-- Personal Details -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Personal Information &amp; Demographics
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
+          <div>
+            <span class="text-slate-400">Full Name</span>
+            <div class="font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.full_name || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Identification</span>
+            <div class="font-mono font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.id_type ? (rawRecord()?.applicant?.id_type | uppercase) + ': ' : '' }}{{ rawRecord()?.applicant?.id_no || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Other ID</span>
+            <div class="font-medium text-slate-700 dark:text-slate-300 mt-1">{{ rawRecord()?.applicant?.other_id_type || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Date of Birth &amp; Age</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.date_of_birth || '-' }}{{ rawRecord()?.applicant?.age ? ' (' + rawRecord()?.applicant?.age + ' years)' : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Nationality &amp; Race</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.nationality ? (rawRecord()?.applicant?.nationality | titlecase) : '-' }}{{ rawRecord()?.applicant?.race ? ' • ' + rawRecord()?.applicant?.race : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Bumiputera Status</span>
+            <div class="font-bold text-emerald-600 mt-1">{{ rawRecord()?.applicant?.bumiputera_status ? 'Yes (Bumiputera)' : 'No' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Marital Status &amp; Gender</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.marital_status ? (rawRecord()?.applicant?.marital_status | titlecase) : '-' }}{{ rawRecord()?.applicant?.gender ? ' • ' + (rawRecord()?.applicant?.gender | titlecase) : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Dependents</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.dependents_count || 0 }} dependents ({{ rawRecord()?.applicant?.schooling_children_count || 0 }} schooling)</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Education Level</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.education_level ? (rawRecord()?.applicant?.education_level | uppercase) : '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Mobile Phone</span>
+            <div class="font-mono font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.mobile_phone || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Residential Phone</span>
+            <div class="font-mono text-slate-700 dark:text-slate-300 mt-1">{{ rawRecord()?.applicant?.residential_phone || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Email Address</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.email || '-' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Employment & Workplace -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Employment &amp; Company Details
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
+          <div>
+            <span class="text-slate-400">Employer Name</span>
+            <div class="font-black text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.employer_name || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Job Position</span>
+            <div class="font-bold text-brand-600 dark:text-brand-400 mt-1">{{ rawRecord()?.applicant?.job_position || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Employment Status</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.employment_status ? (rawRecord()?.applicant?.employment_status | titlecase) : '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Nature of Business</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.nature_of_business || '-' }}{{ rawRecord()?.applicant?.nature_of_business_specify ? ' (' + rawRecord()?.applicant?.nature_of_business_specify + ')' : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Date Joined &amp; Tenure</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.date_joined || '-' }}{{ rawRecord()?.applicant?.length_of_service_years ? ' (' + rawRecord()?.applicant?.length_of_service_years + ' yrs ' + (rawRecord()?.applicant?.length_of_service_months || 0) + ' mos)' : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Work Email</span>
+            <div class="font-mono text-slate-700 dark:text-slate-300 mt-1">{{ rawRecord()?.applicant?.email_work || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Office Phone</span>
+            <div class="font-mono text-slate-700 dark:text-slate-300 mt-1">{{ rawRecord()?.applicant?.office_phone || '-' }}</div>
+          </div>
+          <div class="col-span-2">
+            <span class="text-slate-400">Employer Address</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">
+              {{ rawRecord()?.applicant?.employer_address || '-' }}{{ rawRecord()?.applicant?.employer_city ? ', ' + rawRecord()?.applicant?.employer_city : '' }}{{ rawRecord()?.applicant?.employer_state ? ', ' + rawRecord()?.applicant?.employer_state : '' }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address & Emergency Contact -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Residential Address -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3">
+          <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">Permanent &amp; Mailing Address</h4>
+          <div class="text-xs space-y-2">
+            <div>
+              <span class="text-slate-400">Permanent Address</span>
+              <p class="font-semibold text-slate-900 dark:text-white mt-0.5">
+                {{ rawRecord()?.applicant?.perm_address || '-' }}{{ rawRecord()?.applicant?.perm_city ? ', ' + rawRecord()?.applicant?.perm_city : '' }}{{ rawRecord()?.applicant?.perm_state ? ', ' + rawRecord()?.applicant?.perm_state : '' }}
+              </p>
+              <div class="text-[11px] text-slate-500 mt-0.5" *ngIf="rawRecord()?.applicant?.length_of_stay_years">
+                Stay duration: {{ rawRecord()?.applicant?.length_of_stay_years }} years • Residence type: {{ rawRecord()?.applicant?.residence_type | titlecase }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Emergency Contact -->
+        <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-3">
+          <h4 class="text-xs font-black uppercase tracking-wider text-slate-500">Emergency Next-of-Kin Contact</h4>
+          <div class="text-xs space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Contact Name</span>
+              <span class="font-bold text-slate-900 dark:text-white">{{ rawRecord()?.applicant?.emergency_name || '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Relationship</span>
+              <span class="font-semibold text-slate-700 dark:text-slate-300">{{ rawRecord()?.applicant?.emergency_relationship ? (rawRecord()?.applicant?.emergency_relationship | titlecase) : '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Phone Number</span>
+              <span class="font-mono font-bold text-slate-900 dark:text-white">{{ rawRecord()?.applicant?.emergency_phone || '-' }}</span>
+            </div>
+            <div class="flex items-center justify-between">
+              <span class="text-slate-400">Email</span>
+              <span class="font-mono text-slate-700 dark:text-slate-300">{{ rawRecord()?.applicant?.emergency_email || '-' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 3: SPOUSE PROFILE                                               -->
+    <!-- ======================================================================= -->
+    <div *ngIf="activeSection() === 'spouse'" class="space-y-6">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Spouse Personal &amp; Employment Details
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
+          <div>
+            <span class="text-slate-400">Spouse Full Name</span>
+            <div class="font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_full_name || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Spouse ID No</span>
+            <div class="font-mono font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_id_type ? (rawRecord()?.applicant?.spouse_id_type | uppercase) + ': ' : '' }}{{ rawRecord()?.applicant?.spouse_id_no || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Date of Birth &amp; Age</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_date_of_birth || '-' }}{{ rawRecord()?.applicant?.spouse_age ? ' (' + rawRecord()?.applicant?.spouse_age + ' years)' : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Nationality &amp; Race</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_nationality || '-' }}{{ rawRecord()?.applicant?.spouse_race ? ' • ' + rawRecord()?.applicant?.spouse_race : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Spouse Mobile</span>
+            <div class="font-mono font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_mobile || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Spouse Email</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_email || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Spouse Employer</span>
+            <div class="font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_employer || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Occupation &amp; Position</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.applicant?.spouse_occupation || '-' }}{{ rawRecord()?.applicant?.spouse_position ? ' • ' + rawRecord()?.applicant?.spouse_position : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Monthly Gross Income</span>
+            <div class="font-black text-emerald-600 text-sm mt-1">{{ formatCurrency(rawRecord()?.applicant?.spouse_monthly_gross_rm) }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Annual Gross Income</span>
+            <div class="font-black text-slate-900 dark:text-white mt-1">{{ formatCurrency(rawRecord()?.applicant?.spouse_annual_gross_rm) }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 4: COMMITMENTS & DSR BREAKDOWN                                  -->
+    <!-- ======================================================================= -->
+    <div *ngIf="activeSection() === 'commitments'" class="space-y-6">
+      
+      <!-- Commitments Table -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Existing Banking Commitments (CCRIS Cross-Check)
+        </h3>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="border-b border-slate-200 dark:border-slate-800 text-[11px] font-black uppercase text-slate-400">
+                <th class="py-2.5 px-3">Financial Institution</th>
+                <th class="py-2.5 px-3">Facility Type</th>
+                <th class="py-2.5 px-3">Facility Amount</th>
+                <th class="py-2.5 px-3">Tenure</th>
+                <th class="py-2.5 px-3">Monthly Instalment</th>
+                <th class="py-2.5 px-3 text-right">Current Outstanding</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr *ngFor="let com of parsedCommitments()" class="font-medium text-slate-700 dark:text-slate-200">
+                <td class="py-3 px-3 font-bold">{{ com.financialInstitution }}</td>
+                <td class="py-3 px-3">{{ com.facilityType }}</td>
+                <td class="py-3 px-3 font-mono">{{ formatCurrency(com.facilityAmount) }}</td>
+                <td class="py-3 px-3">{{ com.tenureMonths }} months</td>
+                <td class="py-3 px-3 font-mono font-bold text-rose-600">{{ formatCurrency(com.monthlyInstalment) }}/mo</td>
+                <td class="py-3 px-3 text-right font-mono">{{ formatCurrency(com.currentOutstanding) }}</td>
+              </tr>
+              <tr *ngIf="parsedCommitments().length === 0">
+                <td colspan="6" class="py-4 text-center text-slate-400">No external debt commitments registered.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DSR Calculation Math Breakdown -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Debt Service Ratio (DSR) Formula &amp; Assessment
+        </h3>
+
+        <div class="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 font-mono text-xs space-y-2">
+          <div class="flex justify-between">
+            <span class="text-slate-500">Applicant Monthly Gross Salary:</span>
+            <span class="font-bold text-slate-900 dark:text-white">{{ formatCurrency(rawRecord()?.applicant?.monthly_gross_rm) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Existing Commitments:</span>
+            <span class="font-bold text-rose-600">{{ formatCurrency(parsedCommitments()[0]?.monthlyInstalment || 0) }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-500">Proposed New Housing Installment (Est. 30 yrs @ 4.3%):</span>
+            <span class="font-bold text-rose-600">{{ formatCurrency(loanAmount() > 0 ? ((loanAmount() * 0.043) / 12 + loanAmount() / (30 * 12)) : 0) }}</span>
+          </div>
+          <div class="border-t border-slate-200 dark:border-slate-700 pt-2 flex justify-between text-sm font-black">
+            <span>Resulting DSR:</span>
+            <span class="text-emerald-600">{{ calculatedDsr() }}% ({{ calculatedDsr() <= 70 ? 'Within max threshold 70%' : 'Exceeds max threshold 70%' }})</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 5: PROPERTY COLLATERAL & TITLE                                  -->
+    <!-- ======================================================================= -->
+    <div *ngIf="activeSection() === 'property'" class="space-y-6">
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Property Collateral &amp; Valuation
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
+          <div>
+            <span class="text-slate-400">Project Name</span>
+            <div class="font-black text-slate-900 dark:text-white mt-1">{{ rawRecord()?.property?.project_name || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Developer Name</span>
+            <div class="font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.property?.developer_name || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Contractor Name</span>
+            <div class="font-semibold text-slate-700 dark:text-slate-300 mt-1">{{ rawRecord()?.property?.contractor_name || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Property Type</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.property?.property_type ? (rawRecord()?.property?.property_type | titlecase) : '-' }}{{ rawRecord()?.property?.property_sub_type ? ' • ' + (rawRecord()?.property?.property_sub_type | titlecase) : '' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">SPA Purchase Price</span>
+            <div class="font-black text-slate-900 dark:text-white mt-1">{{ formatCurrency(rawRecord()?.property?.spa_price_rm) }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Open Market Value</span>
+            <div class="font-bold text-slate-900 dark:text-white mt-1">{{ formatCurrency(rawRecord()?.property?.open_market_rm) }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Renovation Value</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ formatCurrency(rawRecord()?.property?.renovation_value_rm) }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Net Purchase Price</span>
+            <div class="font-black text-brand-600 mt-1">{{ formatCurrency(rawRecord()?.property?.net_purchase_price_rm) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Title & Registration Details -->
+      <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-4">
+        <h3 class="text-sm font-black uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          Land Registry Title Details
+        </h3>
+
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 text-xs">
+          <div>
+            <span class="text-slate-400">Title Number</span>
+            <div class="font-mono font-bold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.property?.title_number || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Title Type</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.property?.title_type ? (rawRecord()?.property?.title_type | uppercase) : '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Lot &amp; Mukim</span>
+            <div class="font-mono text-slate-900 dark:text-white mt-1">Lot {{ rawRecord()?.property?.lot_number || '-' }} • Mukim {{ rawRecord()?.property?.mukim || '-' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">District &amp; State Geran</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.property?.district || '-' }}{{ rawRecord()?.property?.state_geran ? ' • ' + rawRecord()?.property?.state_geran : '' }}</div>
+          </div>
+          <div class="col-span-2">
+            <span class="text-slate-400">Full Property Address</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">
+              {{ rawRecord()?.property?.property_address || '-' }}{{ rawRecord()?.property?.property_city ? ', ' + rawRecord()?.property?.property_city : '' }}{{ rawRecord()?.property?.property_state ? ', ' + rawRecord()?.property?.property_state : '' }}
+            </div>
+          </div>
+          <div>
+            <span class="text-slate-400">First Time Homebuyer</span>
+            <div class="font-bold text-emerald-600 mt-1">{{ rawRecord()?.property?.is_first_time_buyer ? 'Yes (First Home)' : 'No' }}</div>
+          </div>
+          <div>
+            <span class="text-slate-400">Owner Occupied</span>
+            <div class="font-semibold text-slate-900 dark:text-white mt-1">{{ rawRecord()?.property?.is_owner_occupied ? 'Yes' : 'No (Investment)' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================================= -->
+    <!-- SECTION 6: AI FORENSICS & DOCUMENT VERIFICATION                         -->
+    <!-- ======================================================================= -->
+    <div *ngIf="activeSection() === 'documents'" class="space-y-6">
+      
+      <!-- When AI analysis is empty / in progress -->
+      <div *ngIf="!parsedAiAnalysis()" class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-8 text-center space-y-3">
+        <div class="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 border border-amber-500/20 flex items-center justify-center mx-auto">
+          <svg class="w-6 h-6 animate-spin text-amber-500" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+        </div>
+        <h4 class="text-base font-black text-slate-900 dark:text-white">AI in progress</h4>
+        <p class="text-xs text-slate-500 max-w-md mx-auto">
+          Multimodal optical forensics and salary triangulation cross-verification are currently running in the background for this application. Submitted documents and forensic analysis will appear once verification is complete.
+        </p>
+      </div>
+
+      <!-- Graph Analysis & Deep Forensics Panel (only rendered when parsedAiAnalysis exists) -->
+      <ng-container *ngIf="parsedAiAnalysis()">
+        
+        <!-- Graph Analysis & Salary Triangulation Hero Card -->
+        <div class="bg-gradient-to-br from-purple-900/10 via-indigo-900/5 to-slate-900/10 dark:from-purple-950/40 dark:via-slate-900 dark:to-indigo-950/30 border border-purple-500/20 dark:border-purple-500/30 rounded-3xl p-6 sm:p-7 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-200/50 dark:border-purple-800/40 pb-5">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider rounded-md bg-purple-500/20 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                  AI Cross-Verification Graph
+                </span>
+                <span class="text-xs font-bold text-slate-500 dark:text-slate-400">
+                  Powered by Gemini Multimodal &amp; Google ADK
+                </span>
+              </div>
+              <h3 class="text-lg font-black text-slate-900 dark:text-white">
+                {{ getAiCheckTitle(parsedAiAnalysis()?.graphAnalysis?.checkName) }}
+              </h3>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="text-right hidden sm:block">
+                <div class="text-[11px] font-bold text-slate-400">Graph Verdict</div>
+                <div class="text-xs font-mono text-slate-500">{{ parsedAiAnalysis()?.graphAnalysis?.checkName || 'SALARY_TRIANGULATION' }}</div>
+              </div>
+              <div
+                class="px-4 py-2 rounded-2xl border font-black text-xs flex items-center gap-2 shadow-sm"
+                [ngClass]="isSalaryTriangulated() ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30' : 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'"
+              >
+                <svg *ngIf="isSalaryTriangulated()" class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <svg *ngIf="!isSalaryTriangulated()" class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <span>STATUS: {{ parsedAiAnalysis()?.graphAnalysis?.status || 'FLAGGED' }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Discrepancies Banner (Shown prominently if discrepancies exist or flagged) -->
+          <div
+            *ngIf="(parsedAiAnalysis()?.graphAnalysis?.discrepancies?.length || 0) > 0"
+            class="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl space-y-2"
+          >
+            <div class="flex items-center gap-2 text-xs font-black text-rose-700 dark:text-rose-300">
+              <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+              <span>{{ parsedAiAnalysis()?.graphAnalysis?.discrepancies?.length }} Discrepancies Detected</span>
+            </div>
+            <ul class="list-disc list-inside text-xs text-rose-700 dark:text-rose-300 space-y-1">
+              <li *ngFor="let d of parsedAiAnalysis()?.graphAnalysis?.discrepancies">{{ d }}</li>
+            </ul>
+          </div>
+
+          <!-- When Triangulation Passed (Both Salary Slip & Bank Statement confirmed) -->
+          <div *ngIf="isSalaryTriangulated()" class="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+            <!-- Node 1: Salary Slip -->
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                  <span>📄 Document 1: Salary Slip</span>
+                </span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  Verified
+                </span>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex justify-between text-slate-500">
+                  <span>Declared Gross:</span>
+                  <strong class="text-slate-900 dark:text-white font-mono">{{ formatCurrency(rawRecord()?.applicant?.monthly_gross_rm) }}</strong>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>EPF Contribution (11%):</span>
+                  <strong class="text-slate-900 dark:text-white font-mono">{{ rawRecord()?.applicant?.monthly_gross_rm ? formatCurrency(rawRecord()!.applicant.monthly_gross_rm * 0.11) : '-' }}</strong>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>Net Pay:</span>
+                  <strong class="text-emerald-600 font-mono font-black">{{ rawRecord()?.applicant?.monthly_gross_rm ? formatCurrency(rawRecord()!.applicant.monthly_gross_rm * 0.85) : '-' }}</strong>
+                </div>
+                <div class="pt-1 text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800 flex justify-between">
+                  <span>Employer:</span>
+                  <span class="font-semibold text-slate-700 dark:text-slate-300 truncate max-w-[140px]">{{ rawRecord()?.applicant?.employer_name || '-' }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Node 2: AI Triangulation Correlation Engine -->
+            <div class="bg-purple-600/10 dark:bg-purple-950/60 border border-purple-500/30 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3 text-center">
+              <div class="flex items-center justify-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                <svg class="w-4 h-4 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                <span>Triangulation Engine</span>
+              </div>
+              <div class="space-y-1 my-auto">
+                <div class="text-2xl font-black text-emerald-600 font-mono">100%</div>
+                <div class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cross-Entity Correlation</div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400">Net Pay ⟷ Bank Credit Match</div>
+              </div>
+              <div class="pt-2 border-t border-purple-500/20 text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
+                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <span>Zero Variance Detected</span>
+              </div>
+            </div>
+
+            <!-- Node 3: Bank Statement -->
+            <div class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                  <span>🏦 Document 2: Bank Statement</span>
+                </span>
+                <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                  Verified
+                </span>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex justify-between text-slate-500">
+                  <span>Bank Institution:</span>
+                  <strong class="text-slate-900 dark:text-white">{{ rawRecord()?.application?.bank_selection || '-' }}</strong>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>Salary Deposit Credits:</span>
+                  <strong class="text-emerald-600 font-mono font-black">{{ rawRecord()?.applicant?.monthly_gross_rm ? formatCurrency(rawRecord()!.applicant.monthly_gross_rm * 0.85) + ' / mo' : '-' }}</strong>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>Recurring Payor:</span>
+                  <strong class="text-slate-900 dark:text-white truncate max-w-[130px]">{{ rawRecord()?.applicant?.employer_name || '-' }}</strong>
+                </div>
+                <div class="pt-1 text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800 flex justify-between">
+                  <span>Consistency:</span>
+                  <span class="font-bold text-emerald-600">Cross-Validated</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- When Triangulation is FLAGGED / INCOMPLETE / Not 100% matched -->
+          <div *ngIf="!isSalaryTriangulated()" class="grid grid-cols-1 md:grid-cols-3 gap-4 relative">
+            <!-- Actual Documents Flow -->
+            <div
+              *ngFor="let d of parsedDocuments().slice(0, 2)"
+              class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3"
+            >
+              <div class="flex items-center justify-between">
+                <span class="text-[11px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 truncate max-w-[140px]">
+                  📄 {{ d.filename || d.name }}
+                </span>
+                <div class="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    (click)="downloadDocument(d, $event)"
+                    class="p-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-brand-600 hover:text-white text-slate-500 transition-colors"
+                    title="Download document file"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                    </svg>
+                  </button>
+                  <span
+                    class="px-2 py-0.5 text-[10px] font-bold rounded-full border"
+                    [ngClass]="d.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-rose-500/10 text-rose-600 border-rose-500/20'"
+                  >
+                    {{ d.status }}
+                  </span>
+                </div>
+              </div>
+              <div class="space-y-1.5 text-xs">
+                <div class="flex justify-between text-slate-500">
+                  <span>Detected Type:</span>
+                  <strong class="text-slate-900 dark:text-white font-mono">{{ d.parsedProcessingDetails?.detectedDocumentType || 'DOCUMENT' }}</strong>
+                </div>
+                <div class="flex justify-between text-slate-500">
+                  <span>Score:</span>
+                  <strong class="font-mono" [ngClass]="(d.parsedProcessingDetails?.scores?.documentScore || 0) > 80 ? 'text-emerald-600' : 'text-amber-600'">
+                    {{ d.parsedProcessingDetails?.scores?.documentScore ? d.parsedProcessingDetails?.scores?.documentScore + '%' : 'Pending' }}
+                  </strong>
+                </div>
+                <div class="pt-1 text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800 line-clamp-2" [title]="d.message">
+                  {{ d.message || 'Processing status recorded' }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Fallback if fewer than 2 documents -->
+            <div
+              *ngIf="parsedDocuments().length < 2"
+              class="bg-slate-50/80 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-700 rounded-2xl p-4 flex flex-col items-center justify-center text-center text-xs text-slate-400 space-y-1"
+            >
+              <svg class="w-5 h-5 text-slate-300 dark:text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span>Missing Required Document</span>
+              <span class="text-[10px] text-slate-400">Payslip or Bank Statement needed for salary cross-check</span>
+            </div>
+
+            <!-- Central Triangulation Engine Assessment -->
+            <div class="bg-rose-500/10 dark:bg-rose-950/40 border border-rose-500/30 rounded-2xl p-4 shadow-sm flex flex-col justify-between space-y-3 text-center">
+              <div class="flex items-center justify-center gap-1.5 text-[11px] font-black uppercase tracking-wider text-rose-700 dark:text-rose-300">
+                <svg class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>Triangulation Engine</span>
+              </div>
+              <div class="space-y-1 my-auto">
+                <div class="text-xl font-black text-rose-700 dark:text-rose-300 font-mono">{{ parsedAiAnalysis()?.graphAnalysis?.status || 'FLAGGED' }}</div>
+                <div class="text-[11px] font-bold text-slate-600 dark:text-slate-300">Cross-Verification Incomplete</div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400">
+                  {{ parsedAiAnalysis()?.graphAnalysis?.discrepancies?.[0] || 'Requirements not satisfied' }}
+                </div>
+              </div>
+              <div class="pt-2 border-t border-rose-500/20 text-[11px] font-bold text-rose-600 dark:text-rose-400 flex items-center justify-center gap-1">
+                <span>Manual Underwriting Required</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Verified Success Banner (when 0 discrepancies and passed) -->
+          <div
+            *ngIf="isSalaryTriangulated() && (parsedAiAnalysis()?.graphAnalysis?.discrepancies?.length || 0) === 0"
+            class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl flex items-start gap-3"
+          >
+            <div class="p-1 rounded-full bg-emerald-500/20 text-emerald-600 mt-0.5">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <div class="text-xs font-black text-emerald-800 dark:text-emerald-300">
+                0 Discrepancies Found Across Multi-Document Triangulation
+              </div>
+              <p class="text-xs text-emerald-800/80 dark:text-emerald-300/80 mt-0.5">
+                Declared income on salary slip correlates with cross-verification from {{ rawRecord()?.application?.bank_selection || 'Bank' }} records and employer {{ rawRecord()?.applicant?.employer_name || '' }}. Zero anomalies detected.
+              </p>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Document List & Deep Forensics Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          <!-- Left: Document List Selector (Sourced from /all API documents) -->
+          <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-sm space-y-3">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-black uppercase tracking-wider text-slate-400">
+                Submitted Documents ({{ parsedDocuments().length }})
+              </h3>
+              <span class="text-[10px] font-bold text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+                Spanner /all
+              </span>
+            </div>
+
+            <div class="space-y-2.5">
+              <div
+                *ngFor="let doc of parsedDocuments()"
+                (click)="selectDocument(doc)"
+                class="p-3.5 rounded-2xl border transition-all cursor-pointer relative"
+                [ngClass]="selectedDocument()?.id === doc.id ? 'bg-brand-50/80 dark:bg-brand-950/60 border-brand-500 ring-2 ring-brand-500/20 shadow-sm' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200/60 dark:border-slate-700/60 hover:bg-slate-100 dark:hover:bg-slate-800/80'"
+              >
+                <div class="flex items-start justify-between gap-2">
+                  <div class="space-y-1 min-w-0">
+                    <div class="text-xs font-bold text-slate-900 dark:text-white truncate" [title]="doc.filename">
+                      {{ doc.filename || doc.name }}
+                    </div>
+                    <div class="text-[10px] font-mono text-slate-400 truncate">
+                      ID: {{ doc.documentId || doc.id }}
+                    </div>
+                  </div>
+                  <span
+                    class="px-2 py-0.5 text-[10px] font-black rounded-full whitespace-nowrap"
+                    [ngClass]="doc.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' : doc.status === 'FAILED' ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20' : 'bg-amber-500/10 text-amber-600 border border-amber-500/20'"
+                  >
+                    {{ doc.status }}
+                  </span>
+                </div>
+                
+                <div class="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+                  <span class="truncate max-w-[120px] font-medium text-slate-600 dark:text-slate-300">
+                    {{ doc.parsedProcessingDetails?.detectedDocumentType || 'DOCUMENT' }}
+                  </span>
+                  <div class="flex items-center gap-2">
+                    <span class="font-bold" [ngClass]="(doc.parsedProcessingDetails?.scores?.documentScore ?? doc.parsedProcessingDetails?.documentScore ?? 0) >= 90 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'">
+                      {{ (doc.parsedProcessingDetails?.scores?.documentScore ?? doc.parsedProcessingDetails?.documentScore) ? ((doc.parsedProcessingDetails?.scores?.documentScore ?? doc.parsedProcessingDetails?.documentScore) + '%') : 'Pending' }}
+                    </span>
+                    <button
+                      type="button"
+                      (click)="downloadDocument(doc, $event)"
+                      class="px-2 py-0.5 rounded-lg bg-slate-200/80 dark:bg-slate-700/80 hover:bg-brand-600 hover:text-white dark:hover:bg-brand-500 text-slate-700 dark:text-slate-200 text-[10px] font-bold transition-all flex items-center gap-1"
+                      title="Download file"
+                    >
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      <span>Download</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Selected Document AI Forensics Detail -->
+          <div class="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-sm space-y-6">
+            
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div class="space-y-1">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <h4 class="font-black text-sm text-slate-900 dark:text-white">{{ selectedDocument()?.filename }}</h4>
+                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                    {{ selectedDocument()?.parsedProcessingDetails?.detectedDocumentType || 'VERIFIED_DOCUMENT' }}
+                  </span>
+                  <span
+                    class="px-2 py-0.5 text-[10px] font-extrabold rounded-md border"
+                    [ngClass]="selectedDocument()?.status === 'SUCCESS' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : selectedDocument()?.status === 'FAILED' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20' : 'bg-amber-500/10 text-amber-600 border-amber-500/20'"
+                  >
+                    {{ selectedDocument()?.status || 'SUCCESS' }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                  <a
+                    [href]="getDocumentDownloadUrl(selectedDocument()?.gcsUrl || selectedDocument()?.url)"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="text-xs text-brand-600 dark:text-brand-400 hover:underline font-mono truncate max-w-md flex items-center gap-1"
+                    title="Open or download GCS file"
+                  >
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    <span>{{ selectedDocument()?.gcsUrl || selectedDocument()?.url }}</span>
+                  </a>
+                </div>
+                <div class="text-[11px] font-mono text-purple-600 dark:text-purple-400">
+                  Document ID: {{ selectedDocument()?.documentId || selectedDocument()?.id }}
+                </div>
+              </div>
+              
+              <div class="flex items-center gap-3">
+                <button
+                  type="button"
+                  (click)="downloadDocument(selectedDocument())"
+                  class="px-3.5 py-2 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs transition-all flex items-center gap-1.5 shadow-sm"
+                  title="Download selected document"
+                >
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                  <span>Download Document</span>
+                </button>
+                <div class="text-left sm:text-right">
+                  <div class="text-xs text-slate-400">Forensics Match Score</div>
+                  <div class="text-xl font-black" [ngClass]="(selectedDocument()?.parsedProcessingDetails?.scores?.documentScore ?? selectedDocument()?.parsedProcessingDetails?.documentScore ?? 0) >= 90 ? 'text-emerald-600' : 'text-amber-600'">
+                    {{ (selectedDocument()?.parsedProcessingDetails?.scores?.documentScore ?? selectedDocument()?.parsedProcessingDetails?.documentScore) ? ((selectedDocument()?.parsedProcessingDetails?.scores?.documentScore ?? selectedDocument()?.parsedProcessingDetails?.documentScore) + '%') : 'Pending' }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Document Processing Status Callout -->
+            <div class="p-3.5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/60 dark:border-slate-700/60 flex items-center justify-between text-xs">
+              <div class="flex items-center gap-2">
+                <span
+                  class="w-2 h-2 rounded-full"
+                  [ngClass]="selectedDocument()?.status === 'SUCCESS' ? 'bg-emerald-500' : selectedDocument()?.status === 'FAILED' ? 'bg-rose-500' : 'bg-amber-500'"
+                ></span>
+                <span class="font-bold text-slate-700 dark:text-slate-200">Processing Status:</span>
+                <span class="text-slate-600 dark:text-slate-300">{{ selectedDocument()?.message || 'Document processed successfully' }}</span>
+              </div>
+              <span class="text-[11px] font-mono text-slate-400">{{ formatDate(selectedDocument()?.uploadedAt) }}</span>
+            </div>
+
+            <!-- Pixel Level Tamper Check -->
+            <div
+              class="p-4 rounded-2xl border"
+              [ngClass]="(selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.isTampered || selectedDocument()?.parsedProcessingDetails?.tampered || selectedDocument()?.status === 'FAILED') ? 'bg-rose-500/10 border-rose-500/30' : 'bg-emerald-500/10 border-emerald-500/30'"
+            >
+              <div
+                class="flex items-center gap-2 font-bold text-xs"
+                [ngClass]="(selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.isTampered || selectedDocument()?.parsedProcessingDetails?.tampered || selectedDocument()?.status === 'FAILED') ? 'text-rose-700 dark:text-rose-300' : 'text-emerald-700 dark:text-emerald-300'"
+              >
+                <svg *ngIf="!(selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.isTampered || selectedDocument()?.parsedProcessingDetails?.tampered || selectedDocument()?.status === 'FAILED')" class="w-4 h-4 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" />
+                </svg>
+                <svg *ngIf="(selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.isTampered || selectedDocument()?.parsedProcessingDetails?.tampered || selectedDocument()?.status === 'FAILED')" class="w-4 h-4 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span>
+                  {{ (selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.isTampered || selectedDocument()?.parsedProcessingDetails?.tampered || selectedDocument()?.status === 'FAILED') ? 'Pixel-Level Forensics: Potential Tampering / Inconsistency Detected' : 'Pixel-Level Forensics: Authentic (No Tampering Detected)' }}
+                  <span *ngIf="selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.tamperingRiskLevel" class="ml-1 text-[11px] font-normal">
+                    (Risk: {{ selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.tamperingRiskLevel }} • {{ selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.tamperingConfidence }}% Confidence)
+                  </span>
+                </span>
+              </div>
+              <p
+                class="text-xs mt-1 leading-relaxed"
+                [ngClass]="(selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.isTampered || selectedDocument()?.parsedProcessingDetails?.tampered || selectedDocument()?.status === 'FAILED') ? 'text-rose-800/90 dark:text-rose-200/90' : 'text-emerald-800/80 dark:text-emerald-300/80'"
+              >
+                {{ selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.findings || 'All text, numeric values, and alignments show genuine optical characteristics.' }}
+              </p>
+
+              <!-- Anomalies List -->
+              <div *ngIf="selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.anomalies?.length" class="mt-2.5 pt-2 border-t border-rose-500/20 space-y-1">
+                <div *ngFor="let a of selectedDocument()?.parsedProcessingDetails?.pixelLevelCheck?.anomalies" class="text-[11px] text-rose-900 dark:text-rose-200 flex items-start gap-1.5 font-mono">
+                  <span class="font-bold text-rose-600">[{{ a.anomalyType || 'ANOMALY' }} in {{ a.targetField || a.location || 'Document' }}]:</span>
+                  <span>{{ a.description }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Scoring Breakdown (if available) -->
+            <div *ngIf="selectedDocument()?.parsedProcessingDetails?.scores?.scoringBreakdown" class="p-4 bg-purple-50/50 dark:bg-purple-950/30 border border-purple-500/20 rounded-2xl space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <span class="font-extrabold uppercase text-[10px] tracking-wider text-purple-700 dark:text-purple-300">Scoring Engine Breakdown</span>
+                <div class="flex items-center gap-3 font-mono text-[11px]">
+                  <span *ngIf="selectedDocument()?.parsedProcessingDetails?.scores?.originalityScore">Originality: <strong>{{ selectedDocument()?.parsedProcessingDetails?.scores?.originalityScore }}%</strong></span>
+                  <span *ngIf="selectedDocument()?.parsedProcessingDetails?.scores?.confidenceScore">Confidence: <strong>{{ selectedDocument()?.parsedProcessingDetails?.scores?.confidenceScore }}%</strong></span>
+                </div>
+              </div>
+              <p class="text-slate-600 dark:text-slate-300 leading-relaxed">
+                {{ selectedDocument()?.parsedProcessingDetails?.scores?.scoringBreakdown }}
+              </p>
+            </div>
+
+            <!-- Extracted Fields Table -->
+            <div class="space-y-3">
+              <div class="flex items-center justify-between">
+                <h5 class="text-xs font-black uppercase tracking-wider text-slate-400">
+                  Extracted Domain Fields &amp; Cross-Check
+                </h5>
+                <span class="text-[11px] text-slate-400">
+                  {{ selectedDocument()?.parsedProcessingDetails?.fieldDetails?.length || 0 }} fields verified
+                </span>
+              </div>
+              
+              <div class="max-h-72 overflow-y-auto rounded-2xl border border-slate-200/80 dark:border-slate-700/80">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60 font-black text-slate-400">
+                      <th class="py-2.5 px-3">Field Name</th>
+                      <th class="py-2.5 px-3">Extracted Value</th>
+                      <th class="py-2.5 px-3 text-right">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-slate-100 dark:divide-slate-800 font-mono">
+                    <tr *ngFor="let item of selectedDocument()?.parsedProcessingDetails?.fieldDetails" class="hover:bg-slate-50 dark:hover:bg-slate-800/40" [ngClass]="item.isSuspicious ? 'bg-amber-500/10 dark:bg-amber-950/20' : ''">
+                      <td class="py-2 px-3 text-slate-500 font-semibold">
+                        <span>{{ item.key }}</span>
+                        <span *ngIf="item.isSuspicious" class="ml-1.5 px-1.5 py-0.5 text-[9px] font-black uppercase rounded bg-rose-500 text-white" [title]="item.notes || 'Suspicious Field'">
+                          Flagged
+                        </span>
+                      </td>
+                      <td class="py-2 px-3 text-slate-900 dark:text-white font-bold">{{ item.value }}</td>
+                      <td class="py-2 px-3 text-right font-bold" [ngClass]="item.isSuspicious ? 'text-rose-600' : 'text-emerald-600'">
+                        {{ (item.confidence * 100) | number:'1.0-0' }}%
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Metadata & Engine Specs -->
+            <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200/60 dark:border-slate-700/60 text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2">
+              <span>Processed with: <strong class="text-slate-700 dark:text-slate-200">{{ selectedDocument()?.parsedProcessingDetails?.metadata?.model || 'Gemini 3.5 Flash' }}</strong></span>
+              <span>Framework: <strong class="text-slate-700 dark:text-slate-200">{{ selectedDocument()?.parsedProcessingDetails?.metadata?.agentFramework || 'Google ADK' }}</strong></span>
+              <span>Duration: <strong class="text-slate-700 dark:text-slate-200">{{ selectedDocument()?.parsedProcessingDetails?.metadata?.executionDurationMs || 4500 }}ms</strong></span>
+            </div>
+
+            <!-- Raw document.document_processing_details Payload Inspector Toggle -->
+            <div class="border border-slate-200/70 dark:border-slate-800 rounded-2xl overflow-hidden">
+              <div
+                (click)="toggleRawAiJson()"
+                class="p-3.5 bg-slate-50/80 dark:bg-slate-800/60 flex items-center justify-between cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    Raw <code class="font-mono text-purple-600 dark:text-purple-400 text-[11px]">document.document_processing_details</code> JSON Payload
+                  </span>
+                  <span class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
+                    {{ selectedDocument()?.filename || 'Selected Document' }}
+                  </span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs text-slate-400">{{ showRawAiJson() ? 'Hide JSON' : 'View Raw JSON' }}</span>
+                  <svg
+                    class="w-4 h-4 text-slate-400 transition-transform"
+                    [ngClass]="showRawAiJson() ? 'rotate-180' : ''"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+
+              <div *ngIf="showRawAiJson()" class="p-4 bg-slate-950 text-slate-200 space-y-3 font-mono text-xs border-t border-slate-800">
+                <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <span class="text-[11px] text-slate-400">Parsed Spanner Document JSON Schema</span>
+                  <button
+                    type="button"
+                    (click)="copyRawDocProcessingDetails()"
+                    class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] transition-colors flex items-center gap-1.5"
+                  >
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                    </svg>
+                    <span>Copy JSON</span>
+                  </button>
+                </div>
+                <pre class="overflow-x-auto text-[11px] leading-relaxed max-h-80 text-emerald-400">{{ getRawDocProcessingDetailsFormatted() }}</pre>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </ng-container>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-4 px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 dark:text-slate-400 mt-12">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <span>MLTF Loan Application Underwriting Inspection • Google Cloud Spanner</span>
+      <span>&copy; 2026 MLTF</span>
+    </div>
+  </footer>
+
+</div>

@@ -1,0 +1,4 @@
+/* Custom styles for standalone document uploader */
+:host {
+  display: block;
+}

@@ -7,7 +7,6 @@ import { ApplyMortgageComponent } from './pages/apply/mortgage/apply-mortgage.co
 import { KycComponent } from './pages/kyc/kyc.component';
 import { OpsLoginComponent } from './pages/ops/ops-login/ops-login.component';
 import { OpsLayoutComponent } from './pages/ops/ops-layout/ops-layout.component';
-import { OpsDashboardComponent } from './pages/ops/ops-dashboard/ops-dashboard.component';
 import { opsAuthGuard } from './shared/guards/ops-auth.guard';
 
 export const routes: Routes = [
@@ -32,18 +31,50 @@ export const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: 'dashboard',
+        redirectTo: 'dashboard-v2',
         pathMatch: 'full',
       },
       {
         path: 'dashboard',
-        component: OpsDashboardComponent,
-        title: 'MLTF Ops - Papan Pemuka Pengurusan Kes Spanner',
+        redirectTo: 'dashboard-v2',
+        pathMatch: 'full',
+      },
+      {
+        path: 'dashboard-v2',
+        loadComponent: () =>
+          import('./pages/ops/ops-dashboard-v2/ops-dashboard-v2.component').then(
+            (m) => m.OpsDashboardV2Component
+          ),
+        title: 'MLTF Ops - Dashboard V2',
+      },
+      {
+        path: 'dashboard-v2/:id',
+        loadComponent: () =>
+          import('./pages/ops/ops-application-detail/ops-application-detail.component').then(
+            (m) => m.OpsApplicationDetailComponent
+          ),
+        title: 'MLTF Ops - Maklumat Terperinci Permohonan',
+      },
+      {
+        path: 'detail/:id',
+        loadComponent: () =>
+          import('./pages/ops/ops-application-detail/ops-application-detail.component').then(
+            (m) => m.OpsApplicationDetailComponent
+          ),
+        title: 'MLTF Ops - Maklumat Terperinci Permohonan',
+      },
+      {
+        path: 'dashboard/:id',
+        loadComponent: () =>
+          import('./pages/ops/ops-application-detail/ops-application-detail.component').then(
+            (m) => m.OpsApplicationDetailComponent
+          ),
+        title: 'MLTF Ops - Maklumat Terperinci Permohonan',
       },
       {
         path: 'cases',
-        component: OpsDashboardComponent,
-        title: 'MLTF Ops - Senarai Kes Pematuhan',
+        redirectTo: 'dashboard-v2',
+        pathMatch: 'full',
       },
     ],
   },
@@ -61,6 +92,11 @@ export const routes: Routes = [
         path: 'apply/mortgage',
         component: ApplyMortgageComponent,
         title: 'MLTF - Permohonan Pinjaman Gadai Janji',
+      },
+      {
+        path: 'apply/mortgage-v2',
+        loadComponent: () => import('./pages/apply/mortgage-v2/mortgage-v2').then(m => m.MortgageV2),
+        title: 'MLTF - Permohonan Pinjaman Gadai Janji V2',
       },
     ],
   },

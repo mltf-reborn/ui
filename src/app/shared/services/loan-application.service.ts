@@ -1,7 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { catchError, switchMap, map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { AppAuthService } from './auth.service';
 
@@ -59,6 +59,23 @@ export class LoanApplicationService {
     );
   }
 
+  createApplication(): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.post<any>(
+          this.endpoint,
+          null,
+          { headers, params: { action: 'create' } }
+        );
+      })
+    );
+  }
+
+
   uploadDocument(applicationId: string, file: File): Observable<ApplicationDocumentResponse> {
     return this.authService.getJwtToken().pipe(
       switchMap(token => {
@@ -70,10 +87,17 @@ export class LoanApplicationService {
         formData.append('document', file, file.name);
 
         const params = new HttpParams().set('applicationID', applicationId);
-        return this.http.post<ApplicationDocumentResponse>(
-          `${this.endpoint}/document`,
+        return this.http.post<any>(
+          `${(environment as any).apiUrl || ''}/api/v2/application/document`,
           formData,
           { headers, params }
+        ).pipe(
+          map(res => ({
+            documentFilename: file.name,
+            documentId: res.documentId,
+            documentStatus: res.status === 'success' ? 'SUCCESS' : 'FAILED',
+            documentMessage: 'Document uploaded successfully',
+          }))
         );
       })
     );
@@ -129,6 +153,53 @@ export class LoanApplicationService {
             params: { applicationID: applicationId },
           }))
         );
+      })
+    );
+  }
+
+  saveApplicationDraft(applicationId: string, payload: any): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.post(
+          `${this.endpoint}/draft`,
+          payload,
+          { headers, params: { applicationID: applicationId }, responseType: 'text' }
+        );
+      })
+    );
+  }
+
+  saveApplicationDetails(applicationId: string, payload: any): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.post(
+          `${this.endpoint}/details`,
+          payload,
+          { headers, params: { applicationID: applicationId }, responseType: 'text' }
+        );
+      })
+    );
+  }
+
+  getApplicationDetails(applicationId: string): Observable<any> {
+    return this.authService.getJwtToken().pipe(
+      switchMap(token => {
+        let headers = new HttpHeaders();
+        if (token.trim()) {
+          headers = headers.set('Authorization', `Bearer ${token.trim().replace(/^Bearer\s+/i, '')}`);
+        }
+        return this.http.get<any>(`${this.endpoint}/details`, {
+          headers,
+          params: { applicationID: applicationId }
+        });
       })
     );
   }

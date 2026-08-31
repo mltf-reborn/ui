@@ -44,7 +44,7 @@ export class OpsLoginComponent {
       this.isLoading.set(false);
 
       if (success) {
-        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/ops/dashboard';
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/ops/dashboard-v2';
         this.router.navigateByUrl(returnUrl);
       } else {
         this.errorMessage.set('Kredensial tidak sah. Sila guna username: ops dan password: ops112233');

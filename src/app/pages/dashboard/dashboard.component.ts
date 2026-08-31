@@ -49,7 +49,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   editApplication(applicationReferenceNumber: string): void {
-    this.router.navigate(['/dashboard/apply/mortgage'], {
+    this.router.navigate(['/dashboard/apply/mortgage-v2'], {
       queryParams: { application: applicationReferenceNumber },
     });
   }
